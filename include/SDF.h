@@ -68,7 +68,7 @@ unsigned int SDFbyteorder(SDF *hdr);
 int SDFswap(SDF *hdr);
 int SDFnoswap(SDF *hdr);
 int SDFisswapping(SDF *hdr);
-int SDFsetmaxbufsz(int new);
+int SDFsetmaxbufsz(int n);
 int SDFrdvecs(SDF *hdr, ...
 	     /* char *name, int n, void *address, int stride,  
 		... , 

@@ -369,9 +369,9 @@ int SDFisswapping(SDF *hdr){
     return hdr->swapping;
 }
 
-int SDFsetmaxbufsz(int new){
+int SDFsetmaxbufsz(int n){
     int ret = max_bufsz;
-    max_bufsz = new;
+    max_bufsz = n;
     return ret;
 }
 
