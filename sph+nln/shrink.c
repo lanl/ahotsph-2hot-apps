@@ -159,7 +159,7 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 		    q->phi = 0.0;  /* Set this correctly? */
 
 		    q->windid = id;
-		    q->ident = 0;  /* Fix in subsequent call to SPHFixId */
+		    q->ident = 100000000;  /* Fix in call to SPHFixId? No */
 
 /* 		    Msgf(("p->pos: %f %f %f; windid: %d; u: %e\n",  */
 /* 			  q->pos[0], q->pos[1], q->pos[2], q->windid,  */

@@ -558,7 +558,7 @@ main(int argc, char *argv[])
 /* 	  centmass += totnewmass; */
 	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\nBH mass = %f\n", iter, 
 		SPHnobj-SPHoldnobj, centmass));
-	  SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
+	  /* SPHFixId(SPHbtab, SPHnobj, SPHgnobj); */
 	}
 
 	/* comoving smoothing */
