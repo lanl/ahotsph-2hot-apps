@@ -27,14 +27,16 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
 	v2 = (p->vel[0] - b.vel[0])*(p->vel[0] - b.vel[0]) + 
 	    (p->vel[1] - b.vel[1])*(p->vel[1] - b.vel[1]) + 
 	    (p->vel[2] - b.vel[2])*(p->vel[2] - b.vel[2]);
-
+	
+	/* One option: adjust r2 based on particle velocities to
+	   simulate capture-radius behavior */
 	r2 = 4.0*newt*newt*b.mass*b.mass / (v2 * v2);
 
 	b2 = (p->pos[0] - b.pos[0])*(p->pos[0] - b.pos[0]) + 
 	    (p->pos[1] - b.pos[1])*(p->pos[1] - b.pos[1]) + 
 	    (p->pos[2] - b.pos[2])*(p->pos[2] - b.pos[2]);
 
-	if ( b2 >= r2 ) {  /* If distance to bndry > BH capture radius */
+	if ( b2 >= r2 ) {  /* If distance to bndry > capture radius */
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
 	} else {
