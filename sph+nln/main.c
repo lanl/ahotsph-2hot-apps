@@ -1651,7 +1651,7 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
 	output_btab[i].u = btab[i].u;
 	output_btab[i].h = btab[i].h;
 	output_btab[i].rho = btab[i].rho;
-/*  	output_btab[i].drho_dt = btab[i].drho_dt; */
+  	output_btab[i].drho_dt = btab[i].drho_dt;
 	output_btab[i].udot = btab[i].udot;
 #ifdef SPH_SAVE_ACC
 	VV(output_btab[i].acc, = btab[i].acc);
