@@ -1,0 +1,9 @@
+
+OPTIMIZE:=-O3
+ARCH_SPECIFIC:=-D__CRAY__
+
+include $(treedir)/Make-common/Make.default
+
+asmdir:=asm-cray
+swsrc:=alloca.c finite.c
+

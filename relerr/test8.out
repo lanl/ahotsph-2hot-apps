@@ -1,0 +1,463 @@
+Welcome to the variable O() integrator running on 1 procs
+cfile "test10knln.ctl" opened
+Setting timeout to 600 seconds.
+Generating random dataset
+int seed = 3141590;
+int cencon = 0;
+Maxmem after data read is 709 (831)
+float errtol = 0.01;
+float dt = 0.01;
+float epsilon = 0.02;
+int iter = 0;
+int nsteps = 10;
+int nproc = 1;
+int do_NlgN = 1;
+Output to testfile.nnnn, every 1000 steps
+int timer_freq = 1;
+int image_freq = 0;
+int decomp_freq = 0;
+int hetero_load_balance = 0;
+float sort_tol = 0.0100;
+int do_periodic = 0;
+gnobj = 10000, mtot = 1.000000
+BuildTree, this_tol=0.00985785
+BuildTree done 1637 (1727)
+FindForces, this_eps=0.02
+FindForces done 1639 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0, iter = 0, size = 1.00718
+ke = 0.302264, pe = -0.597761, energy = -0.295497
+CM accel: (4.67944e-05 -2.17404e-06 9.99267e-06): 4.78988e-05
+rms accel: 0.773965
+      Timers        Min        Max       Mean
+  Step Total       1.96       1.96       1.96
+Step Tot(WC)       1.96       1.96       1.96
+ Build Total       0.22       0.22       0.22
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.13       0.13       0.13
+   Make Tree       0.09       0.09       0.09
+  Force Eval       1.69       1.69       1.69
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.69       1.69       1.69
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     290956     290956       290956    290956.00
+   Body-cell      29665      29665        29665     29665.00
+   Cell-body     172519     172519       172519    172519.00
+   Body-body      37685      37685        37685     37685.00
+      Nterms   11137369   11137369     11137369  11137369.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     137108     137108       137108    137108.00
+Shared Cells       1296       1296         1296      1296.00
+   Translate      14860      14860        14860     14860.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1639       1639         1639      1639.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00979911
+BuildTree done 1639 (1727)
+FindForces, this_eps=0.02
+FindForces done 1639 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.01, iter = 1, size = 1.0102
+ke = 0.302293, pe = -0.597793, energy = -0.2955
+CM accel: (1.43777e-05 -5.31349e-06 -1.46973e-06): 1.53984e-05
+rms accel: 0.77403
+      Timers        Min        Max       Mean
+  Step Total       1.92       1.92       1.92
+Step Tot(WC)       1.92       1.92       1.92
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.70       1.70       1.70
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.70       1.70       1.70
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     291129     291129       291129    291129.00
+   Body-cell      29284      29284        29284     29284.00
+   Cell-body     170874     170874       170874    170874.00
+   Body-body      36908      36908        36908     36908.00
+      Nterms   11178997   11178997     11178997  11178997.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     137224     137224       137224    137224.00
+Shared Cells       1264       1264         1264      1264.00
+   Translate      14907      14907        14907     14907.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1639       1639         1639      1639.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00974268
+BuildTree done 1647 (1727)
+FindForces, this_eps=0.02
+FindForces done 1647 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.02, iter = 2, size = 1.01312
+ke = 0.302324, pe = -0.597822, energy = -0.295498
+CM accel: (2.33681e-05 -1.82785e-05 -3.18339e-06): 2.9838e-05
+rms accel: 0.774016
+      Timers        Min        Max       Mean
+  Step Total       1.91       1.91       1.91
+Step Tot(WC)       1.91       1.91       1.91
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.08       0.08       0.08
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.70       1.70       1.70
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.70       1.70       1.70
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     288238     288238       288238    288238.00
+   Body-cell      29904      29904        29904     29904.00
+   Cell-body     169622     169622       169622    169622.00
+   Body-body      36949      36949        36949     36949.00
+      Nterms   11204681   11204681     11204681  11204681.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     136911     136911       136911    136911.00
+Shared Cells       1264       1264         1264      1264.00
+   Translate      14951      14951        14951     14951.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1647       1647         1647      1647.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00968851
+BuildTree done 1647 (1727)
+FindForces, this_eps=0.02
+FindForces done 1647 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.03, iter = 3, size = 1.01595
+ke = 0.302355, pe = -0.597853, energy = -0.295498
+CM accel: (-1.12938e-06 1.77542e-05 1.96024e-05): 2.64715e-05
+rms accel: 0.774072
+      Timers        Min        Max       Mean
+  Step Total       1.93       1.93       1.93
+Step Tot(WC)       1.93       1.93       1.93
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.71       1.71       1.71
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.71       1.71       1.71
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     287066     287066       287066    287066.00
+   Body-cell      31981      31981        31981     31981.00
+   Cell-body     169534     169534       169534    169534.00
+   Body-body      37293      37293        37293     37293.00
+      Nterms   11264196   11264196     11264196  11264196.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     135791     135791       135791    135791.00
+Shared Cells       1328       1328         1328      1328.00
+   Translate      14928      14928        14928     14928.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1647       1647         1647      1647.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.0095854
+BuildTree done 1647 (1727)
+FindForces, this_eps=0.02
+FindForces done 1647 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.04, iter = 4, size = 1.0214
+ke = 0.302387, pe = -0.597881, energy = -0.295494
+CM accel: (1.9963e-05 -4.76062e-06 1.90788e-06): 2.06113e-05
+rms accel: 0.774107
+      Timers        Min        Max       Mean
+  Step Total       1.94       1.94       1.94
+Step Tot(WC)       1.94       1.94       1.94
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.72       1.72       1.72
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.72       1.72       1.72
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     288223     288223       288223    288223.00
+   Body-cell      31735      31735        31735     31735.00
+   Cell-body     170915     170915       170915    170915.00
+   Body-body      37577      37577        37577     37577.00
+      Nterms   11393550   11393550     11393550  11393550.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     136678     136678       136678    136678.00
+Shared Cells       1296       1296         1296      1296.00
+   Translate      14931      14931        14931     14931.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1647       1647         1647      1647.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00947342
+BuildTree done 1647 (1727)
+FindForces, this_eps=0.02
+FindForces done 1647 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.05, iter = 5, size = 1.02742
+ke = 0.302421, pe = -0.597909, energy = -0.295488
+CM accel: (5.97757e-06 1.02951e-05 2.4624e-05): 2.73507e-05
+rms accel: 0.774176
+      Timers        Min        Max       Mean
+  Step Total       1.95       1.95       1.95
+Step Tot(WC)       1.95       1.95       1.95
+ Build Total       0.18       0.18       0.18
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.73       1.73       1.73
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.73       1.73       1.73
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     289875     289875       289875    289875.00
+   Body-cell      32514      32514        32514     32514.00
+   Cell-body     171033     171033       171033    171033.00
+   Body-body      37242      37242        37242     37242.00
+      Nterms   11431346   11431346     11431346  11431346.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     138163     138163       138163    138163.00
+Shared Cells       1264       1264         1264      1264.00
+   Translate      14962      14962        14962     14962.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1647       1647         1647      1647.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00936505
+BuildTree done 1639 (1727)
+FindForces, this_eps=0.02
+FindForces done 1639 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.06, iter = 6, size = 1.03334
+ke = 0.302459, pe = -0.597944, energy = -0.295485
+CM accel: (1.54973e-05 5.59095e-06 1.30899e-05): 2.10421e-05
+rms accel: 0.77426
+      Timers        Min        Max       Mean
+  Step Total       1.96       1.96       1.96
+Step Tot(WC)       1.96       1.96       1.96
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.73       1.73       1.73
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.73       1.73       1.73
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     285576     285576       285576    285576.00
+   Body-cell      32275      32275        32275     32275.00
+   Cell-body     172989     172989       172989    172989.00
+   Body-body      37550      37550        37550     37550.00
+      Nterms   11524893   11524893     11524893  11524893.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     136837     136837       136837    136837.00
+Shared Cells       1240       1240         1240      1240.00
+   Translate      14871      14871        14871     14871.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1639       1639         1639      1639.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00926013
+BuildTree done 1631 (1727)
+FindForces, this_eps=0.02
+FindForces done 1631 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.07, iter = 7, size = 1.03918
+ke = 0.302501, pe = -0.597977, energy = -0.295475
+CM accel: (2.01004e-05 3.05637e-05 1.05057e-05): 3.80597e-05
+rms accel: 0.774316
+      Timers        Min        Max       Mean
+  Step Total       1.97       1.97       1.97
+Step Tot(WC)       1.97       1.97       1.97
+ Build Total       0.18       0.18       0.18
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.74       1.74       1.74
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.74       1.74       1.74
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     287353     287353       287353    287353.00
+   Body-cell      31899      31899        31899     31899.00
+   Cell-body     176865     176865       176865    176865.00
+   Body-body      37813      37813        37813     37813.00
+      Nterms   11576702   11576702     11576702  11576702.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     137278     137278       137278    137278.00
+Shared Cells       1240       1240         1240      1240.00
+   Translate      14838      14838        14838     14838.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1631       1631         1631      1631.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00915855
+BuildTree done 1631 (1727)
+FindForces, this_eps=0.02
+FindForces done 1631 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.08, iter = 8, size = 1.04493
+ke = 0.302548, pe = -0.598017, energy = -0.295469
+CM accel: (1.12671e-05 2.85976e-05 3.43833e-05): 4.61192e-05
+rms accel: 0.774431
+      Timers        Min        Max       Mean
+  Step Total       1.98       1.98       1.98
+Step Tot(WC)       1.98       1.98       1.98
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.76       1.76       1.76
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.76       1.76       1.76
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     284670     284670       284670    284670.00
+   Body-cell      33517      33517        33517     33517.00
+   Cell-body     180397     180397       180397    180397.00
+   Body-body      38580      38580        38580     38580.00
+      Nterms   11680861   11680861     11680861  11680861.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     137622     137622       137622    137622.00
+Shared Cells       1264       1264         1264      1264.00
+   Translate      14791      14791        14791     14791.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1631       1631         1631      1631.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00906017
+BuildTree done 1639 (1727)
+FindForces, this_eps=0.02
+FindForces done 1639 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.09, iter = 9, size = 1.05059
+ke = 0.302599, pe = -0.598066, energy = -0.295467
+CM accel: (-1.23049e-05 1.51083e-05 -4.42208e-06): 1.99806e-05
+rms accel: 0.774591
+      Timers        Min        Max       Mean
+  Step Total       2.09       2.09       2.09
+Step Tot(WC)       2.09       2.09       2.09
+ Build Total       0.17       0.17       0.17
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.09       0.09       0.09
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.76       1.76       1.76
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.76       1.76       1.76
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     284808     284808       284808    284808.00
+   Body-cell      32746      32746        32746     32746.00
+   Cell-body     177666     177666       177666    177666.00
+   Body-body      37862      37862        37862     37862.00
+      Nterms   11723876   11723876     11723876  11723876.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     137668     137668       137668    137668.00
+Shared Cells       1248       1248         1248      1248.00
+   Translate      14851      14851        14851     14851.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1639       1639         1639      1639.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+BuildTree, this_tol=0.00896487
+BuildTree done 1631 (1727)
+FindForces, this_eps=0.02
+FindForces done 1631 (1727)
+FreeTree done 706 (1727)
+
+tpos = 0.1, iter = 10, size = 1.05616
+ke = 0.302655, pe = -0.598118, energy = -0.295463
+CM accel: (-1.05684e-06 1.80669e-05 -6.75588e-06): 1.93176e-05
+rms accel: 0.774765
+      Timers        Min        Max       Mean
+  Step Total       1.99       1.99       1.99
+Step Tot(WC)       1.99       1.99       1.99
+ Build Total       0.18       0.18       0.18
+      Decomp       0.00       0.00       0.00
+  DecompComm       0.00       0.00       0.00
+        Sort       0.10       0.10       0.10
+   Make Tree       0.08       0.08       0.08
+  Force Eval       1.76       1.76       1.76
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       0.00       0.00       0.00
+ Imbal(walk)       0.00       0.00       0.00
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00       0.00       0.00
+      WalkNT       1.76       1.76       1.76
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell     284534     284534       284534    284534.00
+   Body-cell      32318      32318        32318     32318.00
+   Cell-body     177946     177946       177946    177946.00
+   Body-body      37663      37663        37663     37663.00
+      Nterms   11740797   11740797     11740797  11740797.00
+       Nbody      10000      10000        10000     10000.00
+    MAC fail     137586     137586       137586    137586.00
+Shared Cells       1280       1280         1280      1280.00
+   Translate      14845      14845        14845     14845.00
+    Deferred          0          0            0         0.00
+Mem Used (K)       1631       1631         1631      1631.00
+ Heap Sz (K)       1727       1727         1727      1727.00
+Bye!

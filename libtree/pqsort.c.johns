@@ -1,0 +1,233 @@
+#include <stdlib.h>
+#include "pqsort.h"
+#include "Assert.h"
+#include "key.h"
+#include "Malloc.h"
+#include "mpmy.h"
+#include "gc.h"
+#include "Msgs.h"
+#include "stk.h"
+#include "timers.h"
+#include "decomp.h"
+#include "abm.h"
+
+static ABM Abm;
+
+Timer_t SortTm;
+
+static int cmpkey(const void *k1, const void *k2); 
+static Key_t (*getkey_s)(const void *);
+
+static Stk instk;
+static char *KeepBelowPtr;
+static char *FlushedThroughPtr;
+static int unacked;
+static int expecting_acks;
+
+#define BATCH_SIZE 4096
+#define STK_EXTEND_SZ 65536	/* instk grows by this much each time */
+#define SORT_TAG 4326
+#define NPOLL 10		/* Poll after NPOLL particles in the list */
+#define NFLUSH 1000		/* Flush when we've got this many to send */
+
+/* indices into the handler arrays */
+#define DATA 0
+#define NOMOREDATA 1
+#define ACK 2
+#define NHANDLERS 3
+
+/* Poll calls this function to deal with incoming messages */
+/* This is the hndlr for DATA types */
+static void
+datahndlr(int src, int size, void *buf)
+{
+    /* Put it in the gap if there is room */
+    Msgf(("datahndlr(src=%d, sz=%d, buf=%p)\n", src, size, buf));
+    if (FlushedThroughPtr - KeepBelowPtr >= size) {
+	memcpy(KeepBelowPtr, buf, size);
+	KeepBelowPtr += size;
+    } else {
+	StkPushData(&instk, buf, size);
+    }
+}
+
+static void
+nomorehndlr(int src, int size, void *buf)
+{
+    assert(size == 0);
+    Msgf(("No more messages promised by node %d\n", src));
+    ABMPost(&Abm, src, 0, ACK, NULL, NULL);
+}    
+
+static void
+ackhndlr(int src, int size, void *buf)
+{
+    if( !expecting_acks )
+	Error("ackhndlr called at inappropriate time!\n");
+    unacked--;
+    Msgf(("ackhndlr called, still %d unacked\n", unacked));
+}
+
+void pqsortsetup(sortresult_t *decompp, void *bp, int nobj, 
+		int size, float median_tol,
+		void *(*realloc_like)(void *, size_t)) {
+    pqsortsetup_order(decompp, bp, nobj, size, median_tol, 0, realloc_like);
+}
+
+/* This should replace pqsortsetup in the next "major release" */
+void pqsortsetup_order(sortresult_t *decompp, void *bp, int nobj, 
+		int size, float median_tol, int proc_order, 
+		void *(*realloc_like)(void *, size_t)) {
+    decompp->data = bp;
+    decompp->nobj = nobj;
+    decompp->size = size;
+    decompp->median_tol = median_tol;
+    decompp->proc_order = proc_order;
+    decompp->loadbal_target = 1.0;  /* default to no load balance */
+    decompp->realloc_like = realloc_like;
+}
+
+static void
+MemCpy(void *to, void *from, int sz){
+    Msgf(("Memcpy(%p, %p, %d)\n", to, from, sz)); 
+    memcpy(to, from, sz);
+}
+
+void *pqsort(sortresult_t *decompp,
+	    float (*weight)(const void *), Key_t (*getkey)(const void *))
+{
+    int size, nobj, i, n;
+    char *p, *data;		/* really void*, but we do a lot of arith. */
+    int procnum = MPMY_Procnum();
+    ABMhndlr_t *hndlrs[NHANDLERS];
+    int *nsent;
+    int dest;
+
+    nsent = Calloc(MPMY_Nproc(), sizeof(int));
+    Msgf(("pqsort: nobj is %d\n", decompp->nobj));
+    getkey_s = getkey;
+    
+    size = decompp->size;
+    nobj = decompp->nobj;
+    data = decompp->data;
+    if (MPMY_Nproc() == 1) goto sort;
+
+    SetupDecomp(decompp, weight, getkey);
+    StkInit(&instk, STK_EXTEND_SZ, Realloc_f);
+    hndlrs[DATA] = datahndlr;
+    hndlrs[NOMOREDATA] = nomorehndlr;
+    hndlrs[ACK] = ackhndlr;
+    KeepBelowPtr = FlushedThroughPtr = data;
+    expecting_acks = 0;
+    ABMSetup(&Abm, BATCH_SIZE, SORT_TAG, NHANDLERS, hndlrs);
+
+    /* Strategy: put incoming msgs in the gap created by outgoing msgs */ 
+    /* If there is no space there, save it on a Stk */
+    /* Periodically check if some of Stk can be put in the gap */
+
+    StartTimer(&DecompCommTm);
+    for (p = data, i = 0; p < data + nobj * size; p += size, i++) {
+	dest = DestDecomp(p);
+	if (i % NPOLL == 0) {
+	    Msgf(("ABMPoll(i=%d)\n", i));
+	    ABMPoll(&Abm);
+	}
+	if( i % NFLUSH == 0 ){
+	    Msgf(("ABMFlush(i=%d)\n", i));
+	    ABMFlush(&Abm);
+	    FlushedThroughPtr = p;
+	    n = FlushedThroughPtr - KeepBelowPtr;
+	    if (n > StkSz(&instk)) 
+		n = StkSz(&instk);
+	    /* Stick some of the instk in the gap */
+	    if (n) {
+		memcpy(KeepBelowPtr, StkPop(&instk, n), n);
+		KeepBelowPtr += n;
+	    }
+	}
+	if (dest != procnum) {
+	    Msgf(("Sending %p\n", p));
+	    nsent[dest]++;
+	    ABMPost(&Abm, dest, size, DATA, (ABMpktz_t *)&MemCpy, p);
+	} else {
+	    /* We could just ABMPost it to ourself, but that would
+	       put new and untested demands on the comm system... */
+	    if (KeepBelowPtr+size < FlushedThroughPtr){
+		if( KeepBelowPtr != p )	/* worthwhile? */
+		    memcpy(KeepBelowPtr, p, size);
+		KeepBelowPtr += size;
+	    }else{
+		StkPushData(&instk, p, size);
+	    }
+	}
+    }
+    Msgf(("Finished testing particle destinations\n"));
+    FlushedThroughPtr = data + nobj * size;
+    StopTimer(&DecompCommTm);
+    unacked = 0;
+    expecting_acks = 1;
+    Msgf(("Sending out NOMOREDATA messages.\n"));
+    for(dest=0; dest<MPMY_Nproc(); dest++){
+	if( nsent[dest] ){
+	    /* We could send the nsent[dest] out and let the receiver
+	       maintain an nrecvd[src] if we are worried about out-of-
+	       sequence messages. */
+	    ABMPost(&Abm, dest, 0, NOMOREDATA, NULL, NULL);
+	    unacked++;
+	}
+    }
+    ABMFlush(&Abm);
+    Free(nsent);
+    Msgf(("Waiting for %d acks\n", unacked));
+    while( unacked > 0 ){
+	ABMPollWait(&Abm);
+	Msgf(("PollWait returns, still %d unacked\n", unacked));
+    }
+    ABMIamDone(&Abm);
+    Msgf(("loop waiting for AllDone\n"));
+    while( !ABMAllDone(&Abm) ){
+	ABMPollWait(&Abm);
+    }
+    ABMShutdown(&Abm);
+    Msgf(("calling FinishDecomp\n"));
+    FinishDecomp();
+    StkCrunch(&instk);
+
+    nobj = (KeepBelowPtr - data)/size;
+    Msgf(("nobj after send cycle is %d\n", nobj));
+    Msgf(("Stksz after send cycle is %d (obj)\n", StkSz(&instk)/size));
+
+    assert (StkSz(&instk) % size == 0);
+    data = Realloc(data, nobj * size + StkSz(&instk));
+    decompp->data = data;
+    memcpy(data + nobj*size, StkBase(&instk), StkSz(&instk));
+    nobj += StkSz(&instk)/size;
+    decompp->nobj = nobj;
+    StkTerminate(&instk);
+    Msgf(("Balanced nobj is %6d\n", nobj));
+    
+  sort:
+    assert(nobj > 0);
+    StartTimer(&SortTm);
+    qsort(decompp->data, decompp->nobj, decompp->size, cmpkey);
+    StopTimer(&SortTm);
+    Msgf(("first key is %s, ",  PrintKey(getkey(decompp->data))));
+    Msgf(("last key is %s\n", 
+	  PrintKey(getkey((char *)decompp->data + (nobj-1)*size))));
+    return decompp->data;
+}	     
+
+    
+static int cmpkey(const void *a, const void *b){
+    Key_t ka;
+    Key_t kb;
+    ka = getkey_s(a);
+    kb = getkey_s(b);
+    if( KeyGT(ka, kb) )
+	return 1;
+    else if( KeyLT(ka, kb) )
+	return -1;
+    else
+	return 0;
+}
+

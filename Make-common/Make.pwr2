@@ -1,0 +1,44 @@
+# make CC=xlC will inline the sqrt calls, cc doesn't
+
+# sp2 crashes sometimes with our malloc
+
+ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
+
+ifeq ($(CC),gcc)
+ifeq ($(ARCH),pwr)
+CC_SPECIFIC:=-mcpu=rios1
+else
+CC_SPECIFIC:=-mcpu=rios2 -Wa,-mpwrx
+override CC_SPECIFIC:=$(CC_SPECIFIC) -gxcoff -Wall -ffast-math
+endif
+else
+OPTIMIZE:=-O3
+ifeq ($(ARCH),pwr)
+CC_SPECIFIC:=-qfloat=hsflt -qarch=pwr
+else
+CC_SPECIFIC:=-qfloat=hsflt -qtune=pwrx -qarch=pwrx
+LOADLIBES:=-lrs2
+endif
+endif
+
+include $(treedir)/Make-common/Make.default
+
+asmdir:=asm-power
+swsrc:=gnusort.c lsv.c sigio_dump.c
+
+# we don't have readrtc.s any more
+asmsrc:=readrtc.s
+$(objdir)/%.o : asm-power/%.O
+	cp $^ $@
+
+ifeq ($(PAROS),eui)
+LD=$(CC) $(LDFLAGS) -e mp_main
+LOADLIBES:= $(LOADLIBES) -L/usr/lpp/poe/lib/ip -L/usr/lpp/poe/lib -ls -lvtd -lppe -lccl -leui1c -lcss
+PAROSCFLAGS:=-I/usr/lpp/poe/include
+endif
+
+ifeq ($(PAROS),mpi)
+LD=$(CC) $(LDFLAGS) -e mp_main
+LOADLIBES:= $(LOADLIBES) /usr/lpp/poe/mpif/lib/libmpiglue.a -L/usr/lpp/poe/mpif/lib/ip -L/usr/lpp/poe/mpif/lib -L/usr/lpp/poe/lib -ls -lvtd -lppe -lpm_mpi -lmpicss
+PAROSCFLAGS:=-I/usr/lpp/poe/mpif/include -I/usr/lpp/poe/include
+endif

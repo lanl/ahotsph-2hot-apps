@@ -1,0 +1,177 @@
+Welcome to the variable O() integrator running on 30 procs
+cfile "test10Mnln.ctl" opened
+Setting timeout to 1800 seconds.
+Generating random dataset
+int seed = 3141590;
+int cencon = 0;
+Maxmem after data read is 23478 (23597)
+float errtol = 0.001;
+float dt = 0.01;
+float epsilon = 0.02;
+int iter = 0;
+int nsteps = 2;
+int nproc = 30;
+int do_NlgN = 1;
+Output to testfile.nnnn, every 1000 steps
+int timer_freq = 1;
+int image_freq = 0;
+int decomp_freq = 0;
+int hetero_load_balance = 0;
+float sort_tol = 0.0100;
+int do_periodic = 0;
+WARNING: Node 0 Not making any progress on deferrals for 100000 loops
+WARNING: Node 25 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Not making any progress on deferrals for 100000 loops
+WARNING: Node 13 Not making any progress on deferrals for 100000 loops
+WARNING: Node 14 Not making any progress on deferrals for 100000 loops
+WARNING: Node 19 Not making any progress on deferrals for 100000 loops
+WARNING: Node 0 Progress Restored!
+WARNING: Node 8 Not making any progress on deferrals for 100000 loops
+WARNING: Node 2 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Progress Restored!
+WARNING: Node 14 Progress Restored!
+WARNING: Node 13 Progress Restored!
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 19 Progress Restored!
+WARNING: Node 25 Progress Restored!
+WARNING: Node 0 Not making any progress on deferrals for 100000 loops
+WARNING: Node 10 Progress Restored!
+WARNING: Node 8 Progress Restored!
+WARNING: Node 2 Progress Restored!
+WARNING: Node 0 Progress Restored!
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 13 Not making any progress on deferrals for 100000 loops
+WARNING: Node 16 Not making any progress on deferrals for 100000 loops
+WARNING: Node 21 Not making any progress on deferrals for 100000 loops
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Not making any progress on deferrals for 100000 loops
+WARNING: Node 19 Not making any progress on deferrals for 100000 loops
+WARNING: Node 10 Progress Restored!
+WARNING: Node 13 Progress Restored!
+WARNING: Node 29 Progress Restored!
+WARNING: Node 21 Progress Restored!
+WARNING: Node 15 Progress Restored!
+WARNING: Node 19 Progress Restored!
+WARNING: Node 16 Progress Restored!
+gnobj = 10000000, mtot = 1.000000
+BuildTree, this_tol=0.000980602
+BuildTree done 54461 (56356)
+FindForces, this_eps=0.02
+FindForces done 68332 (68705)
+FreeTree done 28016 (68705)
+
+tpos = 0, iter = 0, size = 1.00984
+ke = 0.300026, pe = -0.59894, energy = -0.298914
+CM accel: (4.21524e-07 -2.78711e-07 -3.6067e-07): 6.20842e-07
+rms accel: 0.771238
+      Timers        Min        Max       Mean
+  Step Total     423.95     423.96     423.95
+Step Tot(WC)     423.95     423.96     423.95
+ Build Total      35.80      36.02      35.90
+      Decomp       3.13       4.76       4.20
+  DecompComm      14.35      14.45      14.42
+        Sort       5.77       8.22       6.73
+   Make Tree       5.33       8.48       6.32
+  Force Eval     384.53     384.54     384.53
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       6.29      10.22       8.36
+ Imbal(walk)       0.01     131.56      82.83
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.01     131.56      82.83
+      WalkNT     252.97     384.53     301.70
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell   10282413   13479034    343610893  11453696.43
+   Body-cell    1420926    1871554     47070132   1569004.40
+   Cell-body    5859842    7659183    194760730   6492024.33
+   Body-body    1201770    1580870     39815755   1327191.83
+      Nterms 1939664704 2147483647  62772193396 2092406446.53
+       Nbody     302886     397960     10000000    333333.33
+    MAC fail    4431386    5812900    146786431   4892881.03
+Shared Cells       1328       3040        64608      2153.60
+   Translate     448117     589225     14793047    493101.57
+    Deferred    2399836    8397032    163504339   5450144.63
+Mem Used (K)      49250      68332      1688640     56288.00
+ Heap Sz (K)      51495      68705      1704853     56828.43
+BuildTree, this_tol=0.000964425
+BuildTree done 50677 (68705)
+FindForces, this_eps=0.02
+FindForces done 61824 (68705)
+FreeTree done 26060 (68705)
+
+tpos = 0.01, iter = 1, size = 1.01828
+ke = 0.300028, pe = -0.598943, energy = -0.298915
+CM accel: (-4.47051e-08 -3.2658e-07 3.86771e-07): 5.08177e-07
+rms accel: 0.771242
+      Timers        Min        Max       Mean
+  Step Total     367.70     367.71     367.70
+Step Tot(WC)     367.70     367.71     367.70
+ Build Total      19.64      20.03      19.89
+      Decomp       2.32       3.19       2.58
+  DecompComm       1.91       2.09       1.99
+        Sort       5.26       7.10       6.33
+   Make Tree       4.84       7.34       6.30
+  Force Eval     344.40     344.42     344.41
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       3.57       7.41       6.21
+ Imbal(walk)       0.01      55.89      42.44
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.01      55.89      42.44
+      WalkNT     288.52     344.40     301.98
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell   10008517   12685658    345417357  11513911.90
+   Body-cell    1386300    1787591     48138657   1604621.90
+   Cell-body    5636802    7178041    194746971   6491565.70
+   Body-body    1146478    1478257     39949269   1331642.30
+      Nterms 2147483647 2147483647  64424509410 2147483647.00
+       Nbody     286390     370132     10000000    333333.33
+    MAC fail    4234637    5446393    147309766   4910325.53
+Shared Cells       1128       2984        64944      2164.80
+   Translate     423263     547877     14795876    493195.87
+    Deferred    1361233    3396679     80627302   2687576.73
+Mem Used (K)      51004      61824      1704159     56805.30
+ Heap Sz (K)      54712      68705      1814959     60498.63
+BuildTree, this_tol=0.000947042
+BuildTree done 50652 (68705)
+FindForces, this_eps=0.02
+FindForces done 61534 (68705)
+FreeTree done 26051 (68705)
+
+tpos = 0.02, iter = 2, size = 1.02758
+ke = 0.30003, pe = -0.598946, energy = -0.298916
+CM accel: (-6.45611e-08 -3.98126e-08 1.42395e-07): 1.61337e-07
+rms accel: 0.771245
+      Timers        Min        Max       Mean
+  Step Total     373.06     373.07     373.07
+Step Tot(WC)     373.06     373.07     373.07
+ Build Total      18.77      19.08      18.90
+      Decomp       2.17       2.93       2.60
+  DecompComm       0.91       0.92       0.91
+        Sort       4.90       7.27       6.05
+   Make Tree       4.80       7.62       6.32
+  Force Eval     350.95     350.96     350.96
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       3.30       7.84       5.97
+ Imbal(walk)       0.01      63.66      46.96
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.01      63.66      46.96
+      WalkNT     287.30     350.95     304.00
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell   10023816   12808639    348263468  11608782.27
+   Body-cell    1391931    1827618     49124566   1637485.53
+   Cell-body    5594334    7169479    194504965   6483498.83
+   Body-body    1139617    1479834     40017886   1333929.53
+      Nterms 2147483647 2147483647  64424509410 2147483647.00
+       Nbody     284959     370012     10000000    333333.33
+    MAC fail    4228657    5466884    147908719   4930290.63
+Shared Cells       1504       3560        66440      2214.67
+   Translate     421880     547621     14803114    493437.13
+    Deferred    1405478    3974122     79806193   2660206.43
+Mem Used (K)      50847      61534      1706447     56881.57
+ Heap Sz (K)      55112      68705      1819185     60639.50
+Bye!

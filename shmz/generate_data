@@ -1,0 +1,5 @@
+gnsrc1.$ARCH fmmsrc.1 32 64
+gnsrc1.$ARCH fmmsrc.2 64 128
+gnsrc1.$ARCH fmmsrc.3 128 256
+gnsrc1.$ARCH fmmsrc.4 256 512
+gnsrc1.$ARCH fmmsrc.5 512 1024

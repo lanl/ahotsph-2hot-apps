@@ -1,0 +1,11 @@
+libsw/Objfiles
+libsw/msgdirinit.c~
+libsw/SDFread.c~
+libsw/abm.c~
+libsw/emalloc.c~
+libsw/mpmy_combine.c~
+libsw/poll.c~
+libsw/Obsolete
+libsw/.tar.Z
+libsw/.tgz
+libsw/-dist.tgz

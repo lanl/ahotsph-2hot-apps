@@ -1,0 +1,20 @@
+# AVS
+ndim=1
+field=irregular
+nspace=3
+data=float
+dim1=1280
+veclen=3
+coord 1 file=pd3e.006 filetype=binary skip=352 stride=8 # x
+coord 2 file=pd3e.006 filetype=binary skip=356 stride=8 # y
+coord 3 file=pd3e.006 filetype=binary skip=360 stride=8 # z
+#
+variable 1 file=pd3e.006 filetype=binary skip=368 stride=8 # velx
+label=velx
+#
+variable 2 file=pd3e.006 filetype=binary skip=372 stride=8 # vely
+label=vely
+#
+variable 3 file=pd3e.006 filetype=binary skip=376 stride=8 # velz
+label=velz
+#

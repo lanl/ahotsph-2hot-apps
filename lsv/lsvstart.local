@@ -1,0 +1,35 @@
+#!/bin/sh
+verbose=1
+trap   'echo lsvstart: bailing out
+	kill $pids
+	echo lsvstart: killed $pids
+	exit 1;' 2 3 4 6 8 10 15 18
+if [ $verbose ] ; then
+  echo lsvstart:LSV_NPROC $LSV_NPROC
+  echo lsvstart:LSV_HOST $LSV_HOST
+  echo lsvstart:LSV_PORT $LSV_PORT
+  echo lsvstart:LSV_PROGELT $LSV_PROGELT
+  echo lsvstart:LSV_SUSPEND $LSV_SUSPEND
+  echo lsvstart:Calling: $LSV_PROGELT "$@"
+fi
+#
+export LSV_PROCNUM
+# := means assign it if it isn't already set
+: ${LSV_FIRST:=0}
+: ${LSV_LAST:=$LSV_NPROC}
+LSV_PROCNUM=$LSV_FIRST
+while [ $LSV_PROCNUM -lt $LSV_NPROC ]; do
+  $LSV_PROGELT "$@" &
+  pids="$pids $!"
+  LSV_PROCNUM=`expr $LSV_PROCNUM + 1`
+done
+
+if [ $verbose ]; then
+  echo lsvstart: waiting for $pids
+fi
+wait
+
+if [ $verbose ]; then
+  echo lsvstart: done
+fi
+exit

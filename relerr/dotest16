@@ -1,0 +1,3 @@
+#!/bin/csh
+# lookout
+mpirun -np 32 relerr.O2k-mpi test20Mnln.ctl >& test16.out < /dev/null 

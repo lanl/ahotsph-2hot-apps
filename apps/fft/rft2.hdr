@@ -1,0 +1,8 @@
+# SDF
+parameter byteorder = 0x78563412;
+struct {
+   float real;
+}[];
+# SDF-EOH
+
+	

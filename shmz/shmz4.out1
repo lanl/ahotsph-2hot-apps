@@ -1,0 +1,24 @@
+Welcome to the scalar Helmholtz solver running on 16 procs
+cfile "shmz4.ctl" opened
+Reading "fmmsrc.4"
+     SDFread       0.35       0.36       0.36
+read speed 7194 kb/s
+cycle 1 starting
+cycle 2 starting
+cycle 3 starting
+cycle 4 starting
+cycle 5 starting
+cycle 6 starting
+cycle 7 starting
+cycle 8 starting
+cycle 9 starting
+cycle 10 starting
+cycle 11 starting
+cycle 12 starting
+cycle 13 starting
+cycle 14 starting
+cycle 15 starting
+  Step Total     183.38     201.07     192.02
+    SDFwrite       1.05       1.05       1.05
+write speed 3504 kb/s
+Bye!

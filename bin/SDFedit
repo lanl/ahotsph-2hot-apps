@@ -1,0 +1,48 @@
+#!/usr/local/bin/perl -w
+# Usage SDFedit name1=value1 name2=value2 ... file
+# Edit, in place the SDF file and change any occurrences of
+# name=something; to name=value;
+# This script handles only the most rudimentary of SDF files.
+# It does, however, handle our typical control files.  The idea
+# is that you can SDFedit in a higher-level script to modify 
+# control-file values, e.g.,
+#  foreach tol in (.1 .01 .001 .0001)
+#    SDFedit errtol=$tol outname=\"foo.$tol\" ctlfile
+#    program.sun4-seq
+#  end
+#
+#  CAVEAT CAVEAT CAVEAT CAVEAT
+# - it really screws up if the SDF file has multiple declarations on a line!
+#
+#
+# Read the foo=bar arguments
+while($ARGV[0] =~ /(.*)=(.*)/){
+    $substnames{$1} = $2;
+    shift ;
+}
+# The only remaining arg is the filename.
+# make a backup copy and open it for input.
+if (!-e $ARGV[0] . '.bak'){
+  # if there isn't already a .bak file, use it.
+  $bakup=$ARGV[0] . '.bak';
+}else{
+  # otherwise use .bakk, don't worry about stepping on it
+  $bakup=$ARGV[0] . '.bakk';
+}
+rename($ARGV[0], $bakup);
+open(IN, $bakup);
+open(OUT, ">$ARGV[0]");
+while(<IN>){
+    if( ($name)=/(\S+)\s*=/ ){
+	if( defined($substnames{$name}) ){
+	    s/(\S+)\s*=\s*([^;]*)/$1 = $substnames{$name}/;
+	    $hit{$name} = 1;
+	}
+    }
+}continue{
+    print OUT;
+}
+# report if we missed any...
+foreach $name (keys(%substnames)){
+    print "no match for $name\n" if !$hit{$name};
+}

@@ -1,0 +1,15 @@
+divergence	set x12=x1-x2
+		set y12=y1-y2
+		set z12=z1-z2
+		set x13=x1-x3
+		set y13=y1-y3
+		set z13=z1-z3
+		set cross12x=y12*strz - z12*stry
+		set cross12y=z12*strx - x12*strz
+		set cross12z=x12*stry - y12*strx
+		set cross13x=y13*strz - z13*stry
+		set cross13y=z13*strx - x13*strz
+		set cross13z=x13*stry - y13*strx
+		set cross12 = sqrt(cross12x*cross12x + cross12y*cross12y + cross12z*cross12z)
+		set cross13 = sqrt(cross13x*cross13x + cross13y*cross13y + cross13z*cross13z)
+		print {x12 x13 cross12 cross13}

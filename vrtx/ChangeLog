@@ -1,0 +1,14 @@
+Wed May 10 13:21:34 1995  John Salmon  <johns@mullet.anu.edu.au>
+
+	* integrate_vrtx_helic.c (Update): Removed the code that
+	puts "dead" vortices on a ring.  Just leave them where they
+	are sitting in the input data.  This speeds things up A LOT
+	because it eliminates thousands of trig function calls.
+
+	* quads_vrtx.c (InteractCell): Test for dist==0, which can
+	happen (rarely) if zero-strength vortices are present.
+
+	* cofm_vrtx.c (CofmFromDaugh): Added a couple of extra tests
+	to guard against div-by-zero and similar problems when dealing
+	with zero-strength vortices.
+

@@ -1,0 +1,13 @@
+# The exemplar has no lex or yacc.
+# You need to copy libSDF/SDF-parse.c and SDF-lex.c from another machine.
+
+defaultCC:=gcc
+
+ifeq ($(CC),cc)
+OPTIMIZE:=-O2
+endif
+
+include $(treedir)/Make-common/Make.default
+
+asmdir:=asm-hp
+swsrc:=finite.c gnusort.c

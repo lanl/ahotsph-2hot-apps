@@ -1,0 +1,25 @@
+trex% ~/s/tree16/apps/fft/cdm.paragon -sz 64 ~/s/tree16/apps/fft/cdm_n.ctl -pn open
+~/s/tree16/apps/fft/cdm.paragon -sz 64 ~/s/tree16/apps/fft/cdm_n.ctl -pn open
+cfile "/home/sampson8/msw/s/tree16/apps/fft/cdm_n.ctl" opened
+Building EBW cdm spec q=6.58135e-06, h=0.5, sqrtA=5.63757
+nu=1.13, a'=5.02655, b'=3.61674, c'=1.7827
+doing 512x512x512 real transform
+int nproc = 64;
+Estimate 2x8192k memory use per node for fft
+Reducing by factor of 8 in each dimension.
+max 64.058235, min -54.639164, avg -0.000000, rms 12.935842
+Fluctuations will grow by 64.00
+Initial point fluctuations are 0.202123
+Initial velocity factor (f) is 1.000002
+T0 is 13.04 Gyr
+Rejected 0 negative mass particles
+Writing 262144 particles
+    SDFwrite       8.33       8.48       8.48
+write speed 495 kb/s
+      Timers        Min        Max       Mean
+       Total     117.02     117.22     117.05
+   Total(WC)     117.02     117.22     117.05
+       Four1      24.80      24.83      24.81
+       FourP      30.67      30.78      30.73
+        Comm       1.75       1.88       1.81
+    Counters        Min        Max          Sum          Avg

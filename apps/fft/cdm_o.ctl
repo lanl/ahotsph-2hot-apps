@@ -1,0 +1,13 @@
+# SDF
+char outfile[] = "cdm_o.sdf";
+int Nmesh = 256;
+int data_level = 3;
+int boundary_difference = 0;
+int seed = 187189;
+int Ndim = 3;
+int EBW_cdmspec = 1;
+float L0 = 250000.0;
+float Tquad = 20.0e-6;
+float Zinitial = 63.0;
+# SDF-EOH
+

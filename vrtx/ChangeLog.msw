@@ -1,0 +1,55 @@
+Thu Nov 30 09:14:17 1995  Mike Warren  <msw@sampson.145>
+
+	* mac.c: Inline NlgNMAC into NlgNMACv.  This saves some
+	time and memory bandwidth.
+
+	* main_vrtx.c, mac.c, physics_vrtx.h: Add VrtxTm to 
+	measure	time spent doing "real" work.
+	(main): Do OutputTimers even if rk_substep.
+
+Mon Nov 27 19:43:54 1995  Mike Warren  <msw@sampson.145>
+
+	* omegat.c, mono_vrtx.c (aexp): Greg's revisions added.
+
+Wed Nov 22 12:40:23 1995  Mike Warren  <msw@sampson.145>
+
+	* main_vrtx.c: Enable WalkImbalTm
+
+Wed Nov 15 14:26:31 1995  Mike Warren  <msw@sampson.145>
+
+	* physics_vrtx.h: Take out #define DOUBLE_ACCUMULATORS
+
+Thu Oct 19 13:05:05 1995  Mike Warren  <msw@sampson.145>
+
+	* fixomegatot.c: New function (from gsw).
+
+	* main_vrtx.c: Add call to FixOmegaTot (from gsw).
+
+Tue Aug  8 14:36:44 1995  Mike Warren  <msw@rococo.lanl.gov>
+
+	* integrate_vrtx_rk.c: vel_old could be garbage, so multiplying
+	by 0 is not safe.  Put in an if statement.
+
+n Aug  7 09:25:28 1995  Mike Warren  <msw@sampson.145>
+
+	* remesh.c: Rewrite to use memory more efficiently and to
+	work in parallel.  I put most of the code that was remesh
+	related in main_vrtx.c here as well.
+
+	* GNUmakefile: Somebody has gratuitously screwed up the Makefile.
+	I'm changing it to something that works for now.
+
+Tue Aug  1 13:51:03 EDT 1995  Mike Warren
+	
+	* main_vrtx.c: Put the remeshing section back in.  There should
+	be no change in behavior if remesh_freq == 0.
+
+ 	* main_vrtx.c: Do not decrement iter for RK steps.  The remesh_freq
+	counter can not tell that an iteration has been done otherwise.
+	I think iter should count force updates, not integrator steps.
+
+	* main_vrtx.c: Don't keep remeshed particles that have strength
+	smaller than the input parameter remesh_min_str.  I think the
+	problems we were having were from particles that were incredibly
+	weak.
+

@@ -1,0 +1,32 @@
+defaultPAROS:=nx
+
+# make DEBUG='-g -Mdebug' for debug
+
+OPTIMIZE:=-O2
+AGGRESSIVE_OPT=-O4 -Knoieee
+ARCH_SPECIFIC:=-D__PARAGON__ -D__INTEL_SSD__
+CC_SPECIFIC:=-nx
+AS=Paragon $(OS_VERSION) as860 -x
+LDFLAGS=-nx
+
+include $(treedir)/Make-common/Make.default
+
+ifeq ($(CC),cc)
+override CC:=Paragon $(OS_VERSION) icc
+override LD:=Paragon $(OS_VERSION) icc
+endif
+
+asmdir=asm-i860
+AR=Paragon ar860
+RANLIB=/usr/bin/ranlib
+swsrc:=sigio_dump.c gnusort.c
+asmsrc=recipsqrtf.s sqrtf.s do_grav_fast.s clear_tregs.s
+
+ifeq ($(PAROS),sunmos)
+override LD:=Paragon /usr/local/paragon/sunmos/bin/sicc
+LDFLAGS:=$(OPTIMIZE)
+endif
+
+
+
+

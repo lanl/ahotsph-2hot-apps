@@ -1,0 +1,151 @@
+Welcome to the variable O() integrator running on 32 procs
+cfile "test20Mnln.ctl" opened
+Setting timeout to 1800 seconds.
+Generating random dataset
+int seed = 3141590;
+int cencon = 0;
+Maxmem after data read is 43985 (44105)
+float errtol = 0.01;
+float dt = 0.01;
+float epsilon = 0.02;
+int iter = 0;
+int nsteps = 2;
+int nproc = 32;
+int do_NlgN = 1;
+Output to testfile.nnnn, every 1000 steps
+int timer_freq = 1;
+int image_freq = 0;
+int decomp_freq = 0;
+int hetero_load_balance = 0;
+float sort_tol = 0.0100;
+int do_periodic = 0;
+WARNING: Node 18 Not making any progress on deferrals for 100000 loops
+WARNING: Node 23 Not making any progress on deferrals for 100000 loops
+WARNING: Node 30 Not making any progress on deferrals for 100000 loops
+WARNING: Node 23 Progress Restored!
+WARNING: Node 18 Progress Restored!
+WARNING: Node 30 Progress Restored!
+WARNING: Node 22 Not making any progress on deferrals for 100000 loops
+WARNING: Node 22 Progress Restored!
+gnobj = 20000000, mtot = 1.000000
+BuildTree, this_tol=0.00980602
+BuildTree done 109009 (109716)
+FindForces, this_eps=0.02
+FindForces done 116753 (116886)
+FreeTree done 55880 (116886)
+
+tpos = 0, iter = 0, size = 1.00984
+ke = 0.299999, pe = -0.59914, energy = -0.299141
+CM accel: (-3.86865e-07 -1.0698e-06 4.46763e-07): 1.22218e-06
+rms accel: 0.772379
+      Timers        Min        Max       Mean
+  Step Total     395.01     395.02     395.01
+Step Tot(WC)     395.01     395.02     395.01
+ Build Total      64.33      64.83      64.71
+      Decomp       5.24       5.94       5.52
+  DecompComm      11.59      11.65      11.61
+        Sort      11.62      17.46      12.68
+   Make Tree      12.75      29.33      15.63
+  Force Eval     325.16     325.17     325.17
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       3.00       6.52       4.67
+ Imbal(walk)       0.01     119.79      94.45
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.01     119.79      94.45
+      WalkNT     205.38     325.16     230.72
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell   14288700   18777225    478229450  14944670.31
+   Body-cell    2564713    3397262     85565517   2673922.41
+   Cell-body    4566517    6019481    152372793   4761649.78
+   Body-body    1789654    2375451     59841030   1870032.19
+      Nterms 1402908089 2092235377  49463532686 1545735396.44
+       Nbody     598289     794250     20000000    625000.00
+    MAC fail    5167260    6833244    172592096   5393503.00
+Shared Cells       1048       3104        70328      2197.75
+   Translate     893124    1186429     29859271    933102.22
+    Deferred     609440    2084997     37546732   1173335.38
+Mem Used (K)      89097     116753      3021754     94429.81
+ Heap Sz (K)      96441     116886      3163488     98859.00
+BuildTree, this_tol=0.0096409
+BuildTree done 94475 (116886)
+FindForces, this_eps=0.02
+FindForces done 101229 (116886)
+FreeTree done 48446 (116886)
+
+tpos = 0.01, iter = 1, size = 1.01845
+ke = 0.300001, pe = -0.59914, energy = -0.299139
+CM accel: (1.00161e-08 -8.8594e-07 5.07038e-07): 1.02082e-06
+rms accel: 0.77237
+      Timers        Min        Max       Mean
+  Step Total     301.49     301.52     301.50
+Step Tot(WC)     301.49     301.52     301.50
+ Build Total      45.44      46.11      45.95
+      Decomp       4.50       6.42       4.92
+  DecompComm       3.97       4.14       4.03
+        Sort       9.71      13.64      11.67
+   Make Tree      10.33      21.62      14.61
+  Force Eval     250.74     250.75     250.75
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       2.47       5.76       4.38
+ Imbal(walk)       0.01      36.94      18.84
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.01      36.94      18.84
+      WalkNT     213.81     250.74     231.91
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell   12915911   16442862    483046594  15095206.06
+   Body-cell    2231871    2927384     84725071   2647658.47
+   Cell-body    4066984    5268263    153224101   4788253.16
+   Body-body    1582615    2067219     59913896   1872309.25
+      Nterms 1533294266 1608610235  50058126793 1564316462.28
+       Nbody     528932     688514     20000000    625000.00
+    MAC fail    4601453    5958978    173590383   5424699.47
+Shared Cells       1248       3208        72728      2272.75
+   Translate     789068    1027276     29847644    932738.88
+    Deferred     539714    1439159     31997895    999934.22
+Mem Used (K)      82113     101229      3025108     94534.62
+ Heap Sz (K)      96441     116886      3206377    100199.28
+BuildTree, this_tol=0.00947042
+BuildTree done 94308 (116886)
+FindForces, this_eps=0.02
+FindForces done 101871 (116886)
+FreeTree done 48359 (116886)
+
+tpos = 0.02, iter = 2, size = 1.02758
+ke = 0.300004, pe = -0.59914, energy = -0.299136
+CM accel: (-3.74109e-07 -6.52892e-07 -2.42886e-07): 7.90708e-07
+rms accel: 0.772345
+      Timers        Min        Max       Mean
+  Step Total     302.29     302.30     302.29
+Step Tot(WC)     302.29     302.30     302.29
+ Build Total      42.36      43.17      42.79
+      Decomp       3.97       5.85       4.96
+  DecompComm       1.43       1.43       1.43
+        Sort       8.80      14.44      11.42
+   Make Tree      10.23      21.68      15.43
+  Force Eval     254.64     254.65     254.65
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       2.71       5.55       4.40
+ Imbal(walk)       0.00      40.73      18.53
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00      40.73      18.53
+      WalkNT     213.92     254.64     236.11
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell   13005549   16609232    487475043  15233595.09
+   Body-cell    2197684    2897092     83635567   2613611.47
+   Cell-body    4094055    5278177    154197362   4818667.56
+   Body-body    1584837    2062739     60024124   1875753.88
+      Nterms 1542551499 1635534417  50965742851 1592679464.09
+       Nbody     527307     687287     20000000    625000.00
+    MAC fail    4617172    5980711    174508845   5453401.41
+Shared Cells       1408       3032        73008      2281.50
+   Translate     785992    1025426     29834070    932314.69
+    Deferred     521315    1537150     32723227   1022600.84
+Mem Used (K)      81531     101871      3027093     94596.66
+ Heap Sz (K)      96441     116886      3218412    100575.38
+Bye!

@@ -1,0 +1,52 @@
+src=init.c prft.c holtz_cdm.c ebw_cdm.c realft.c four1.c ran1.c ft.c fourn.c \
+	powlaw.c
+programname=cdm
+treedir=../../../tree16
+
+##### End of application-specific setup
+
+include $(treedir)/Make-common/Make.$(ARCH)
+
+include $(treedir)/Make-common/Make.generic
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+init$(objsuf): ../../../tree16/include/protos.h
+init$(objsuf): ../../../tree16/include/timers.h
+init$(objsuf): ../../../tree16/include/singlio.h
+init$(objsuf): ../../../tree16/include/mpmy.h
+init$(objsuf): ../../../tree16/include/mpmy_io.h
+init$(objsuf): ../../../tree16/include/randoms.h
+init$(objsuf): ../../../tree16/include/Assert.h
+init$(objsuf): ../../../tree16/include/error.h
+init$(objsuf): ../../../tree16/include/gccextensions.h
+init$(objsuf): ../../../tree16/include/Malloc.h
+init$(objsuf): ../../../tree16/include/Msgs.h ../../../tree16/include/SDF.h
+init$(objsuf): ../../../tree16/include/getparam.h
+init$(objsuf): ../../../tree16/include/SDFwrite.h
+prft$(objsuf): ../../../tree16/include/Malloc.h
+prft$(objsuf): ../../../tree16/include/error.h
+prft$(objsuf): ../../../tree16/include/gccextensions.h
+prft$(objsuf): ../../../tree16/include/Msgs.h
+prft$(objsuf): ../../../tree16/include/timers.h
+prft$(objsuf): ../../../tree16/include/protos.h
+prft$(objsuf): ../../../tree16/include/singlio.h
+prft$(objsuf): ../../../tree16/include/mpmy.h
+prft$(objsuf): ../../../tree16/include/Assert.h
+prft$(objsuf): ../../../tree16/include/randoms.h complex.h
+holtz_cdm$(objsuf): ../../../tree16/include/singlio.h
+holtz_cdm$(objsuf): ../../../tree16/include/randoms.h
+holtz_cdm$(objsuf): ../../../tree16/include/error.h
+holtz_cdm$(objsuf): ../../../tree16/include/gccextensions.h
+ebw_cdm$(objsuf): ../../../tree16/include/singlio.h
+ebw_cdm$(objsuf): ../../../tree16/include/randoms.h
+ebw_cdm$(objsuf): ../../../tree16/include/error.h
+ebw_cdm$(objsuf): ../../../tree16/include/gccextensions.h
+ft$(objsuf): ../../../tree16/include/protos.h
+ft$(objsuf): ../../../tree16/include/randoms.h
+ft$(objsuf): ../../../tree16/include/Malloc.h ../../../tree16/include/error.h
+ft$(objsuf): ../../../tree16/include/gccextensions.h nr.h
+powlaw$(objsuf): ../../../tree16/include/singlio.h
+powlaw$(objsuf): ../../../tree16/include/randoms.h
+powlaw$(objsuf): ../../../tree16/include/error.h
+powlaw$(objsuf): ../../../tree16/include/gccextensions.h

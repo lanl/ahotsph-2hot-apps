@@ -1,0 +1,22 @@
+#
+cp -p ~/s/tree16/apps/corr/cdm_n_corr.ctl cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0100\" outfile\[\]=\"cdm_n1_pcorr.0100\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0200\" outfile\[\]=\"cdm_n1_pcorr.0200\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0300\" outfile\[\]=\"cdm_n1_pcorr.0300\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0400\" outfile\[\]=\"cdm_n1_pcorr.0400\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0500\" outfile\[\]=\"cdm_n1_pcorr.0500\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0600\" outfile\[\]=\"cdm_n1_pcorr.0600\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0700\" outfile\[\]=\"cdm_n1_pcorr.0700\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0800\" outfile\[\]=\"cdm_n1_pcorr.0800\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.0900\" outfile\[\]=\"cdm_n1_pcorr.0900\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl
+SDFedit datafile\[\]=\"cdm_n1.1000\" outfile\[\]=\"cdm_n1_pcorr.1000\" cdm_n1_corr.ctl
+~/s/tree16/apps/corr/corr.paragon -sz 64 -pn open cdm_n1_corr.ctl

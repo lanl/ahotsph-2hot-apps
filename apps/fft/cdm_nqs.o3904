@@ -1,0 +1,22 @@
+cfile "/home/sampson8/msw/s/tree16/apps/fft/cdm_c02flat.ctl" opened
+Building EBW cdm spec q=6.58135e-06, h=0.8, sqrtA=0.124589
+nu=1.13, a'=1.25664, b'=0.452092, c'=0.111419
+doing 256x256x256 real transform
+int nproc = 64;
+Estimate 1024k memory use per node for fft
+max 29.670071, min -27.506203, avg -0.000000, rms 5.136878
+Fluctuations will grow by 45.24
+Initial point fluctuations are 0.113548
+Initial velocity factor (f) is 0.999993
+T0 is 13.15 Gyr
+Rejected 0 negative mass particles
+Writing 16777216 particles
+    SDFwrite      30.61      30.93      30.92
+write speed 8679 kb/s
+      Timers        Min        Max       Mean
+       Total      45.41      53.71      49.56
+   Total(WC)      45.41      53.71      49.56
+       Four1       2.93       2.93       2.93
+       FourP       3.64       3.70       3.67
+        Comm       0.28       0.33       0.30
+    Counters        Min        Max          Sum          Avg

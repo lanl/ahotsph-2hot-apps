@@ -1,0 +1,18 @@
+
+# In order to use the totalview debugger, you have to tell ld the
+# number of nodes you want, i.e. "make DEBUG=-g LDFLAGS=-X2"
+
+defaultPAROS:=craypvm
+
+OPTIMIZE:=-O2
+ARCH_SPECIFIC:=-DLONG_NK1_KEY -D__T3D__ -D__CRAY__ -DUSE_SYSTEM_MALLOC
+
+include $(treedir)/Make-common/Make.default
+
+ifeq ($(CC),cc)
+override CC:=t3d cc
+override LD:=t3d cc
+endif
+
+asmdir:=asm-alpha
+swsrc:=finite.c

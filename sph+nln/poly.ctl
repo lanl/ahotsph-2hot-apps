@@ -1,0 +1,31 @@
+char SPHdatafile[]="poly_3_2.sdf";
+int do_sph = 1;
+int do_grav = 1;
+int has_grav_data = 0;
+int exact_rho = 0;
+int nbrcut_max = 150;
+int nbrcut_min = 30;
+float nbrcut_fac = 0.01;
+int do_periodic = 0;
+int do_Arel = 1;
+int do_DL = 1;
+float epsilon=0.01;
+float errtol=0.05;
+float frac_tol=0.05;
+int adaptive_dt = 1;
+float dt = 0.03;
+float dark_dt = 1000;
+float dt_max = 10000;
+float default_nterms = 10;
+int nsteps=3000;
+int cosmology=0;
+int log_time=0;
+int comov_eps=0;
+int save_first=0;
+char outfile[]="poly_3_2";
+int output_freq=100;
+int timer_freq = 10;
+#char Msg_turn_on[] = "main.c,decomp.c,pqsort.c";
+#int Msg_memfile = 65536;
+# SDF-EOH
+

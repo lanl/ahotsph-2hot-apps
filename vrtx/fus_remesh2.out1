@@ -1,0 +1,879 @@
+trex% ~/s/vrtx16/vrtx.paragon -sz 64 -pn open ~/s/vrtx16/ctrl.fus_remesh2
+Welcome to the Vortex integrator
+cfile "/home/sampson8/msw/s/vrtx16/ctrl.fus_remesh2" opened
+     SDFread       2.40       2.47       2.43
+read speed 734 kb/s
+nproc = 64
+gnobj = 56700
+initial_time = 0
+initial_iter = 0
+epsilon = 0.0625;
+kernel_cutoff = 5 * epsilon = 0.3125
+nu = 0.0025;
+error_tolerance = 0.0001;
+dt = 0.05;
+Pedrizzetti's relax = 0;
+dt*relax = 0;
+Winck relax = 1;
+nsteps = 200;
+save first step: 0
+remesh h: 0.05
+remesh freq: 10
+remesh first: 0
+remesh min strength: 1e-08
+do_relaxom: 0
+Output to data/fus_remesh2.nnn, every 20 steps
+timer_freq = 1;
+Restart to data/fus_remesh_rst.nnn, every 401 steps
+Using Runge-Kutta 2  on first step
+Ready to start. maxmem: 270K, maxheap: 366K
+After SetupTree. maxmem: 270K, maxheap: 366K
+system radius: 2.71265
+Building...Done. maxmem: 902K, maxheap: 1023K
+Fields...Done. maxmem: 281K, maxheap: 2171K
+iter=0, time=0, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 0 0 0
+lin_impulse= 0 0 -6.00273
+ang_impulse= -2.6159e-16 4.57783e-16 -3.05189e-16
+ke = 1.82133, en = 81.0659, he = 3.52118e-09
+sum error bounds: mean: 0.00616967, max: 0.00913421
+sqrt(sum sq err bounds): mean: 0.000476773, max: 0.000629959
+Errs: 0.00616967 0.00913421 0.000476773 0.000629959
+    SDFwrite       2.70       2.71       2.71
+write speed 669 kb/s
+
+Output file data/fus_remesh2.000 created.
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      62.84      62.87      62.84
+Step Total (WC)      62.84      62.87      62.84
+ Build Total       0.76       0.81       0.79
+Field Comput.      58.73      58.76      58.76
+  Walk Defer       1.13       4.39       2.72
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     566504     823773     43694981    682734.08
+   Body Int.     505492     871153     44347138    692924.03
+Kernel(Tayl)        866       2565        95026      1484.78
+Kernel(Full)     458941     778336     40220822    628450.34
+      Nterms    2106006    3182489    172052948   2688327.31
+       Defer       2857       8839       301844      4716.31
+system radius: 2.71101
+Building...Done. maxmem: 982K, maxheap: 2171K
+Fields...Done. maxmem: 352K, maxheap: 2299K
+iter=1, time=0, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -6.58353e-08 2.83918e-10 -1.51973e-10
+lin_impulse= 5.13003e-11 2.60853e-07 -6.00428
+ang_impulse= 1.07151e-07 -7.1537e-10 2.99586e-10
+ke = 1.79874, en = 77.1, he = 1.92201e-09
+sum error bounds: mean: 0.00623667, max: 0.00930791
+sqrt(sum sq err bounds): mean: 0.000478306, max: 0.000629318
+Errs: 0.00623667 0.00930791 0.000478306 0.000629318
+Fix of Omega_tot completed
+system radius: 2.71054
+Building...Done. maxmem: 989K, maxheap: 2299K
+Fields...Done. maxmem: 351K, maxheap: 2420K
+iter=2, time=0.05, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.19045e-07 2.20161e-10 -1.37301e-10
+lin_impulse= 4.0841e-10 1.87885e-07 -6.00275
+ang_impulse= 5.13741e-08 -1.36873e-09 2.26121e-10
+ke = 1.81187, en = 79.639, he = -6.21549e-10
+sum error bounds: mean: 0.00622469, max: 0.0094734
+sqrt(sum sq err bounds): mean: 0.000478216, max: 0.000638116
+Errs: 0.00622469 0.0094734 0.000478216 0.000638116
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      52.32      52.33      52.33
+Step Total (WC)      52.32      52.33      52.33
+ Build Total       0.57       0.60       0.59
+Field Comput.      51.48      51.49      51.49
+  Walk Defer       1.39       4.91       2.82
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     617838     779113     43985111    687267.36
+   Body Int.     583369     785143     44339216    692800.25
+Kernel(Tayl)       1003       3309       110966      1733.84
+Kernel(Full)     525793     700377     40185274    627894.91
+      Nterms    2648478    2747084    172605678   2696963.72
+       Defer       2678      10077       311798      4871.84
+system radius: 2.70817
+Building...Done. maxmem: 987K, maxheap: 2420K
+Fields...Done. maxmem: 349K, maxheap: 2420K
+iter=3, time=0.1, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.52892e-07 7.83135e-10 4.47737e-10
+lin_impulse= 2.90606e-10 1.41614e-07 -6.00277
+ang_impulse= 6.95886e-08 -2.23718e-09 -8.78198e-11
+ke = 1.80242, en = 78.231, he = -9.10061e-10
+sum error bounds: mean: 0.00628941, max: 0.00928196
+sqrt(sum sq err bounds): mean: 0.000480408, max: 0.000628328
+Errs: 0.00628941 0.00928196 0.000480408 0.000628328
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      52.53      52.57      52.56
+Step Total (WC)      52.53      52.57      52.56
+ Build Total       0.61       0.64       0.63
+Field Comput.      51.73      51.74      51.74
+  Walk Defer       1.60       4.59       2.82
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     607477     786345     44184873    690388.64
+   Body Int.     584019     787468     44275515    691804.92
+Kernel(Tayl)       1226       3463       126972      1983.94
+Kernel(Full)     527089     704881     40151715    627370.55
+      Nterms    2610440    2764469    172923948   2701936.69
+       Defer       3065       8686       308011      4812.67
+system radius: 2.70606
+Building...Done. maxmem: 982K, maxheap: 2420K
+Fields...Done. maxmem: 352K, maxheap: 2420K
+iter=4, time=0.15, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.64341e-07 1.86256e-10 -1.94476e-10
+lin_impulse= 5.7172e-10 1.54975e-08 -6.00276
+ang_impulse= -1.49191e-07 -8.34291e-10 1.16316e-10
+ke = 1.79347, en = 76.9441, he = -2.50698e-09
+sum error bounds: mean: 0.00634592, max: 0.00960527
+sqrt(sum sq err bounds): mean: 0.000482601, max: 0.000621479
+Errs: 0.00634592 0.00960527 0.000482601 0.000621479
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      53.27      53.33      53.32
+Step Total (WC)      53.27      53.33      53.32
+ Build Total       0.60       0.65       0.64
+Field Comput.      52.44      52.45      52.45
+  Walk Defer       1.65       4.30       2.80
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     612235     775236     44416355    694005.55
+   Body Int.     574315     795981     44235208    691175.13
+Kernel(Tayl)       1424       3455       138008      2156.38
+Kernel(Full)     517886     713786     40099479    626554.36
+      Nterms    2635386    2809387    173305405   2707896.95
+       Defer       2972       9912       307533      4805.20
+system radius: 2.70307
+Building...Done. maxmem: 984K, maxheap: 2420K
+Fields...Done. maxmem: 354K, maxheap: 2420K
+iter=5, time=0.2, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.25264e-07 2.49424e-11 3.01647e-10
+lin_impulse= -1.36074e-10 -3.10113e-07 -6.00273
+ang_impulse= -8.28897e-08 -8.48758e-10 -5.1873e-10
+ke = 1.78467, en = 75.7035, he = 2.79491e-09
+sum error bounds: mean: 0.00638866, max: 0.00952584
+sqrt(sum sq err bounds): mean: 0.000483046, max: 0.000621483
+Errs: 0.00638866 0.00952584 0.000483046 0.000621483
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      53.72      53.78      53.78
+Step Total (WC)      53.72      53.78      53.78
+ Build Total       0.62       0.64       0.63
+Field Comput.      52.89      52.91      52.91
+  Walk Defer       1.55       4.16       2.79
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     627997     793447     44879983    701249.73
+   Body Int.     605489     796199     44326595    692603.05
+Kernel(Tayl)       1230       3492       142236      2222.44
+Kernel(Full)     541406     715324     40084613    626322.08
+      Nterms    2628473    2836903    174313410   2723647.03
+       Defer       2829       9779       305839      4778.73
+system radius: 2.7003
+Building...Done. maxmem: 993K, maxheap: 2420K
+Fields...Done. maxmem: 355K, maxheap: 2420K
+iter=6, time=0.25, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -3.1213e-07 -8.74038e-10 5.1287e-11
+lin_impulse= -3.96162e-10 -3.57768e-07 -6.00271
+ang_impulse= -3.91227e-08 1.25374e-09 -2.06954e-10
+ke = 1.77602, en = 74.5081, he = 7.76926e-08
+sum error bounds: mean: 0.00644556, max: 0.0097195
+sqrt(sum sq err bounds): mean: 0.000484845, max: 0.000625472
+Errs: 0.00644556 0.0097195 0.000484845 0.000625472
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      53.55      53.60      53.60
+Step Total (WC)      53.55      53.60      53.60
+ Build Total       0.60       0.63       0.62
+Field Comput.      52.76      52.77      52.77
+  Walk Defer       1.63       4.58       2.83
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     626083     785446     44887209    701362.64
+   Body Int.     574828     784755     44131700    689557.81
+Kernel(Tayl)       1216       3702       145564      2274.44
+Kernel(Full)     516779     700106     39990788    624856.06
+      Nterms    2607317    2801247    174042470   2719413.59
+       Defer       2998       9487       309876      4841.81
+system radius: 2.69735
+Building...Done. maxmem: 990K, maxheap: 2420K
+Fields...Done. maxmem: 352K, maxheap: 2420K
+iter=7, time=0.3, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -4.64134e-07 -3.12458e-08 4.4549e-08
+lin_impulse= 1.8743e-09 -1.46985e-07 -6.00267
+ang_impulse= 5.7117e-07 -3.39734e-09 -9.71478e-09
+ke = 1.76752, en = 73.3538, he = -4.15902e-08
+sum error bounds: mean: 0.00645346, max: 0.0100506
+sqrt(sum sq err bounds): mean: 0.000484499, max: 0.000631243
+Errs: 0.00645346 0.0100506 0.000484499 0.000631243
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      53.82      53.88      53.87
+Step Total (WC)      53.82      53.88      53.87
+ Build Total       0.60       0.64       0.63
+Field Comput.      53.00      53.01      53.01
+  Walk Defer       1.73       4.76       2.90
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     604280     791555     45177702    705901.59
+   Body Int.     588973     785070     44050566    688290.09
+Kernel(Tayl)       1348       3643       146472      2288.63
+Kernel(Full)     531641     706285     39930842    623919.41
+      Nterms    2650544    2829434    174483284   2726301.31
+       Defer       3209       8839       318932      4983.31
+system radius: 2.69357
+Building...Done. maxmem: 990K, maxheap: 2420K
+Fields...Done. maxmem: 352K, maxheap: 2420K
+iter=8, time=0.35, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 4.24073e-08 -6.00399e-09 -3.15662e-09
+lin_impulse= 1.27107e-09 3.90122e-09 -6.00263
+ang_impulse= 3.93003e-07 -1.0659e-08 2.40906e-08
+ke = 1.75917, en = 72.2378, he = -1.45272e-08
+sum error bounds: mean: 0.00650457, max: 0.0100842
+sqrt(sum sq err bounds): mean: 0.000486561, max: 0.000632378
+Errs: 0.00650457 0.0100842 0.000486561 0.000632378
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      53.96      54.01      54.01
+Step Total (WC)      53.96      54.01      54.01
+ Build Total       0.58       0.62       0.60
+Field Comput.      53.15      53.16      53.16
+  Walk Defer       1.56       4.80       2.90
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     627227     795753     45343469    708491.70
+   Body Int.     585341     793510     43945769    686652.64
+Kernel(Tayl)       1348       3538       148588      2321.69
+Kernel(Full)     526481     711755     39884044    623188.19
+      Nterms    2642760    2820996    174665339   2729145.92
+       Defer       3025      10346       316925      4951.95
+system radius: 2.69027
+Building...Done. maxmem: 985K, maxheap: 2420K
+Fields...Done. maxmem: 355K, maxheap: 2420K
+iter=9, time=0.4, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 4.92296e-07 -4.15228e-09 -2.73207e-09
+lin_impulse= 1.80743e-09 2.14508e-07 -6.00258
+ang_impulse= 2.1574e-07 -1.50345e-08 2.40509e-08
+ke = 1.75095, en = 71.1571, he = -1.01668e-08
+sum error bounds: mean: 0.00655498, max: 0.0104224
+sqrt(sum sq err bounds): mean: 0.000487942, max: 0.000638829
+Errs: 0.00655498 0.0104224 0.000487942 0.000638829
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      53.40      53.46      53.46
+Step Total (WC)      53.40      53.46      53.46
+ Build Total       0.59       0.62       0.61
+Field Comput.      52.62      52.63      52.63
+  Walk Defer       1.64       4.50       2.86
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     634288     810984     45687563    713868.17
+   Body Int.     572176     793282     43768375    683880.86
+Kernel(Tayl)       1410       3326       149044      2328.81
+Kernel(Full)     517337     714652     39812852    622075.81
+      Nterms    2672847    2810372    175105397   2736021.83
+       Defer       2749       9346       310860      4857.19
+
+Remeshed to h=0.05, gnobj is now 67326
+system radius: 2.75225
+Building...Done. maxmem: 979K, maxheap: 2956K
+Fields...Done. maxmem: 342K, maxheap: 2956K
+iter=10, time=0.45, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -1.52893e-07 -9.36036e-09 -3.86322e-08
+lin_impulse= -2.80852e-09 7.20902e-07 -6.0025
+ang_impulse= 3.81828e-07 -1.65161e-08 4.99208e-08
+ke = 1.74267, en = 70.0554, he = -6.26219e-09
+sum error bounds: mean: 0.00585786, max: 0.00999793
+sqrt(sum sq err bounds): mean: 0.000464832, max: 0.00065732
+Errs: 0.00585786 0.00999793 0.000464832 0.00065732
+    SDFwrite       7.26       7.27       7.27
+write speed 2298 kb/s
+
+Restart file data/fus_remesh_rst.010 created.
+    SDFwrite       3.76       3.78       3.78
+write speed 569 kb/s
+
+Output file data/fus_remesh2.010 created.
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      87.53      87.54      87.54
+Step Total (WC)      87.53      87.54      87.54
+ Build Total       0.55       0.58       0.56
+Field Comput.      69.34      69.35      69.35
+  Walk Defer       0.77       3.68       1.98
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     674076    1041348     52466306    819786.03
+   Body Int.     588397    1002881     52635813    822434.58
+Kernel(Tayl)       1045       1067        67326      1051.97
+Kernel(Full)     540402     888817     47115070    736172.97
+      Nterms    2588568    3975447    204750821   3199231.58
+       Defer       1699       6797       206865      3232.27
+system radius: 2.75164
+Building...Done. maxmem: 1103K, maxheap: 2956K
+Fields...Done. maxmem: 446K, maxheap: 2956K
+iter=11, time=0.45, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 7.65516e-08 -1.04838e-08 -1.18692e-08
+lin_impulse= -4.06181e-09 5.04594e-07 -6.00382
+ang_impulse= 5.07476e-07 -1.31007e-08 2.39917e-08
+ke = 1.72457, en = 67.294, he = -7.12671e-09
+sum error bounds: mean: 0.00616123, max: 0.0100788
+sqrt(sum sq err bounds): mean: 0.000474268, max: 0.000652008
+Errs: 0.00616123 0.0100788 0.000474268 0.000652008
+Fix of Omega_tot completed
+system radius: 2.75137
+Building...Done. maxmem: 1093K, maxheap: 2956K
+Fields...Done. maxmem: 436K, maxheap: 2956K
+iter=12, time=0.5, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 2.09758e-08 -8.53604e-09 -6.39595e-09
+lin_impulse= -4.95783e-09 5.06122e-07 -6.00248
+ang_impulse= 4.91718e-07 -1.08556e-08 1.81912e-08
+ke = 1.73455, en = 69.0307, he = -1.09786e-08
+sum error bounds: mean: 0.00613816, max: 0.0101126
+sqrt(sum sq err bounds): mean: 0.000473315, max: 0.00064755
+Errs: 0.00613816 0.0101126 0.000473315 0.00064755
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      61.02      61.03      61.03
+Step Total (WC)      61.02      61.03      61.03
+ Build Total       0.58       0.61       0.60
+Field Comput.      60.20      60.22      60.21
+  Walk Defer       1.10       3.95       2.09
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     752703     934205     54309663    848588.48
+   Body Int.     712067     936877     52783410    824740.78
+Kernel(Tayl)        876       1279        67326      1051.97
+Kernel(Full)     646099     820006     47063598    735368.72
+      Nterms    3181901    3334446    208533660   3258338.44
+       Defer       1887       7615       216998      3390.59
+system radius: 2.74995
+Building...Done. maxmem: 1091K, maxheap: 2956K
+Fields...Done. maxmem: 443K, maxheap: 2956K
+iter=13, time=0.55, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.17365e-07 -2.47593e-09 -3.03862e-09
+lin_impulse= -3.21139e-09 2.66919e-07 -6.00245
+ang_impulse= 5.79402e-07 -1.33779e-08 1.55389e-08
+ke = 1.72651, en = 68.022, he = -1.77565e-08
+sum error bounds: mean: 0.00633547, max: 0.0103228
+sqrt(sum sq err bounds): mean: 0.000480224, max: 0.000658535
+Errs: 0.00633547 0.0103228 0.000480224 0.000658535
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      62.14      62.19      62.18
+Step Total (WC)      62.14      62.19      62.18
+ Build Total       0.58       0.60       0.59
+Field Comput.      61.36      61.38      61.38
+  Walk Defer       1.04       4.01       2.15
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     750223     960353     55412093    865813.95
+   Body Int.     700447     934530     53020509    828445.45
+Kernel(Tayl)        918       1454        74298      1160.91
+Kernel(Full)     637086     817259     47127711    736370.48
+      Nterms    3212520    3367705    211046704   3297604.75
+       Defer       1896       7231       225657      3525.89
+system radius: 2.74801
+Building...Done. maxmem: 1095K, maxheap: 2956K
+Fields...Done. maxmem: 438K, maxheap: 2956K
+iter=14, time=0.6, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.50629e-07 -6.58229e-10 -7.51194e-10
+lin_impulse= -2.99696e-09 1.1256e-07 -6.00239
+ang_impulse= 7.19663e-07 -1.74352e-08 1.46532e-08
+ke = 1.71878, en = 67.0768, he = -1.29838e-08
+sum error bounds: mean: 0.00647091, max: 0.0105375
+sqrt(sum sq err bounds): mean: 0.000484714, max: 0.0006642
+Errs: 0.00647091 0.0105375 0.000484714 0.0006642
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      62.88      62.91      62.91
+Step Total (WC)      62.88      62.91      62.91
+ Build Total       0.61       0.65       0.63
+Field Comput.      62.04      62.06      62.06
+  Walk Defer       1.02       4.77       2.28
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     779305     984603     56197102    878079.72
+   Body Int.     705408     953313     52946937    827295.89
+Kernel(Tayl)       1203       1982        96696      1510.88
+Kernel(Full)     637297     835636     47156372    736818.31
+      Nterms    3245057    3419391    212594209   3321784.52
+       Defer       2144       7016       235108      3673.56
+system radius: 2.74557
+Building...Done. maxmem: 1099K, maxheap: 2956K
+Fields...Done. maxmem: 443K, maxheap: 2956K
+iter=15, time=0.65, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.66008e-07 -2.30175e-09 -3.64118e-10
+lin_impulse= -2.50804e-09 -3.72017e-08 -6.00232
+ang_impulse= 7.63019e-07 -1.49898e-08 1.38089e-08
+ke = 1.71116, en = 66.1567, he = -1.40992e-08
+sum error bounds: mean: 0.00661474, max: 0.0105129
+sqrt(sum sq err bounds): mean: 0.000489204, max: 0.000668124
+Errs: 0.00661474 0.0105129 0.000489204 0.000668124
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      64.47      64.52      64.52
+Step Total (WC)      64.47      64.52      64.52
+ Build Total       0.61       0.63       0.63
+Field Comput.      63.67      63.68      63.68
+  Walk Defer       1.18       4.96       2.54
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     769504    1026379     56819280    887801.25
+   Body Int.     693576     936997     52696831    823387.98
+Kernel(Tayl)       1386       2257       113752      1777.38
+Kernel(Full)     627119     829217     47083432    735678.63
+      Nterms    3240088    3451237    213532575   3336446.48
+       Defer       2365       8377       256530      4008.28
+system radius: 2.74265
+Building...Done. maxmem: 1099K, maxheap: 2956K
+Fields...Done. maxmem: 443K, maxheap: 2956K
+iter=16, time=0.7, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 2.07749e-07 -1.49941e-09 6.65792e-10
+lin_impulse= -2.40169e-09 -5.16281e-07 -6.00225
+ang_impulse= 7.97327e-07 -1.5778e-08 1.41427e-08
+ke = 1.70365, en = 65.2602, he = -1.02541e-08
+sum error bounds: mean: 0.00672556, max: 0.0108339
+sqrt(sum sq err bounds): mean: 0.000493722, max: 0.000663208
+Errs: 0.00672556 0.0108339 0.000493722 0.000663208
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      64.50      64.55      64.55
+Step Total (WC)      64.50      64.55      64.55
+ Build Total       0.59       0.61       0.61
+Field Comput.      63.73      63.74      63.74
+  Walk Defer       1.48       5.24       2.80
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     790744    1024179     57316518    895570.59
+   Body Int.     684840     938352     52705261    823519.70
+Kernel(Tayl)       1612       2257       125904      1967.25
+Kernel(Full)     618770     826949     47120137    736252.14
+      Nterms    3287538    3427533    214584338   3352880.28
+       Defer       2675       9019       276754      4324.28
+system radius: 2.73927
+Building...Done. maxmem: 1097K, maxheap: 2956K
+Fields...Done. maxmem: 441K, maxheap: 2956K
+iter=17, time=0.75, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.4553e-07 -9.96815e-11 2.46245e-10
+lin_impulse= -3.29909e-09 -5.85166e-07 -6.00217
+ang_impulse= 9.51937e-07 -2.14872e-08 1.57476e-08
+ke = 1.69626, en = 64.3866, he = -1.16351e-08
+sum error bounds: mean: 0.00677683, max: 0.0105226
+sqrt(sum sq err bounds): mean: 0.000494372, max: 0.00064977
+Errs: 0.00677683 0.0105226 0.000494372 0.00064977
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      65.79      65.82      65.82
+Step Total (WC)      65.79      65.82      65.82
+ Build Total       0.63       0.66       0.65
+Field Comput.      64.97      64.98      64.98
+  Walk Defer       1.50       5.61       2.89
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     785623    1031376     57676376    901193.38
+   Body Int.     676212     932706     52167359    815114.98
+Kernel(Tayl)       1609       2442       135842      2122.53
+Kernel(Full)     620243     826030     47073014    735515.84
+      Nterms    3275368    3428966    214728967   3355140.11
+       Defer       2697      10027       296800      4637.50
+system radius: 2.73545
+Building...Done. maxmem: 1107K, maxheap: 2956K
+Fields...Done. maxmem: 443K, maxheap: 2956K
+iter=18, time=0.8, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.03216e-07 7.49983e-10 6.43501e-10
+lin_impulse= -4.6213e-09 -7.94071e-07 -6.00206
+ang_impulse= 1.02976e-06 -1.46996e-08 1.73398e-08
+ke = 1.68897, en = 63.5352, he = -3.11077e-09
+sum error bounds: mean: 0.00682615, max: 0.0107568
+sqrt(sum sq err bounds): mean: 0.000495919, max: 0.000655936
+Errs: 0.00682615 0.0107568 0.000495919 0.000655936
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      66.22      66.27      66.26
+Step Total (WC)      66.22      66.27      66.26
+ Build Total       0.60       0.63       0.62
+Field Comput.      65.44      65.45      65.45
+  Walk Defer       1.52       5.43       3.08
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     801131    1048601     58064898    907264.03
+   Body Int.     696515     925433     52307309    817301.70
+Kernel(Tayl)       1641       2691       142804      2231.31
+Kernel(Full)     636293     820593     47054099    735220.30
+      Nterms    3254335    3485475    215634008   3369281.38
+       Defer       2988      10358       310344      4849.13
+system radius: 2.73122
+Building...Done. maxmem: 1105K, maxheap: 2956K
+Fields...Done. maxmem: 442K, maxheap: 2956K
+iter=19, time=0.85, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 8.58262e-08 2.40158e-09 2.1154e-09
+lin_impulse= -3.69386e-09 -9.67757e-07 -6.00195
+ang_impulse= 1.10178e-06 -1.92939e-08 1.49215e-08
+ke = 1.6818, en = 62.7054, he = -3.7176e-09
+sum error bounds: mean: 0.00687139, max: 0.0108986
+sqrt(sum sq err bounds): mean: 0.000497625, max: 0.00067334
+Errs: 0.00687139 0.0108986 0.000497625 0.00067334
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      66.80      66.81      66.80
+Step Total (WC)      66.80      66.81      66.80
+ Build Total       0.59       0.61       0.61
+Field Comput.      65.73      65.74      65.74
+  Walk Defer       1.67       5.18       3.20
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     797162    1042826     58382839    912231.86
+   Body Int.     697418     932723     52363657    818182.14
+Kernel(Tayl)       1740       2831       148212      2315.81
+Kernel(Full)     634108     826191     47009227    734519.17
+      Nterms    3291855    3500257    216286774   3379480.84
+       Defer       3104      10016       322391      5037.36
+
+Remeshed to h=0.05, gnobj is now 76646
+system radius: 2.75225
+Building...Done. maxmem: 1057K, maxheap: 3277K
+Fields...Done. maxmem: 417K, maxheap: 3277K
+iter=20, time=0.9, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.7515e-07 -1.3678e-08 3.53994e-09
+lin_impulse= -3.76657e-09 -1.04583e-06 -6.00189
+ang_impulse= 1.05619e-06 3.47264e-09 1.24225e-08
+ke = 1.67462, en = 61.8679, he = -6.58873e-09
+sum error bounds: mean: 0.0062874, max: 0.011149
+sqrt(sum sq err bounds): mean: 0.000480991, max: 0.000697619
+Errs: 0.0062874 0.011149 0.000480991 0.000697619
+    SDFwrite       8.78       8.78       8.78
+write speed 2165 kb/s
+
+Restart file data/fus_remesh_rst.020 created.
+    SDFwrite       3.48       3.51       3.50
+write speed 699 kb/s
+
+Output file data/fus_remesh2.020 created.
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)     102.85     103.06     103.05
+Step Total (WC)     102.85     103.06     103.05
+ Build Total       0.75       0.81       0.79
+Field Comput.      82.80      82.82      82.82
+  Walk Defer       1.05       4.17       2.24
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     820026    1280764     64379626   1005931.66
+   Body Int.     733142    1151663     60963443    952553.80
+Kernel(Tayl)       1172       1219        76646      1197.59
+Kernel(Full)     664621    1031522     54604527    853195.73
+      Nterms    3058716    4704589    244403868   3818810.44
+       Defer       2265       6385       225103      3517.23
+system radius: 2.75251
+Building...Done. maxmem: 1212K, maxheap: 3277K
+Fields...Done. maxmem: 546K, maxheap: 3277K
+iter=21, time=0.9, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.11599e-07 -6.09652e-09 1.92402e-09
+lin_impulse= -4.4104e-09 -1.23436e-06 -6.00302
+ang_impulse= 1.09659e-06 -6.74579e-09 1.58625e-08
+ke = 1.65956, en = 59.8054, he = 2.85058e-09
+sum error bounds: mean: 0.00652263, max: 0.0107373
+sqrt(sum sq err bounds): mean: 0.000487658, max: 0.000661246
+Errs: 0.00652263 0.0107373 0.000487658 0.000661246
+Fix of Omega_tot completed
+system radius: 2.7523
+Building...Done. maxmem: 1197K, maxheap: 3277K
+Fields...Done. maxmem: 532K, maxheap: 3277K
+iter=22, time=0.95, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 2.05495e-10 -6.10928e-09 7.69428e-10
+lin_impulse= -4.74997e-09 -1.1315e-06 -6.00185
+ang_impulse= 1.13276e-06 -4.9515e-09 1.71894e-08
+ke = 1.66744, en = 61.0582, he = -1.27041e-09
+sum error bounds: mean: 0.00650555, max: 0.0106752
+sqrt(sum sq err bounds): mean: 0.000486888, max: 0.000661332
+Errs: 0.00650555 0.0106752 0.000486888 0.000661332
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      72.04      72.05      72.05
+Step Total (WC)      72.04      72.05      72.05
+ Build Total       0.59       0.62       0.61
+Field Comput.      71.23      71.25      71.25
+  Walk Defer       1.12       4.27       2.43
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     916641    1152963     65955281   1030551.27
+   Body Int.     810295    1117799     60991644    952994.44
+Kernel(Tayl)        964       1476        76646      1197.59
+Kernel(Full)     734845     980145     54473227    851144.17
+      Nterms    3777293    3984791    247452079   3866438.73
+       Defer       2101       7021       235310      3676.72
+system radius: 2.75193
+Building...Done. maxmem: 1214K, maxheap: 3277K
+Fields...Done. maxmem: 540K, maxheap: 3277K
+iter=23, time=1, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 2.09704e-08 -5.58632e-09 1.37686e-11
+lin_impulse= -5.98812e-09 -1.20178e-06 -6.0018
+ang_impulse= 1.16893e-06 -5.5915e-09 1.65853e-08
+ke = 1.66034, en = 60.2614, he = 4.17467e-08
+sum error bounds: mean: 0.00664646, max: 0.0111059
+sqrt(sum sq err bounds): mean: 0.000490592, max: 0.000668119
+Errs: 0.00664646 0.0111059 0.000490592 0.000668119
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      74.20      74.22      74.21
+Step Total (WC)      74.20      74.22      74.21
+ Build Total       0.65       0.68       0.67
+Field Comput.      73.29      73.31      73.31
+  Walk Defer       1.21       4.53       2.49
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     930638    1181588     66937603   1045900.05
+   Body Int.     818654    1095079     61005641    953213.14
+Kernel(Tayl)        998       1602        80982      1265.34
+Kernel(Full)     739052     960880     54560943    852514.73
+      Nterms    3793242    4014515    249522772   3898793.31
+       Defer       2291       6912       243264      3801.00
+system radius: 2.75115
+Building...Done. maxmem: 1191K, maxheap: 3277K
+Fields...Done. maxmem: 535K, maxheap: 3277K
+iter=24, time=1.05, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -5.33254e-08 -4.67548e-09 5.6599e-09
+lin_impulse= -7.20977e-09 -1.23934e-06 -6.00172
+ang_impulse= 1.2487e-06 -1.92948e-09 1.28333e-08
+ke = 1.65345, en = 59.5055, he = 1.63335e-08
+sum error bounds: mean: 0.00681062, max: 0.0111488
+sqrt(sum sq err bounds): mean: 0.000495789, max: 0.000667791
+Errs: 0.00681062 0.0111488 0.000495789 0.000667791
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      75.18      75.36      75.35
+Step Total (WC)      75.18      75.36      75.35
+ Build Total       0.63       0.74       0.72
+Field Comput.      74.19      74.20      74.20
+  Walk Defer       1.21       4.66       2.57
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     945401    1235167     67598499   1056226.55
+   Body Int.     809559    1103608     60977440    952772.50
+Kernel(Tayl)       1193       2151       101506      1586.03
+Kernel(Full)     733345     973407     54597893    853092.08
+      Nterms    3828006    4015002    250873837   3919903.70
+       Defer       2226       8111       254636      3978.69
+system radius: 2.74997
+Building...Done. maxmem: 1190K, maxheap: 3277K
+Fields...Done. maxmem: 534K, maxheap: 3277K
+iter=25, time=1.1, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -1.05199e-08 -3.15106e-09 2.35613e-09
+lin_impulse= -6.73808e-09 -1.1626e-06 -6.00163
+ang_impulse= 1.25391e-06 9.40578e-09 1.79999e-08
+ke = 1.64666, en = 58.7674, he = 2.51646e-08
+sum error bounds: mean: 0.00694587, max: 0.0111654
+sqrt(sum sq err bounds): mean: 0.000501185, max: 0.000676093
+Errs: 0.00694587 0.0111654 0.000501185 0.000676093
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      75.97      76.07      76.06
+Step Total (WC)      75.97      76.07      76.06
+ Build Total       0.60       0.65       0.63
+Field Comput.      75.12      75.15      75.14
+  Walk Defer       1.28       5.24       2.82
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     958118    1231919     68311496   1067367.13
+   Body Int.     804335    1105343     61057573    954024.58
+Kernel(Tayl)       1446       2437       120794      1887.41
+Kernel(Full)     728189     972485     54607920    853248.75
+      Nterms    3817111    4060694    252409279   3943894.98
+       Defer       2493       8994       277600      4337.50
+system radius: 2.7484
+Building...Done. maxmem: 1215K, maxheap: 3277K
+Fields...Done. maxmem: 533K, maxheap: 3277K
+iter=26, time=1.15, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 1.27724e-08 -2.78809e-09 3.76455e-09
+lin_impulse= -6.47357e-09 -1.15025e-06 -6.00153
+ang_impulse= 1.26966e-06 8.87441e-09 1.6972e-08
+ke = 1.63997, en = 58.0474, he = 3.14318e-08
+sum error bounds: mean: 0.00705304, max: 0.0115056
+sqrt(sum sq err bounds): mean: 0.000504381, max: 0.000676796
+Errs: 0.00705304 0.0115056 0.000504381 0.000676796
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      75.53      75.58      75.57
+Step Total (WC)      75.53      75.58      75.57
+ Build Total       0.67       0.70       0.68
+Field Comput.      74.48      74.49      74.49
+  Walk Defer       1.50       5.67       3.05
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     965896    1216513     68648889   1072638.89
+   Body Int.     805929    1098167     60827398    950428.09
+Kernel(Tayl)       1716       2838       134990      2109.22
+Kernel(Full)     732146     972798     54569544    852649.13
+      Nterms    3797082    4059211    252829710   3950464.22
+       Defer       2530       9925       298583      4665.36
+system radius: 2.74645
+Building...Done. maxmem: 1214K, maxheap: 3277K
+Fields...Done. maxmem: 533K, maxheap: 3277K
+iter=27, time=1.2, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 4.16846e-08 -3.35152e-10 2.82868e-09
+lin_impulse= -5.72525e-09 -1.06743e-06 -6.00142
+ang_impulse= 1.33371e-06 7.4014e-09 1.66615e-08
+ke = 1.63337, en = 57.3448, he = 3.91287e-08
+sum error bounds: mean: 0.00713834, max: 0.0116317
+sqrt(sum sq err bounds): mean: 0.000506926, max: 0.00068371
+Errs: 0.00713834 0.0116317 0.000506926 0.00068371
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      77.81      77.82      77.82
+Step Total (WC)      77.81      77.82      77.82
+ Build Total       0.63       0.67       0.65
+Field Comput.      76.82      76.84      76.83
+  Walk Defer       1.53       5.98       3.30
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     972769    1239837     69330474   1083288.66
+   Body Int.     806941    1098006     60447157    944486.83
+Kernel(Tayl)       1812       2913       147034      2297.41
+Kernel(Full)     734210     973717     54487028    851359.81
+      Nterms    3883335    4069916    253742167   3964721.36
+       Defer       2966       8513       312765      4886.95
+system radius: 2.74413
+Building...Done. maxmem: 1192K, maxheap: 3277K
+Fields...Done. maxmem: 528K, maxheap: 3277K
+iter=28, time=1.25, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -3.10301e-09 6.00881e-10 -8.85082e-11
+lin_impulse= -4.86024e-09 -9.08446e-07 -6.00129
+ang_impulse= 1.38334e-06 -2.03894e-10 2.09202e-08
+ke = 1.62687, en = 56.6591, he = 4.23625e-08
+sum error bounds: mean: 0.00719521, max: 0.0116719
+sqrt(sum sq err bounds): mean: 0.000508385, max: 0.000685789
+Errs: 0.00719521 0.0116719 0.000508385 0.000685789
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      76.77      76.87      76.86
+Step Total (WC)      76.77      76.87      76.86
+ Build Total       0.65       0.69       0.67
+Field Comput.      75.84      75.86      75.86
+  Walk Defer       1.56       6.28       3.55
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     969057    1225059     69429552   1084836.75
+   Body Int.     796652    1071889     60500617    945322.14
+Kernel(Tayl)       2061       3059       157210      2456.41
+Kernel(Full)     723150     953556     54447601    850743.77
+      Nterms    3829715    4058339    253964532   3968195.81
+       Defer       3025      11231       333128      5205.13
+system radius: 2.74146
+Building...Done. maxmem: 1224K, maxheap: 3277K
+Fields...Done. maxmem: 536K, maxheap: 3277K
+iter=29, time=1.3, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= -2.68027e-08 -1.24639e-09 7.75546e-10
+lin_impulse= -5.75898e-09 -5.98928e-07 -6.00115
+ang_impulse= 1.46511e-06 3.93519e-09 2.11051e-08
+ke = 1.62046, en = 55.9902, he = 5.04733e-08
+sum error bounds: mean: 0.00720168, max: 0.0113928
+sqrt(sum sq err bounds): mean: 0.00050894, max: 0.000668503
+Errs: 0.00720168 0.0113928 0.00050894 0.000668503
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      78.58      78.68      78.67
+Step Total (WC)      78.58      78.68      78.67
+ Build Total       0.68       0.71       0.70
+Field Comput.      77.36      77.38      77.37
+  Walk Defer       1.81       6.07       3.66
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     972043    1241817     69905282   1092270.03
+   Body Int.     813324    1088629     60290392    942037.38
+Kernel(Tayl)       2101       3126       164300      2567.19
+Kernel(Full)     743956     970654     54451740    850808.44
+      Nterms    3880541    4138141    254716996   3979953.06
+       Defer       3031      11094       344989      5390.45
+
+Remeshed to h=0.05, gnobj is now 86698
+system radius: 2.75225
+Building...Done. maxmem: 1168K, maxheap: 3617K
+Fields...Done. maxmem: 503K, maxheap: 3617K
+iter=30, time=1.35, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 2.24092e-07 -4.78814e-10 5.38489e-09
+lin_impulse= -5.08569e-09 -3.16588e-07 -6.00105
+ang_impulse= 1.21945e-06 1.89241e-08 1.88281e-08
+ke = 1.61403, en = 55.3163, he = 5.61847e-08
+sum error bounds: mean: 0.00660941, max: 0.0117042
+sqrt(sum sq err bounds): mean: 0.0004921, max: 0.000695196
+Errs: 0.00660941 0.0117042 0.0004921 0.000695196
+    SDFwrite      11.46      11.47      11.46
+write speed 1875 kb/s
+
+Restart file data/fus_remesh_rst.030 created.
+    SDFwrite       8.52       8.55       8.54
+write speed 325 kb/s
+
+Output file data/fus_remesh2.030 created.
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)     126.63     126.77     126.76
+Step Total (WC)     126.63     126.77     126.76
+ Build Total       0.80       0.82       0.81
+Field Comput.      97.88      97.89      97.89
+  Walk Defer       1.29       4.75       2.57
+    Counters        Min        Max          Sum          Avg
+   Cell Int.     924975    1550950     76071469   1188616.70
+   Body Int.     856484    1348180     70614570   1103352.66
+Kernel(Tayl)       1335       1379        86698      1354.66
+Kernel(Full)     769607    1191009     62812992    981453.00
+      Nterms    3507249    5575346    285657198   4463393.72
+       Defer       2193       7439       250896      3920.25
+system radius: 2.74891
+Building...Done. maxmem: 1339K, maxheap: 3617K
+Fields...Done. maxmem: 640K, maxheap: 3617K
+iter=31, time=1.35, WC: 0, CPU: 0
+
+ Diagnostics:
+omega_tot= 2.04767e-08 -1.45692e-09 2.83971e-09
+lin_impulse= -6.46595e-09 -1.00345e-07 -6.00202
+ang_impulse= 1.30368e-06 2.15183e-08 2.31793e-08
+ke = 1.6012, en = 53.7344, he = 5.61235e-08
+sum error bounds: mean: 0.00683537, max: 0.0110839
+sqrt(sum sq err bounds): mean: 0.000498772, max: 0.000658679
+Errs: 0.00683537 0.0110839 0.000498772 0.000658679
+Fix of Omega_tot completed
+system radius: 2.74878
+Building...Done. maxmem: 1330K, maxheap: 3617K
+Fields...^C

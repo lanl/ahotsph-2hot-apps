@@ -1,0 +1,81 @@
+data ndtest3out
+sdfread
+set r = real
+set i = imag
+data ft3out
+sdfread
+print {r real}
+print {i imag}
+set q = r-real
+set s = i-imag
+limits q s
+erase
+box
+points q s
+ptype 1 1
+erase
+box
+points q s
+erase
+sdfhrd rft.hdr
+sdfhdr rft.hdr
+data rndtest3out
+sdfread
+set r = real
+data ft3out
+sdfread
+print {r real}
+quit
+device text
+device dumb
+help device
+list device
+device screen80
+dc
+erase
+clear
+sdfhdr rft.hdr
+data rft3out
+sdfread
+print {real}
+calc real[32]
+calc real[1024]
+calc real[1023]
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+data rtest3out
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+sdfread
+print {real}
+data rft3out
+sdfread
+print {real}
+sdfread
+print {real}
+data rtest3out
+sdfread
+print {real}
+quit
+macro read ebw_cdm.sm
+quit

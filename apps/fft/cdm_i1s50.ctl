@@ -1,0 +1,20 @@
+# SDF
+char outfile[] = "cdm_i1s50";
+int Nmesh = 512;
+int seed = 50236;
+int Ndim = 3;
+int EBW_cdmspec = 1;
+float L0 = 200000.0;
+float Tquad = 18.0e-6;
+float Zinitial = 63.0;
+int data_level = 1;
+int boundary_difference = 2;
+int do_center = 0;
+int do_offset = 1;
+int ic_center_x = 494;
+int ic_center_y = 411;
+int ic_center_z = 25;
+float rcut_min = 0.0;
+float rcut_max = 50000.0;
+# SDF-EOH
+

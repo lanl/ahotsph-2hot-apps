@@ -1,0 +1,223 @@
+vrtx_fast.paragon -sz 32 -pn open ctrl.fus_prof
+Welcome to the Vortex integrator
+cfile "ctrl.fus_prof" opened
+     SDFread       4.84       5.89       5.09
+read speed 308 kb/s
+nproc = 32
+gnobj = 56700
+initial_time = 0
+initial_iter = 0
+epsilon = 0.0625;
+kernel_cutoff = 5 * epsilon = 0.3125
+nu = 0.0025;
+error_tolerance = 0.0001;
+dt = 0.05;
+Pedrizzetti's relax = 0;
+dt*relax = 0;
+Winck relax = 1;
+nsteps = 2;
+restart first step: 0
+output first step: 0
+remesh h: 0.05
+remesh freq: 10
+remesh first: 0
+remesh min strength: 1e-08
+do_relaxom: 0
+Output to data/fus_remesh.nnn, every 20 steps
+timer_freq = 1;
+Restart to data/fus_remesh_rst.nnn, every 401 steps
+Using Runge-Kutta 2  on first step
+Ready to start. maxmem: 501K, maxheap: 725K
+After SetupTree. maxmem: 501K, maxheap: 725K
+system radius: 2.71265
+Building...Done. maxmem: 1035K, maxheap: 1156K
+Fields...Done. maxmem: 510K, maxheap: 2692K
+iter=0, time=0, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= 0 0 0
+lin_impulse= 0 0 -6.00273
+ang_impulse= -5.2318e-16 -3.16088e-16 -7.8477e-16
+ke = 1.82133, en = 81.0659, he = 3.47971e-09
+sum error bounds: mean: 0, max: 0
+sqrt(sum sq err bounds): mean: 0, max: 0
+Errs: 0 0 0 0
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)     102.89     102.90     102.89
+Step Total (WC)     102.89     102.90     102.89
+ Build Total       0.82       0.84       0.84
+Field Comput.     101.73     101.76     101.76
+  Walk Defer       2.22       5.71       3.48
+    Counters        Min        Max          Sum          Avg
+   Cell Int.    1204913    1611245     43694981   1365468.16
+   Body Int.    1080955    1574699     44347138   1385848.06
+Kernel(Tayl)       1903       4198        95026      2969.56
+Kernel(Full)     982003    1411010     40220822   1256900.69
+      Nterms    4669377    6118741    172052948   5376654.63
+       Defer       3178       9378       170500      5328.13
+system radius: 2.71101
+Building...Done. maxmem: 1103K, maxheap: 2692K
+Fields...Done. maxmem: 562K, maxheap: 2820K
+iter=0, time=0, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= -6.58353e-08 2.83918e-10 -1.51973e-10
+lin_impulse= 3.57234e-11 2.60838e-07 -6.00428
+ang_impulse= 1.07077e-07 -7.70634e-10 3.50835e-10
+ke = 1.79874, en = 77.1, he = 1.94462e-09
+sum error bounds: mean: 0, max: 0
+sqrt(sum sq err bounds): mean: 0, max: 0
+Errs: 0 0 0 0
+Fix of Omega_tot completed
+system radius: 2.71054
+Building...Done. maxmem: 1098K, maxheap: 2820K
+Fields...Done. maxmem: 557K, maxheap: 2820K
+iter=1, time=0.05, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= 1.19145e-07 1.75257e-10 -6.90426e-11
+lin_impulse= 5.26854e-10 1.88003e-07 -6.00275
+ang_impulse= 5.13382e-08 -2.01958e-09 1.9254e-10
+ke = 1.81187, en = 79.639, he = -6.60755e-10
+sum error bounds: mean: 0, max: 0
+sqrt(sum sq err bounds): mean: 0, max: 0
+Errs: 0 0 0 0
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      91.13      91.14      91.14
+Step Total (WC)      91.13      91.14      91.14
+ Build Total       0.58       0.61       0.60
+Field Comput.      90.29      90.31      90.30
+  Walk Defer       2.39       6.04       3.66
+    Counters        Min        Max          Sum          Avg
+   Cell Int.    1265274    1504833     43985111   1374534.72
+   Body Int.    1254824    1523730     44339216   1385600.50
+Kernel(Tayl)       2136       5320       110966      3467.69
+Kernel(Full)    1124900    1365529     40185274   1255789.81
+      Nterms    5305890    5499293    172605678   5393927.44
+       Defer       3342      10186       178741      5585.66
+system radius: 2.70817
+Building...Done. maxmem: 1095K, maxheap: 2820K
+Fields...Done. maxmem: 563K, maxheap: 2820K
+iter=2, time=0.1, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= 1.53201e-07 4.09785e-10 2.26526e-10
+lin_impulse= 3.69699e-10 1.41752e-07 -6.00277
+ang_impulse= 6.91904e-08 -1.68512e-09 1.78574e-10
+ke = 1.80242, en = 78.231, he = -9.36145e-10
+sum error bounds: mean: 0, max: 0
+sqrt(sum sq err bounds): mean: 0, max: 0
+Errs: 0 0 0 0
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      92.13      92.17      92.16
+Step Total (WC)      92.13      92.17      92.16
+ Build Total       0.62       0.66       0.64
+Field Comput.      91.11      91.13      91.12
+  Walk Defer       2.20       5.26       3.43
+    Counters        Min        Max          Sum          Avg
+   Cell Int.    1260837    1474335     44184873   1380777.28
+   Body Int.    1259925    1498347     44275515   1383609.84
+Kernel(Tayl)       2968       5732       126972      3967.88
+Kernel(Full)    1151696    1347870     40151715   1254741.09
+      Nterms    5296615    5507067    172923948   5403873.38
+       Defer       3172      11022       177249      5539.03
+trex% ^_fast^^
+vrtx.paragon -sz 32 -pn open ctrl.fus_prof
+Welcome to the Vortex integrator
+cfile "ctrl.fus_prof" opened
+     SDFread       3.19       3.54       3.27
+read speed 513 kb/s
+nproc = 32
+gnobj = 56700
+initial_time = 0
+initial_iter = 0
+epsilon = 0.0625;
+kernel_cutoff = 5 * epsilon = 0.3125
+nu = 0.0025;
+error_tolerance = 0.0001;
+dt = 0.05;
+Pedrizzetti's relax = 0;
+dt*relax = 0;
+Winck relax = 1;
+nsteps = 2;
+restart first step: 0
+output first step: 0
+remesh h: 0.05
+remesh freq: 10
+remesh first: 0
+remesh min strength: 1e-08
+do_relaxom: 0
+Output to data/fus_remesh.nnn, every 20 steps
+timer_freq = 1;
+Restart to data/fus_remesh_rst.nnn, every 401 steps
+Using Runge-Kutta 2  on first step
+Ready to start. maxmem: 501K, maxheap: 725K
+After SetupTree. maxmem: 501K, maxheap: 725K
+system radius: 2.71265
+Building...Done. maxmem: 1035K, maxheap: 1156K
+Fields...Done. maxmem: 510K, maxheap: 2692K
+iter=0, time=0, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= 0 0 0
+lin_impulse= 0 0 -6.00273
+ang_impulse= -5.2318e-16 -3.16088e-16 -7.8477e-16
+ke = 1.82133, en = 81.0659, he = 3.52118e-09
+sum error bounds: mean: 0.00616967, max: 0.00913421
+sqrt(sum sq err bounds): mean: 0.000476773, max: 0.000629959
+Errs: 0.00616967 0.00913421 0.000476773 0.000629959
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)     112.31     112.32     112.31
+Step Total (WC)     112.31     112.32     112.31
+ Build Total       0.84       0.87       0.86
+Field Comput.     111.17     111.20     111.19
+  Walk Defer       2.59       6.28       3.87
+    Counters        Min        Max          Sum          Avg
+   Cell Int.    1204913    1611245     43694981   1365468.16
+   Body Int.    1080955    1574699     44347138   1385848.06
+Kernel(Tayl)       1903       4198        95026      2969.56
+Kernel(Full)     982003    1411010     40220822   1256900.69
+      Nterms    4669377    6118741    172052948   5376654.63
+       Defer       3471       9589       173965      5436.41
+system radius: 2.71101
+Building...Done. maxmem: 1103K, maxheap: 2692K
+Fields...Done. maxmem: 562K, maxheap: 2930K
+iter=0, time=0, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= -6.58353e-08 2.83918e-10 -1.51973e-10
+lin_impulse= 5.13003e-11 2.60853e-07 -6.00428
+ang_impulse= 1.07151e-07 -7.15377e-10 2.99586e-10
+ke = 1.79874, en = 77.1, he = 1.92201e-09
+sum error bounds: mean: 0.00623667, max: 0.00930791
+sqrt(sum sq err bounds): mean: 0.000478306, max: 0.000629318
+Errs: 0.00623667 0.00930791 0.000478306 0.000629318
+Fix of Omega_tot completed
+system radius: 2.71054
+Building...Done. maxmem: 1098K, maxheap: 2930K
+Fields...Done. maxmem: 557K, maxheap: 2930K
+iter=1, time=0.05, WC: 0, CPU: 0
+Diagnostics:
+omega_tot= 1.19045e-07 2.20161e-10 -1.37301e-10
+lin_impulse= 4.0841e-10 1.87885e-07 -6.00275
+ang_impulse= 5.13741e-08 -1.36873e-09 2.2612e-10
+ke = 1.81187, en = 79.639, he = -6.21549e-10
+sum error bounds: mean: 0.00622469, max: 0.0094734
+sqrt(sum sq err bounds): mean: 0.000478216, max: 0.000638116
+Errs: 0.00622469 0.0094734 0.000478216 0.000638116
+Fix of Omega_tot completed
+      Timers        Min        Max       Mean
+Step Total (CPU)      99.75      99.76      99.75
+Step Total (WC)      99.75      99.76      99.75
+ Build Total       0.57       0.60       0.59
+Field Comput.      98.90      98.92      98.91
+  Walk Defer       2.64       6.53       4.02
+    Counters        Min        Max          Sum          Avg
+   Cell Int.    1265274    1504833     43985111   1374534.72
+   Body Int.    1254824    1523730     44339216   1385600.50
+Kernel(Tayl)       2136       5320       110966      3467.69
+Kernel(Full)    1124900    1365529     40185274   1255789.81
+      Nterms    5305890    5499293    172605678   5393927.44
+       Defer       3340      10142       182803      5712.59
+system radius: 2.70817
+Building...Done. maxmem: 1095K, maxheap: 2930K
+Fields...^C
+trex% 

@@ -1,0 +1,6 @@
+Fri May 19 15:54:34 1995  Mike Warren  <msw@sampson.145>
+
+	* Allow writing separate header so compositing files is
+	easier.
+
+

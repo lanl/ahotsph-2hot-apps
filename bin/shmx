@@ -1,0 +1,35 @@
+#!/bin/sh
+# trap most signals to try to kill everything when things go bad.
+# we used to trap 18 (SIGTSTP), but on sysV, 18 is SIGCHLD.  Since there's
+# no symbolic way to refer to signals, we just leave it out for now.
+for sig in 2 3 4 6 8 10 15; do
+  trap   "echo $0: bailing out
+	kill -$sig \$pids
+	echo $0: kill -$sig \$pids
+	exit 1;" $sig
+done
+export MPMY_PROCNUM
+if [ $SHM_VERBOSE ] ; then
+  echo $0:MPMY_PROGELT $MPMY_PROGELT
+  echo $0:MPMY_NPROC $MPMY_NPROC
+fi
+#
+: ${SHM_FIRST:=0}
+: ${SHM_LAST:=$MPMY_NPROC}
+MPMY_PROCNUM=$SHM_FIRST
+while [ $MPMY_PROCNUM -lt $SHM_LAST ]; do
+  echo $MPMY_PROGELT $MPMY_NPROC $MPMY_PROCNUM "$@"
+  $MPMY_PROGELT "$@" &
+  pids="$pids $!"
+  MPMY_PROCNUM=`expr $MPMY_PROCNUM + 1`
+done
+#
+if [ $SHM_VERBOSE ]; then
+  echo waiting
+fi
+wait
+
+if [ $SHM_VERBOSE ]; then
+  echo $0: done
+fi
+exit

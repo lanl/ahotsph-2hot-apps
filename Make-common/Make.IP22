@@ -1,0 +1,10 @@
+
+ifeq ($(CC),cc)
+OPTIMIZE:=-O2
+CC_SPECIFIC:=-D__STDC__ -xansi -mips2 -g3
+endif
+
+include $(treedir)/Make-common/Make.default
+
+asmdir:=asm-mips
+swsrc:=gnusort.c

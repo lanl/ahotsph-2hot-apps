@@ -1,0 +1,2 @@
+#!/bin/csh
+mpirun -np 32 relerr.O2k-mpi test20Mnln.ctl >& test9.out < /dev/null 

@@ -1,0 +1,5 @@
+
+
+This source has been optimized to do the family of N log N rcrit MACs
+
+i.e. Barnes-Hut, Bmax, Absolute error, Relative per interaction error

@@ -1,0 +1,27 @@
+The treecode source is in ~mswarren/s/tree16
+
+cp -pr ~mswarren/s/tree16 to a suitable location.
+
+Set TREEHOME to point to the location you just moved
+the source to (i.e. setenv TREEHOME ~/s/tree16)
+
+If you want to rebuild the binary
+cd $TREEHOME
+rm -rf Objfiles */Objfiles
+On an Origin 2000, build the program by typing "make ARCH=O2k PAROS=mpi"
+If that doesn't work, make sure you are using GNU make
+
+The binary ends up in $TREEHOME/relerr/relerr.O2k-mpi
+
+Execute with (for example):
+
+cd $TREEHOME/relerr
+mpirun -np 32 relerr.O2k-mpi test10Mnln.ctl
+
+That will run a 10 million particle problem, which takes somewhat less
+than 2 Gbytes of memory.
+
+One can adjust nsteps in the .ctl file to take more steps, or nobj to
+run a bigger problem, or make errtol larger to compute forces less
+accurately (to take less time).
+

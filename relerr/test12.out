@@ -1,0 +1,632 @@
+Welcome to the variable O() integrator running on 64 procs
+cfile "test10Mnln.ctl" opened
+Setting timeout to 1800 seconds.
+Generating random dataset
+int seed = 3141590;
+int cencon = 0;
+Maxmem after data read is 11026 (11146)
+float errtol = 0.001;
+float dt = 0.01;
+float epsilon = 0.02;
+int iter = 0;
+int nsteps = 2;
+int nproc = 64;
+int do_NlgN = 1;
+Output to testfile.nnnn, every 1000 steps
+int timer_freq = 1;
+int image_freq = 0;
+int decomp_freq = 0;
+int hetero_load_balance = 0;
+float sort_tol = 0.0100;
+int do_periodic = 0;
+WARNING: Node 41 Not making any progress on deferrals for 100000 loops
+WARNING: Node 42 WARNING: Node 47 Not making any progress on deferrals for 100000 loops
+Not making any progress on deferrals for 100000 loops
+WARNING: Node 37 WARNING: Node 44 WARNING: Node 33 WARNING: Node 55 Not making any progress on deferrals for 100000 loops
+WARNING: Node 43 Not making any progress on deferrals for 100000 loops
+Not making any progress on deferrals for 100000 loops
+Not making any progress on deferrals for 100000 loops
+Not making any progress on deferrals for 100000 loops
+WARNING: Node 62 WARNING: Node 53 WARNING: Node 60 Not making any progress on deferrals for 100000 loops
+WARNING: Node 59 Not making any progress on deferrals for 100000 loops
+Not making any progress on deferrals for 100000 loops
+Not making any progress on deferrals for 100000 loops
+WARNING: Node 19 Not making any progress on deferrals for 100000 loops
+WARNING: Node 18 Not making any progress on deferrals for 100000 loops
+WARNING: Node 4 Not making any progress on deferrals for 100000 loops
+WARNING: Node 19 Progress Restored!
+WARNING: Node 4 Progress Restored!
+WARNING: Node 47 Progress Restored!
+WARNING: Node 18 Progress Restored!
+WARNING: Node 42 Progress Restored!
+WARNING: Node 44 Progress Restored!
+WARNING: Node 33 Progress Restored!
+WARNING: Node 37 Progress Restored!
+WARNING: Node 41 Progress Restored!
+WARNING: Node 60 WARNING: Node 53 Progress Restored!
+Progress Restored!
+WARNING: Node 59 WARNING: Node 43 WARNING: Node 62 Progress Restored!
+Progress Restored!
+Progress Restored!
+WARNING: Node 55 Progress Restored!
+WARNING: Node 2 Not making any progress on deferrals for 100000 loops
+WARNING: Node 0 Not making any progress on deferrals for 100000 loops
+WARNING: Node 40 Not making any progress on deferrals for 100000 loops
+WARNING: Node 0 Not making any progress on deferrals for 200000 loops
+WARNING: Node 7 Not making any progress on deferrals for 100000 loops
+WARNING: Node 16 Not making any progress on deferrals for 100000 loops
+WARNING: Node 2 Progress Restored!
+WARNING: Node 16 Progress Restored!
+WARNING: Node 24 Not making any progress on deferrals for 100000 loops
+WARNING: Node 0 Not making any progress on deferrals for 400000 loops
+WARNING: Node 32 Not making any progress on deferrals for 100000 loops
+WARNING: Node 40 Progress Restored!
+WARNING: Node 7 Progress Restored!
+WARNING: Node 54 Not making any progress on deferrals for 100000 loops
+WARNING: Node 8 WARNING: Node 0 Not making any progress on deferrals for 100000 loops
+Progress Restored!
+WARNING: Node 22 Not making any progress on deferrals for 100000 loops
+WARNING: Node 30 Not making any progress on deferrals for 100000 loops
+WARNING: Node 23 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Not making any progress on deferrals for 100000 loops
+WARNING: Node 25 Not making any progress on deferrals for 100000 loops
+WARNING: Node 34 Not making any progress on deferrals for 100000 loops
+WARNING: Node 37 Not making any progress on deferrals for 100000 loops
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 33 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Not making any progress on deferrals for 100000 loops
+WARNING: Node 46 Defer count is very large
+WARNING: Node 26 Not making any progress on deferrals for 100000 loops
+WARNING: Node 44 Not making any progress on deferrals for 100000 loops
+WARNING: Node 42 Not making any progress on deferrals for 100000 loops
+WARNING: Node 38 Not making any progress on deferrals for 100000 loops
+WARNING: Node 24 Progress Restored!
+WARNING: Node 10 Progress Restored!
+WARNING: Node 34 Progress Restored!
+WARNING: Node 33 Progress Restored!
+WARNING: Node 32 Progress Restored!
+WARNING: Node 37 Progress Restored!
+WARNING: Node 25 Progress Restored!
+WARNING: Node 54 Progress Restored!
+WARNING: Node 38 Progress Restored!
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 9 Not making any progress on deferrals for 100000 loops
+WARNING: Node 23 Progress Restored!
+WARNING: Node 42 Progress Restored!
+WARNING: Node 44 Progress Restored!
+WARNING: Node 29 Progress Restored!
+WARNING: Node 12 Progress Restored!
+WARNING: Node 30 Progress Restored!
+WARNING: Node 22 Progress Restored!
+WARNING: Node 26 Progress Restored!
+WARNING: Node 8 Progress Restored!
+WARNING: Node 15 WARNING: Node 9 Progress Restored!
+Progress Restored!
+WARNING: Node 29 Not making any progress on deferrals for 100000 loops
+WARNING: Node 2 Not making any progress on deferrals for 100000 loops
+WARNING: Node 2 Progress Restored!
+WARNING: Node 63 Not making any progress on deferrals for 100000 loops
+WARNING: Node 26 Not making any progress on deferrals for 100000 loops
+WARNING: Node 54 Not making any progress on deferrals for 100000 loops
+WARNING: Node 56 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Progress Restored!
+WARNING: Node 61 Not making any progress on deferrals for 100000 loops
+WARNING: Node 31 Defer count is very large
+WARNING: Node 30 Defer count is very large
+WARNING: Node 57 Not making any progress on deferrals for 100000 loops
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 36 Defer count is very large
+WARNING: Node 19 Not making any progress on deferrals for 100000 loops
+WARNING: Node 60 Not making any progress on deferrals for 100000 loops
+WARNING: Node 35 Not making any progress on deferrals for 100000 loops
+WARNING: Node 44 Not making any progress on deferrals for 100000 loops
+WARNING: Node 32 Not making any progress on deferrals for 100000 loops
+WARNING: Node 16 Not making any progress on deferrals for 100000 loops
+WARNING: Node 17 Not making any progress on deferrals for 100000 loops
+WARNING: Node 48 Not making any progress on deferrals for 100000 loops
+WARNING: Node 28 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 38 Not making any progress on deferrals for 100000 loops
+WARNING: Node 11 Not making any progress on deferrals for 100000 loops
+WARNING: Node 62 Not making any progress on deferrals for 100000 loops
+WARNING: Node 45 Not making any progress on deferrals for 100000 loops
+WARNING: Node 55 Not making any progress on deferrals for 100000 loops
+WARNING: Node 63 Progress Restored!
+WARNING: Node 61 Progress Restored!
+WARNING: Node 19 Progress Restored!
+WARNING: Node 17 Progress Restored!
+WARNING: Node 48 Progress Restored!
+WARNING: Node 38 Progress Restored!
+WARNING: Node 6 Progress Restored!
+WARNING: Node 35 Progress Restored!
+WARNING: Node 16 Progress Restored!
+WARNING: Node 33 Not making any progress on deferrals for 100000 loops
+WARNING: Node 26 Progress Restored!
+WARNING: Node 54 Progress Restored!
+WARNING: Node 56 Progress Restored!
+WARNING: Node 15 Progress Restored!
+WARNING: Node 40 Not making any progress on deferrals for 100000 loops
+WARNING: Node 32 Progress Restored!
+WARNING: Node 28 Progress Restored!
+WARNING: Node 11 Progress Restored!
+WARNING: Node 44 Progress Restored!
+WARNING: Node 34 Defer count is very large
+WARNING: Node 57 WARNING: Node 60 Progress Restored!
+Progress Restored!
+WARNING: Node 45 Progress Restored!
+WARNING: Node 33 Progress Restored!
+WARNING: Node 40 Progress Restored!
+WARNING: Node 55 Progress Restored!
+WARNING: Node 62 Progress Restored!
+WARNING: Node 27 Defer count is very large
+WARNING: Node 56 Not making any progress on deferrals for 100000 loops
+WARNING: Node 8 Not making any progress on deferrals for 100000 loops
+WARNING: Node 34 Not making any progress on deferrals for 100000 loops
+WARNING: Node 9 Not making any progress on deferrals for 100000 loops
+WARNING: Node 44 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 46 Not making any progress on deferrals for 100000 loops
+WARNING: Node 48 Not making any progress on deferrals for 100000 loops
+WARNING: Node 11 Not making any progress on deferrals for 100000 loops
+WARNING: Node 18 Not making any progress on deferrals for 100000 loops
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 28 Not making any progress on deferrals for 100000 loops
+WARNING: Node 35 Not making any progress on deferrals for 100000 loops
+WARNING: Node 13 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Not making any progress on deferrals for 100000 loops
+WARNING: Node 33 Not making any progress on deferrals for 100000 loops
+WARNING: Node 24 Defer count is very large
+WARNING: Node 16 Not making any progress on deferrals for 100000 loops
+WARNING: Node 14 Not making any progress on deferrals for 100000 loops
+WARNING: Node 60 Not making any progress on deferrals for 100000 loops
+WARNING: Node 41 Not making any progress on deferrals for 100000 loops
+WARNING: Node 62 Not making any progress on deferrals for 100000 loops
+WARNING: Node 57 Not making any progress on deferrals for 100000 loops
+WARNING: Node 49 Not making any progress on deferrals for 100000 loops
+WARNING: Node 17 Not making any progress on deferrals for 100000 loops
+WARNING: Node 47 Not making any progress on deferrals for 100000 loops
+WARNING: Node 26 Not making any progress on deferrals for 100000 loops
+WARNING: Node 45 Not making any progress on deferrals for 100000 loops
+WARNING: Node 38 Defer count is very large
+WARNING: Node 5 Not making any progress on deferrals for 100000 loops
+WARNING: Node 43 Not making any progress on deferrals for 100000 loops
+WARNING: Node 25 Not making any progress on deferrals for 100000 loops
+WARNING: Node 34 Progress Restored!
+WARNING: Node 8 Progress Restored!
+WARNING: Node 15 Progress Restored!
+WARNING: Node 1 WARNING: Node 46 Progress Restored!
+Progress Restored!
+WARNING: Node 56 Progress Restored!
+WARNING: Node 3 Progress Restored!
+WARNING: Node 29 Progress Restored!
+WARNING: Node 18 Progress Restored!
+WARNING: Node 35 Progress Restored!
+WARNING: Node 17 Progress Restored!
+WARNING: Node 48 Progress Restored!
+WARNING: Node 6 Progress Restored!
+WARNING: Node 11 Progress Restored!
+WARNING: Node 33 Progress Restored!
+WARNING: Node 16 Progress Restored!
+WARNING: Node 44 Progress Restored!
+WARNING: Node 57 Progress Restored!
+WARNING: Node 25 Progress Restored!
+WARNING: Node 63 Not making any progress on deferrals for 100000 loops
+WARNING: Node 49 WARNING: Node 47 Progress Restored!
+Progress Restored!
+WARNING: Node 13 Progress Restored!
+WARNING: Node 5 Progress Restored!
+WARNING: Node 26 WARNING: Node 41 Progress Restored!
+Progress Restored!
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 45 Progress Restored!
+WARNING: Node 28 Progress Restored!
+WARNING: Node 14 Progress Restored!
+WARNING: Node 62 Progress Restored!
+WARNING: Node 43 Progress Restored!
+WARNING: Node 9 Progress Restored!
+WARNING: Node 63 Progress Restored!
+WARNING: Node 10 Progress Restored!
+WARNING: Node 60 Progress Restored!
+WARNING: Node 39 Defer count is very large
+WARNING: Node 31 Not making any progress on deferrals for 100000 loops
+WARNING: Node 17 Not making any progress on deferrals for 100000 loops
+WARNING: Node 49 Not making any progress on deferrals for 100000 loops
+WARNING: Node 52 Not making any progress on deferrals for 100000 loops
+WARNING: Node 26 Not making any progress on deferrals for 100000 loops
+WARNING: Node 54 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 Not making any progress on deferrals for 100000 loops
+WARNING: Node 41 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Not making any progress on deferrals for 100000 loops
+WARNING: Node 11 Not making any progress on deferrals for 100000 loops
+WARNING: Node 37 Not making any progress on deferrals for 100000 loops
+WARNING: Node 20 Not making any progress on deferrals for 100000 loops
+WARNING: Node 58 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 42 Not making any progress on deferrals for 100000 loops
+WARNING: Node 63 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Not making any progress on deferrals for 100000 loops
+WARNING: Node 33 Not making any progress on deferrals for 100000 loops
+WARNING: Node 35 Defer count is very large
+WARNING: Node 34 Not making any progress on deferrals for 100000 loops
+WARNING: Node 9 Not making any progress on deferrals for 100000 loops
+WARNING: Node 0 Not making any progress on deferrals for 100000 loops
+WARNING: Node 43 Not making any progress on deferrals for 100000 loops
+WARNING: Node 25 Not making any progress on deferrals for 100000 loops
+WARNING: Node 2 Not making any progress on deferrals for 100000 loops
+WARNING: Node 38 Not making any progress on deferrals for 100000 loops
+WARNING: Node 0 Not making any progress on deferrals for 200000 loops
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 4 Not making any progress on deferrals for 100000 loops
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 13 Not making any progress on deferrals for 100000 loops
+WARNING: Node 8 Not making any progress on deferrals for 100000 loops
+WARNING: Node 16 Not making any progress on deferrals for 100000 loops
+WARNING: Node 32 Not making any progress on deferrals for 100000 loops
+WARNING: Node 51 Defer count is very large
+WARNING: Node 50 Not making any progress on deferrals for 100000 loops
+WARNING: Node 27 Not making any progress on deferrals for 100000 loops
+WARNING: Node 46 Not making any progress on deferrals for 100000 loops
+WARNING: Node 30 Not making any progress on deferrals for 100000 loops
+WARNING: Node 17 Progress Restored!
+WARNING: Node 31 Progress Restored!
+WARNING: Node 49 Progress Restored!
+WARNING: Node 1 WARNING: Node 26 Progress Restored!
+Progress Restored!
+WARNING: Node 37 WARNING: Node 54 Progress Restored!
+WARNING: Node 20 WARNING: Node 15 Progress Restored!
+Progress Restored!
+WARNING: Node 33 Progress Restored!
+Progress Restored!
+WARNING: Node 58 Progress Restored!
+WARNING: Node 12 Progress Restored!
+WARNING: Node 41 Progress Restored!
+WARNING: Node 11 Progress Restored!
+WARNING: Node 34 Progress Restored!
+WARNING: Node 62 Not making any progress on deferrals for 100000 loops
+WARNING: Node 32 Progress Restored!
+WARNING: Node 61 Defer count is very large
+WARNING: Node 29 Progress Restored!
+WARNING: Node 52 Progress Restored!
+WARNING: Node 0 WARNING: Node 3 Progress Restored!
+Progress Restored!
+WARNING: Node 4 WARNING: Node 6 WARNING: Node 25 Progress Restored!
+Progress Restored!
+Progress Restored!
+WARNING: Node 2 Progress Restored!
+WARNING: Node 16 Progress Restored!
+WARNING: Node 13 WARNING: Node 42 Progress Restored!
+Progress Restored!
+WARNING: Node 63 Progress Restored!
+WARNING: Node 38 Progress Restored!
+WARNING: Node 28 Not making any progress on deferrals for 100000 loops
+WARNING: Node 23 Defer count is very large
+WARNING: Node 47 Not making any progress on deferrals for 100000 loops
+WARNING: Node 9 Progress Restored!
+WARNING: Node 43 Progress Restored!
+WARNING: Node 50 Progress Restored!
+WARNING: Node 10 Not making any progress on deferrals for 200000 loops
+WARNING: Node 8 Not making any progress on deferrals for 200000 loops
+WARNING: Node 45 Defer count is very large
+WARNING: Node 27 Progress Restored!
+WARNING: Node 62 Progress Restored!
+WARNING: Node 8 Progress Restored!
+WARNING: Node 28 Progress Restored!
+WARNING: Node 46 Progress Restored!
+WARNING: Node 10 Progress Restored!
+WARNING: Node 47 WARNING: Node 30 Progress Restored!
+Progress Restored!
+WARNING: Node 16 Not making any progress on deferrals for 100000 loops
+WARNING: Node 52 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 Not making any progress on deferrals for 100000 loops
+WARNING: Node 44 Not making any progress on deferrals for 100000 loops
+WARNING: Node 24 Not making any progress on deferrals for 100000 loops
+WARNING: Node 38 Not making any progress on deferrals for 100000 loops
+WARNING: Node 27 Not making any progress on deferrals for 100000 loops
+WARNING: Node 44 Progress Restored!
+WARNING: Node 52 Progress Restored!
+WARNING: Node 30 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 14 Not making any progress on deferrals for 100000 loops
+WARNING: Node 4 Not making any progress on deferrals for 100000 loops
+WARNING: Node 25 Defer count is very large
+WARNING: Node 25 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Progress Restored!
+WARNING: Node 14 Progress Restored!
+WARNING: Node 19 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Not making any progress on deferrals for 100000 loops
+WARNING: Node 7 Not making any progress on deferrals for 100000 loops
+WARNING: Node 38 Progress Restored!
+WARNING: Node 12 Defer count is very large
+WARNING: Node 19 Progress Restored!
+WARNING: Node 7 Progress Restored!
+WARNING: Node 3 Not making any progress on deferrals for 100000 loops
+WARNING: Node 16 Not making any progress on deferrals for 200000 loops
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 6 Progress Restored!
+WARNING: Node 24 Progress Restored!
+WARNING: Node 20 Not making any progress on deferrals for 100000 loops
+WARNING: Node 29 Progress Restored!
+WARNING: Node 25 Progress Restored!
+WARNING: Node 27 Not making any progress on deferrals for 200000 loops
+WARNING: Node 34 Not making any progress on deferrals for 100000 loops
+WARNING: Node 30 Not making any progress on deferrals for 200000 loops
+WARNING: Node 58 Not making any progress on deferrals for 100000 loops
+WARNING: Node 4 Not making any progress on deferrals for 200000 loops
+WARNING: Node 13 Not making any progress on deferrals for 100000 loops
+WARNING: Node 20 Progress Restored!
+WARNING: Node 41 Not making any progress on deferrals for 100000 loops
+WARNING: Node 41 Progress Restored!
+WARNING: Node 9 Not making any progress on deferrals for 100000 loops
+WARNING: Node 35 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 Not making any progress on deferrals for 200000 loops
+WARNING: Node 5 Not making any progress on deferrals for 100000 loops
+WARNING: Node 34 Progress Restored!
+WARNING: Node 35 Progress Restored!
+WARNING: Node 19 Not making any progress on deferrals for 100000 loops
+WARNING: Node 24 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Not making any progress on deferrals for 200000 loops
+WARNING: Node 44 Not making any progress on deferrals for 100000 loops
+WARNING: Node 42 Not making any progress on deferrals for 100000 loops
+WARNING: Node 58 Not making any progress on deferrals for 200000 loops
+WARNING: Node 59 Not making any progress on deferrals for 100000 loops
+WARNING: Node 45 Not making any progress on deferrals for 100000 loops
+WARNING: Node 31 Not making any progress on deferrals for 100000 loops
+WARNING: Node 20 Not making any progress on deferrals for 100000 loops
+WARNING: Node 46 Not making any progress on deferrals for 100000 loops
+WARNING: Node 13 Progress Restored!
+WARNING: Node 9 Not making any progress on deferrals for 200000 loops
+WARNING: Node 19 Progress Restored!
+WARNING: Node 16 Not making any progress on deferrals for 400000 loops
+WARNING: Node 45 WARNING: Node 46 Progress Restored!
+Progress Restored!
+WARNING: Node 5 Not making any progress on deferrals for 200000 loops
+WARNING: Node 30 Progress Restored!
+WARNING: Node 49 Not making any progress on deferrals for 100000 loops
+WARNING: Node 50 Not making any progress on deferrals for 100000 loops
+WARNING: Node 31 Not making any progress on deferrals for 200000 loops
+WARNING: Node 4 Not making any progress on deferrals for 400000 loops
+WARNING: Node 49 Progress Restored!
+WARNING: Node 20 Not making any progress on deferrals for 200000 loops
+WARNING: Node 63 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Not making any progress on deferrals for 100000 loops
+WARNING: Node 44 Progress Restored!
+WARNING: Node 42 Not making any progress on deferrals for 200000 loops
+WARNING: Node 20 Progress Restored!
+WARNING: Node 1 Not making any progress on deferrals for 400000 loops
+WARNING: Node 24 Progress Restored!
+WARNING: Node 60 Defer count is very large
+WARNING: Node 7 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 WARNING: Node 16 Progress Restored!
+Progress Restored!
+WARNING: Node 48 Not making any progress on deferrals for 100000 loops
+WARNING: Node 27 Progress Restored!
+WARNING: Node 50 Not making any progress on deferrals for 200000 loops
+WARNING: Node 63 Not making any progress on deferrals for 200000 loops
+WARNING: Node 58 Not making any progress on deferrals for 400000 loops
+WARNING: Node 42 Progress Restored!
+WARNING: Node 12 Progress Restored!
+WARNING: Node 59 Not making any progress on deferrals for 200000 loops
+WARNING: Node 9 WARNING: Node 4 WARNING: Node 3 Progress Restored!
+Progress Restored!
+Progress Restored!
+WARNING: Node 48 Defer count is very large
+WARNING: Node 7 WARNING: Node 5 Progress Restored!
+Progress Restored!
+WARNING: Node 48 WARNING: Node 63 Progress Restored!
+Progress Restored!
+WARNING: Node 59 Progress Restored!
+WARNING: Node 58 Progress Restored!
+WARNING: Node 31 Progress Restored!
+WARNING: Node 50 Progress Restored!
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 Not making any progress on deferrals for 100000 loops
+WARNING: Node 17 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Not making any progress on deferrals for 100000 loops
+WARNING: Node 13 Not making any progress on deferrals for 100000 loops
+WARNING: Node 56 Not making any progress on deferrals for 100000 loops
+WARNING: Node 49 Not making any progress on deferrals for 100000 loops
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 35 Not making any progress on deferrals for 100000 loops
+WARNING: Node 8 Not making any progress on deferrals for 100000 loops
+WARNING: Node 54 Not making any progress on deferrals for 100000 loops
+WARNING: Node 42 Not making any progress on deferrals for 100000 loops
+WARNING: Node 56 WARNING: Node 54 Progress Restored!
+Progress Restored!
+WARNING: Node 8 Progress Restored!
+WARNING: Node 6 WARNING: Node 10 Progress Restored!
+Progress Restored!
+WARNING: Node 38 Not making any progress on deferrals for 100000 loops
+WARNING: Node 1 WARNING: Node 17 Progress Restored!
+Progress Restored!
+WARNING: Node 42 WARNING: Node 38 Progress Restored!
+Progress Restored!
+WARNING: Node 35 Progress Restored!
+WARNING: Node 61 Not making any progress on deferrals for 100000 loops
+WARNING: Node 62 Not making any progress on deferrals for 100000 loops
+WARNING: Node 20 Not making any progress on deferrals for 100000 loops
+WARNING: Node 21 Not making any progress on deferrals for 100000 loops
+WARNING: Node 15 Progress Restored!
+WARNING: Node 13 Progress Restored!
+WARNING: Node 20 WARNING: Node 49 Progress Restored!
+Progress Restored!
+WARNING: Node 62 Progress Restored!
+WARNING: Node 61 Progress Restored!
+WARNING: Node 12 Not making any progress on deferrals for 200000 loops
+WARNING: Node 21 Progress Restored!
+WARNING: Node 12 Progress Restored!
+WARNING: Node 63 Defer count is very large
+WARNING: Node 11 Defer count is very large
+WARNING: Node 13 Defer count is very large
+WARNING: Node 22 Defer count is very large
+WARNING: Node 10 Not making any progress on deferrals for 100000 loops
+WARNING: Node 56 Not making any progress on deferrals for 100000 loops
+WARNING: Node 43 Not making any progress on deferrals for 100000 loops
+WARNING: Node 12 Not making any progress on deferrals for 100000 loops
+WARNING: Node 54 Not making any progress on deferrals for 100000 loops
+WARNING: Node 56 Progress Restored!
+WARNING: Node 54 Progress Restored!
+WARNING: Node 43 Progress Restored!
+WARNING: Node 37 Not making any progress on deferrals for 100000 loops
+WARNING: Node 37 Progress Restored!
+WARNING: Node 10 Progress Restored!
+WARNING: Node 12 Progress Restored!
+WARNING: Node 30 Not making any progress on deferrals for 100000 loops
+WARNING: Node 45 Not making any progress on deferrals for 100000 loops
+WARNING: Node 49 Not making any progress on deferrals for 100000 loops
+WARNING: Node 45 Progress Restored!
+WARNING: Node 49 Progress Restored!
+WARNING: Node 30 Progress Restored!
+WARNING: Node 56 Defer count is very large
+WARNING: Node 49 Defer count is very large
+WARNING: Node 55 Defer count is very large
+WARNING: Node 18 Defer count is very large
+WARNING: Node 59 Defer count is very large
+WARNING: Node 29 Defer count is very large
+WARNING: Node 42 Not making any progress on deferrals for 100000 loops
+WARNING: Node 42 Progress Restored!
+gnobj = 10000000, mtot = 1.000000
+BuildTree, this_tol=0.000980619
+BuildTree done 27859 (27960)
+FindForces, this_eps=0.02
+FindForces done 35717 (35984)
+FreeTree done 14151 (35984)
+
+tpos = 0, iter = 0, size = 1.00983
+ke = 0.30003, pe = -0.599011, energy = -0.298981
+CM accel: (5.64676e-07 -1.14316e-06 6.27735e-07): 1.42117e-06
+rms accel: 0.771421
+      Timers        Min        Max       Mean
+  Step Total     241.16     241.44     241.31
+Step Tot(WC)     241.16     241.44     241.31
+ Build Total      35.09      35.22      35.19
+      Decomp       1.30       1.58       1.47
+  DecompComm      26.45      26.49      26.47
+        Sort       1.81       3.91       2.75
+   Make Tree       1.14       3.05       1.84
+  Force Eval     204.47     204.53     204.49
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       9.43      15.87      12.39
+ Imbal(walk)       0.02     109.35      52.79
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.02     109.35      52.79
+      WalkNT      95.14     204.47     151.70
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell    3605625    6696134    343798754   5371855.53
+   Body-cell     498474     936734     47066409    735412.64
+   Cell-body    2042908    3802475    194743119   3042861.23
+   Body-body     427022     797944     39815470    622116.72
+      Nterms  633746093 1536956868  70020596538 1094071820.91
+       Nbody     107828     200772     10000000    156250.00
+    MAC fail    1564535    2913580    146884762   2295074.41
+Shared Cells       1072       3224       127832      1997.38
+   Translate     159772     297603     14793241    231144.39
+    Deferred     258062    9936522    372635595   5822431.17
+Mem Used (K)      19741      35717      1853532     28961.44
+ Heap Sz (K)      24433      35984      1915506     29929.78
+WARNING: Node 2 Not making any progress on deferrals for 100000 loops
+WARNING: Node 2 Progress Restored!
+WARNING: Node 2 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Progress Restored!
+WARNING: Node 2 Progress Restored!
+WARNING: Node 52 Not making any progress on deferrals for 100000 loops
+WARNING: Node 52 Progress Restored!
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 50 Not making any progress on deferrals for 100000 loops
+WARNING: Node 60 Not making any progress on deferrals for 100000 loops
+WARNING: Node 50 Progress Restored!
+WARNING: Node 60 Progress Restored!
+WARNING: Node 6 Progress Restored!
+BuildTree, this_tol=0.000964723
+BuildTree done 27073 (35984)
+FindForces, this_eps=0.02
+FindForces done 34116 (35984)
+FreeTree done 13744 (35984)
+
+tpos = 0.01, iter = 1, size = 1.01812
+ke = 0.300031, pe = -0.599014, energy = -0.298983
+CM accel: (-3.48161e-07 1.19729e-08 6.01384e-07): 6.94998e-07
+rms accel: 0.771425
+      Timers        Min        Max       Mean
+  Step Total     162.61     162.86     162.76
+Step Tot(WC)     162.61     162.86     162.76
+ Build Total      13.26      13.63      13.46
+      Decomp       0.73       1.48       1.08
+  DecompComm       5.84       6.17       6.07
+        Sort       1.88       3.23       2.59
+   Make Tree       1.37       2.43       1.81
+  Force Eval     147.71     147.73     147.73
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       2.98       7.29       5.74
+ Imbal(walk)       0.02      12.06       5.48
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.02      12.06       5.48
+      WalkNT     135.67     147.71     142.24
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell    4482335    6541983    345466060   5397907.19
+   Body-cell     612200     929688     48089388    751396.69
+   Cell-body    2515764    3691787    194774650   3043353.91
+   Body-body     510713     774231     39968575    624508.98
+      Nterms 1064282698 1135949046  70709742903 1104839732.86
+       Nbody     127571     194973     10000000    156250.00
+    MAC fail    1891293    2845918    147332318   2302067.47
+Shared Cells       1160       3024       127968      1999.50
+   Translate     188571     289098     14793049    231141.39
+    Deferred    1715452    7621666    249491263   3898300.98
+Mem Used (K)      24749      34116      1863167     29111.98
+ Heap Sz (K)      26500      35984      2056214     32128.34
+WARNING: Node 5 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Not making any progress on deferrals for 100000 loops
+WARNING: Node 6 Not making any progress on deferrals for 100000 loops
+WARNING: Node 3 Progress Restored!
+WARNING: Node 5 Progress Restored!
+WARNING: Node 6 Progress Restored!
+BuildTree, this_tol=0.000947257
+BuildTree done 26974 (35984)
+FindForces, this_eps=0.02
+FindForces done 34082 (35984)
+FreeTree done 13702 (35984)
+
+tpos = 0.02, iter = 2, size = 1.02746
+ke = 0.300033, pe = -0.599017, energy = -0.298983
+CM accel: (2.16433e-08 5.35464e-08 2.45352e-07): 2.52058e-07
+rms accel: 0.771427
+      Timers        Min        Max       Mean
+  Step Total     157.46     157.48     157.47
+Step Tot(WC)     157.46     157.48     157.47
+ Build Total       8.05       8.26       8.16
+      Decomp       0.83       1.41       1.09
+  DecompComm       0.54       0.56       0.55
+        Sort       1.93       3.34       2.48
+   Make Tree       1.39       2.60       1.85
+  Force Eval     147.88     147.94     147.92
+   Grav Time       0.00       0.00       0.00
+  Walk Defer       3.15       5.79       4.44
+ Imbal(walk)       0.00      11.52       6.49
+    WalkInit       0.00       0.00       0.00
+    WalkTerm       0.00      11.52       6.49
+      WalkNT     136.42     147.88     141.42
+    WalkInit       0.00       0.00       0.00
+    Periodic       0.00       0.00       0.00
+    Counters        Min        Max          Sum          Avg
+   Cell-cell    4551789    6640020    348543438   5445991.22
+   Body-cell     633017     950415     49119886    767498.22
+   Cell-body    2527538    3696006    194536434   3039631.78
+   Body-body     516831     773207     40024995    625390.55
+      Nterms 1082507884 1146584224  71460817305 1116575270.39
+       Nbody     129158     194375     10000000    156250.00
+    MAC fail    1914175    2854822    148048289   2313254.52
+Shared Cells       1104       2840       131400      2053.12
+   Translate     191051     287909     14801351    231271.11
+    Deferred    1697270    4503747    181025066   2828516.66
+Mem Used (K)      25078      34082      1868246     29191.34
+ Heap Sz (K)      26756      35984      2063896     32248.38
+Bye!

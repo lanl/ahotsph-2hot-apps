@@ -1,0 +1,9 @@
+
+OPTIMIZE:=-O
+ARCH_SPECIFIC:=-D__CONVEX__
+
+include $(treedir)/Make-common/Make.default
+
+asmdir:=asm-convex
+swsrc:=lsv.c gnusort.c assert.c
+RANLIB:=ranlib

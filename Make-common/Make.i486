@@ -1,0 +1,23 @@
+# This is really for linux i486.  It's certainly not for MS-DOG.
+defaultPAROS:=seq
+ifeq (X$(PAROS),X)
+PAROS:=$(defaultPAROS)
+endif
+
+ifeq ($(PAROS),$(defaultPAROS))
+PAROSsuf:=
+else
+PAROSsuf:=-$(PAROS)
+endif
+
+ARCH_SPECIFIC:=-D_iX86=486
+CC:=gcc
+LD:=gcc
+TAR=tar
+CFLAGS:=-g -Wall -O2
+objsuf:=.o
+libext:=.a
+
+ifeq ($(PAROS),pvm)
+PRELIBS:=$(PVM_ROOT)/lib/$(PVM_ARCH)/libpvm3.a
+endif

@@ -1,0 +1,17 @@
+ifeq ($(CC),cc)
+# O3 is "aggressive" optimization.  fast_sqrt says to use the
+# rsqrt instruction.  This returns a NaN for sqrt(0), so it introduces
+# yet another restriction on the code.  The IEEE_arithmetic=3 
+# says to do dangerous rearrangements that might
+# impact ieee conformance (e.g., x/y -> x*recip(y) ).  See man cc for details.
+OPTIMIZE:= -O3 -OPT:fast_sqrt -OPT:IEEE_arithmetic=3 -TENV:align_aggregate=8
+CC_SPECIFIC:=-D__STDC__ -g3 -DSTK_FORCE_ALIGNMENT=8
+endif
+
+include $(treedir)/Make-common/Make.default
+
+swsrc:=gnusort.c lsv.c
+
+ifeq ($(PAROS),mpi)
+LOADLIBES:= -lmpi
+endif

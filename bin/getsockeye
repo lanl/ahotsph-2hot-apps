@@ -1,0 +1,10 @@
+#!/bin/csh
+foreach file ($*)
+  if ( -e $file ) then
+    echo cp $file $file.bak;
+    cp $file $file.bak || (echo backup $file failed; exit 1);
+    chmod -w $file.bak
+  endif
+  echo rcp sockeye:tree15/$file $file
+  rcp sockeye:tree15/$file $file || (echo rcp $file failed);
+end

@@ -1,0 +1,16 @@
+#!/usr/local/bin/perl
+# Try to split the header and data in an SDF file
+$name=$ARGV[0];
+$hdr=$name . ".hdr";
+$dat=$name . ".dat";
+open(IN, "$name") || die("Could not open $name");
+open(HDR, ">$hdr") || die("Could not open $hdr"); 
+open(DAT, ">$dat") || die("Could not open $dat");
+## Should we check for "#SDF",  and jump straight to data?? 
+while(<IN>){
+    print HDR;
+    last if /^#\s*SDF-EOH\s*$/;
+}
+while(read(IN, $buf, 16384)){
+    print DAT $buf;
+}
