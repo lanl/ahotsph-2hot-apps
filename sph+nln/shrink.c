@@ -106,7 +106,8 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	if ( (Dot(p->pos, p->pos) >= r2)
 	     && (fabs(p->pos[0]) <= 3400.0) 
 	     && (fabs(p->pos[1]) <= 3400.0) 
-	     && (fabs(p->pos[2]) <= 3400.0) ) { 
+	     && (fabs(p->pos[2]) <= 3400.0) 
+	     && (p->u <= 1e5) ) { 
 
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
@@ -169,7 +170,7 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	}
 	/* Else track accreted/ejected material; do this right sometime */
 	else {
-	    Msgf(("%d: %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %u\n", iter, tpos, p->pos[0], p->pos[1], p->pos[2], p->vel[0], p->vel[1], p->vel[2], p->mass, p->rho, p->u, p->h, p->windid));
+	    Msgf(("%d: %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %u %u\n", iter, tpos, p->pos[0], p->pos[1], p->pos[2], p->vel[0], p->vel[1], p->vel[2], p->mass, p->rho, p->u, p->h, p->windid, p->ident));
 	}
 
     }
