@@ -119,6 +119,7 @@ static float Gamma;		/* lowercase is a math.h function */
 static int default_nterms;
 static float centmass;
 static float bh_S;
+float masunit, lenunit, timunit;
 float bh_rplus;
 
 static double gnterms;
@@ -336,6 +337,10 @@ main(int argc, char *argv[])
 		    SDFgetfloatOrDie(csdfp, "centmass", &centmass);
 		    SDFgetfloatOrDie(csdfp, "bh_a", &bh_a);
 		    SDFgetfloatOrDie(csdfp, "clight", &cosmo.c);
+		    SDFgetfloatOrDie(sdfp, "MAS", &masunit);
+		    SDFgetfloatOrDie(sdfp, "LEN", &lenunit);
+		    SDFgetfloatOrDie(sdfp, "TIM", &timunit);
+		    centmass *= 1.9889e33/masunit;  /* convert to code units */
 		}
 
 		SDFgetintOrDefault(csdfp, "do_adiabatic", &do_adiabatic, 0);
@@ -490,15 +495,18 @@ main(int argc, char *argv[])
     }
     singlPrintf("int do_bardeen = %d;\n", do_bardeen);
     if (do_bardeen) {
-	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
-	singlPrintf("float clight = %e;\n", cosmo.c);
-	singlPrintf("float centmass = %f;\n", centmass);
+	singlPrintf("float MAS = %g;\n", masunit);
+	singlPrintf("float LEN = %g;\n", lenunit);
+	singlPrintf("float TIM = %g;\n", timunit);
+	singlPrintf("float GNewt = %g;\n", cosmo.GNewt);
+	singlPrintf("float clight = %g;\n", cosmo.c);
+	singlPrintf("float centmass = %g;\n", centmass);
 	bh_rplus = cosmo.GNewt * centmass / (cosmo.c * cosmo.c);
-	singlPrintf("float bh_rplus = %f;\n", bh_rplus);
+	singlPrintf("float bh_rplus = %g;\n", bh_rplus);
 	bh_S = (bh_a * cosmo.GNewt * cosmo.GNewt * centmass * centmass) 
 	    / (cosmo.c * cosmo.c * cosmo.c);
-	singlPrintf("float bh_a = %f;\n", bh_a);
-	singlPrintf("float bh_S = %f;\n", bh_S);
+	singlPrintf("float bh_a = %g;\n", bh_a);
+	singlPrintf("float bh_S = %g;\n", bh_S);
 	
     }	
     singlPrintf("int do_adiabatic = %d;\n", do_adiabatic);
@@ -1956,8 +1964,11 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "hubble", SDF_FLOAT, output_h,
 	     "redshift", SDF_FLOAT, output_z,
 	     "gamma", SDF_FLOAT, Gamma,
-	     "centmass", SDF_FLOAT, centmass, 
+	     "centmass", SDF_FLOAT, centmass*masunit/1.9889e33, 
 	     "eos_K", SDF_FLOAT, eos_K,
+	     "MAS", SDF_FLOAT, masunit,
+	     "LEN", SDF_FLOAT, lenunit,
+	     "TIM", SDF_FLOAT, timunit,
 	     "ke", SDF_DOUBLE, ke,
 	     "pe", SDF_DOUBLE, pe,
 	     "te", SDF_DOUBLE, te,
