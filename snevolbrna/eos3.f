@@ -1217,7 +1217,8 @@ c
       double precision inpvar(4)
       common /burnop/ t9nse,t9burn,tfreeze
 c
-      rhoswe=1.05d3
+      rhoswe=1.0d5
+c      rhoswe=1.05d3
 c      rhoswe=2.05d3
       t9nse=21.d0
       t9burn=0.1
