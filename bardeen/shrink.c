@@ -129,7 +129,7 @@ AdjustBtab2 (SPHbody **SPHbtabp, int *nobj)
     for (p = btab; p < btab+*nobj; p++) {
 	/* Keep all particles outside of bh_rplus */
 
-	if (Dot(p->pos, p->pos) >= r2) {
+	if (Dot(p->pos, p->pos) > r2) {
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
 	}

@@ -674,12 +674,18 @@ update_point_mass_bardeen(SPHbody *btab, int nobj, float G,
 	dr2 = Dotx(r, r);
 	oneor = recipsqrtf(dr2);
 
-	A = -G*mass*oneor*oneor*oneor*(1.0 + 6.0*rplus*oneor);
-	B = 2.0*S*oneor*oneor*oneor;
-	C = 6.0*S*r2*oneor*oneor*oneor*oneor*oneor;
+ 	A = -G*mass*oneor*oneor*oneor*(1.0 + 6.0*rplus*oneor);
+ 	B = 2.0*S*oneor*oneor*oneor;
+ 	C = 6.0*S*r2*oneor*oneor*oneor*oneor*oneor;
 
-	p->acc[0] += A*r0 + B*v1 + C*(r1*v2 - r2*v1);
-	p->acc[1] += A*r1 - B*v0 + C*(r2*v0 - r0*v2);
-	p->acc[2] += A*r2 + C*(r0*v1 - r1*v0);
+ 	p->acc[0] += A*r0 + B*v1 + C*(r1*v2 - r2*v1);
+ 	p->acc[1] += A*r1 - B*v0 + C*(r2*v0 - r0*v2);
+ 	p->acc[2] += A*r2 + C*(r0*v1 - r1*v0);
+
+/*  	A = -G*mass*oneor*oneor*oneor; */
+
+/*  	p->acc[0] += A*r0; */
+/*  	p->acc[1] += A*r1; */
+/*  	p->acc[2] += A*r2; */
     }
 }
