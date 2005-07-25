@@ -2145,7 +2145,7 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
     float rho_err, rms_rho_err2, max_rho_err;
     float min_dt;
     float sacc2;
-    float tx;
+    double tx;
     float dti;
     int tlow;
     int local_gnobj;
@@ -2191,7 +2191,7 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 	if (p->vsound/p->h > max_vsound)
 	  max_vsound = p->vsound/p->h;
 	dti = p->h/p->vsound;	
-	tx = p->rho/(1e-30+fabs(p->drho_dt));
+	tx = p->rho/(1e-40+fabs(p->drho_dt));
 	if (tx < dti) dti = tx;
 #if 0
 	if (p->ifleos == 3) {
