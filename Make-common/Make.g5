@@ -1,11 +1,11 @@
 defaultCC:=gcc
-defaultFC:=xlf
+defaultFC:=g77
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS
+CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -fast
 FC_SPECIFIC:=
-ARCH_SPECIFIC:=-Wno-long-double -DUSE_SYSTEM_MALLOC
+ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 
-override OPTIMIZE=-fast
+override OPTIMIZE=
 override AGGRESSIVE_OPT=
 # LDFLAGS:=-O3 -tpp7 -xW
 LOADLIBES:=
