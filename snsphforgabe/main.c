@@ -571,6 +571,9 @@ main(int argc, char *argv[])
 	bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2.0*z2) ) ) 
 	    * cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
 
+	/* Move bndry.r to 10km if it's less */
+	bndry.r = (bndry.r < 1.0e-3) ? 1.0e-3 : bndry.r;
+
 	singlPrintf("float Gnewt = %g;\n", cosmo.GNewt);
 	singlPrintf("float clight = %g;\n", Konst->clight);
 	singlPrintf("double bndry.x = %g;\n", bndry.pos[0]);
@@ -1038,6 +1041,9 @@ main(int argc, char *argv[])
 	    z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
 	    bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2*z2) ) ) 
 		* cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
+
+	    /* Move bndry.r to 10km if it's less */
+	    bndry.r = (bndry.r < 1.0e-3) ? 1.0e-3 : bndry.r;
 	}
 
 	MPMY_Sync();
