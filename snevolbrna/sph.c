@@ -313,14 +313,14 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VxdV(const float pos_sink, = sink->pos);
     VxdV(const float v, = sink->vel);
     const float h = sink->h;
-    const float pro2 = (sink->pr / sink->rho_est) / sink->rho_est;
+    const double pro2 = (sink->pr / sink->rho_est) / sink->rho_est;
     const float mass = sink->mass;
     const float rho_est = sink->rho_est;
     const float vsound = sink->vsound;
     const float u = sink->u;
 
     Vxd(float r);
-    Vxd(float f);
+    Vxd(double f);
     Vxd(float dv);
     Vxd(float smv);
     float min_nbr_dt = sink->min_nbr_dt;
@@ -331,16 +331,18 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     float hmean11, hmean21;
     int index;
     int nbrs = 0;
-    float rhoi = (float)0.0;
-    float divvi = (float)0.0;
+    double rhoi = (double)0.0;
+    double divvi = (double)0.0;
     float dr2;
     Vxd(float runi);
-    float dq = (float)0.0;
+    double dq = (float)0.0;
     float vv, vv2;
-    float dxx, dwdx, wtij, dgrwdx, grwtij;
-    float rapm, robar1, grpm, wpm;
-    float poro2;
-    float projv, vsbar, est_divv, t12;
+    float dxx, dwdx, dgrwdx;
+    double wtij, grwtij;
+    float rapm, robar1;
+    double wpm, grpm;
+    double poro2;
+    double projv, vsbar, est_divv, t12;
     float rij, rij1;
     int interactions = 0;
 
