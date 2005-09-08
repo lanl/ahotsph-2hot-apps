@@ -45,10 +45,12 @@ PrintBodyContentsLong(const body *p)
     if( p == NULL){
 	sprintf(contents_string, "\t(null)");
     }else{
-	sprintf(contents_string, "\t@%#lx %7.4g\n"
+	sprintf(contents_string, "\t@%#lx %7.4g %u\n"
 		"\t" Sinfix("%14.10f", " ")
 		" " Sinfix("%x", " "),
-		(unsigned long)p, Mass(p), Vinfix(Pos(p), COMMA),
+		(unsigned long)p, Mass(p), 
+		(p->ident & (1<<31)) ? (p->ident & ~(1<<31)) : p->ident, 
+		Vinfix(Pos(p), COMMA),
 		Vinfix( *(int *)&p->pos, COMMA));
     }
     return contents_string;
