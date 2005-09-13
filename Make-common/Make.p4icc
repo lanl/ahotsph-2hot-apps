@@ -2,7 +2,7 @@ defaultCC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/icc
 defaultFC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/ifc
 
 CC_SPECIFIC:=-g -DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
-FC_SPECIFIC:=
+FC_SPECIFIC:=-cm -w95 -80
 ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -align -Zp8 -DUSE_SYSTEM_MALLOC
 
 # ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
