@@ -6,6 +6,7 @@
 #include "timers.h"
 #include "error.h"
 #include "singlio.h"
+#include "Msgs.h"
 #include "mpmy.h"
 
 #ifndef M_1_PI
