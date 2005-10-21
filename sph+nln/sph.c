@@ -474,11 +474,11 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	p->udot += p->drho_dt * p->pr / (p->rho * p->rho);
 
 	if (do_cooling) {
-	    /* Check units, calculate temp = u / (2.5*n*k) (where n =
-	       rho/(2.0*mh)), calculate lcool, update udot */
+	    /* Check units, calculate temp = 2.0*mh*u / (2.5*k),
+	       calculate lcool, update udot */
 	    n = p->rho * m/(l*l*l) / (2.0*mh);
 	    u = p->u * l/t * l/t;
-	    temp = u / (2.5 * n * kboltz);
+	    temp = 2.0*mh * u / (2.5 * kboltz);
 
 	    /* From Chris's email; fit to Dalgarno and McCray (ARA&A
 	       1972, 10, 375) and Sutherland and Dopita (ApJS, 88,
@@ -491,7 +491,7 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 		lcool=1.0e-21/(3.0*(log10(temp)-5.5)+1.0);
 
 	    /* lcool has units of erg cm^3/s, need erg/g/s */
-	    p->udot -= lcool*n/p->mass * t*t*t/(l*l);
+	    p->udot -= lcool*n/(2.0*mh) * t*t*t/(l*l);
 	}
 
 	if (!finite(p->udot)) 
