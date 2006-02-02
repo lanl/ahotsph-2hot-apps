@@ -1220,7 +1220,7 @@ c
       rhoswe=1.0d5
 c      rhoswe=1.05d3
 c      rhoswe=2.05d3
-      t9nse=21.d1
+      t9nse=1.0d1
       t9burn=21.d1
       tfreeze=t9nse-1.0d0
       rhoburn=1.0d5
