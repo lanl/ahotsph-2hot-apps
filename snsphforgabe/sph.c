@@ -1118,8 +1118,8 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     float rlumnuef,rlumnuebf,rlumnuxf;
     float dlumnu;
     float xlumnu,ylumnu,zlumnu;
-    float hgw1,hgw2,hgw3,hgw4,hgw5,hgw6;
-    float ixx, iyy, izz, ixy, ixz, iyz;
+    double hgw1,hgw2,hgw3,hgw4,hgw5,hgw6;
+    double ixx, iyy, izz, ixy, ixz, iyz;
     float dtrapnue, dtrapnueb;
     MPMY_Comm_request req;
     float rmaxnuet_tab[NUMRMAXTAB];
@@ -1387,18 +1387,18 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     MPMY_ICombine(&xlumnu, &xlumnu, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&ylumnu, &ylumnu, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&zlumnu, &zlumnu, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&hgw1, &hgw1, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&hgw2, &hgw2, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&hgw3, &hgw3, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&hgw4, &hgw4, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&hgw5, &hgw5, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&hgw6, &hgw6, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&ixx, &ixx, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&iyy, &iyy, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&izz, &izz, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&ixy, &ixy, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&ixz, &ixz, 1, MPMY_FLOAT, MPMY_SUM, req);
-    MPMY_ICombine(&iyz, &iyz, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw1, &hgw1, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&hgw2, &hgw2, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&hgw3, &hgw3, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&hgw4, &hgw4, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&hgw5, &hgw5, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&hgw6, &hgw6, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&ixx, &ixx, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&iyy, &iyy, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&izz, &izz, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&ixy, &ixy, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&ixz, &ixz, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&iyz, &iyz, 1, MPMY_DOUBLE, MPMY_SUM, req);
     MPMY_ICombine(&enuef, &enuef, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&enuebf, &enuebf, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&enuxf, &enuxf, 1, MPMY_FLOAT, MPMY_SUM, req);
@@ -1461,7 +1461,7 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     iyz = iyz/xmtheo;
 
     {
-      float f = Unit2->ufoe/Units->utime;
+      double f = Unit2->ufoe/Units->utime;
       singlPrintf(" nue loss: %12g foes/s at <E> (MeV) %g\n", 
 		  rlumnuef*f, enuef);
       singlPrintf("nueb loss: %12g foes/s at <E> (MeV) %g\n", 
