@@ -116,6 +116,7 @@ typedef struct {
     unsigned int nbrs; 
     unsigned int ident;		/* unique? identifier */
     unsigned int windid;
+    unsigned int dummy;
 } SPHoutbody;
 
 typedef struct {
@@ -154,6 +155,7 @@ typedef struct {
     unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
+    unsigned int dummy;\n\
 }"
 #define SPHSHORTOUTBODYDESC \
 "struct {\n\
