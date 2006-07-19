@@ -148,7 +148,7 @@ main(int argc, char *argv[])
     body *btab, *p;
     body *pmtab;
     SPHbody *SPHbtab, *SPHsinkbtab = NULL, *q;
-    SPHbody *accbtab;
+    SPHbody *accbtab = NULL;
     float eps;			/* Plummer smoothing length */
     float tol;			/* MAC tolerance */
 		/* for big MAC, this is multiplied by M/(rsize*rsize) */
