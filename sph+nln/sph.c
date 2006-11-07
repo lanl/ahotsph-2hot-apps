@@ -421,7 +421,7 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
 	for (j = ncoef1-2; j >= 1; j--)
           dw = dw * v + j * wcoef1[j];
 	wij[i] = cnormk * w;
-	grwij[i] = cnormk * dw / v;
+	grwij[i] = cnormk * dw;
     }
 
     /*  b) v greater than 1 */
@@ -435,7 +435,7 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
 	for (j = ncoef2-2; j >= 1; j--)
           dw = dw * v + j * wcoef2[j];
 	wij[i] = cnormk * w;
-	grwij[i] = cnormk * dw / v;
+	grwij[i] = cnormk * dw;
     }
     /* For interpolation of last table entry */
     wij[NKERNEL_TABLE+1] = grwij[NKERNEL_TABLE+1] = 0.0;
