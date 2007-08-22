@@ -1,3 +1,4 @@
+#include <math.h>
 #include "physics_sph.h"
 #include "verify.h"
 #include "mpmy.h"
