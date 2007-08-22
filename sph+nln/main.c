@@ -75,7 +75,8 @@ static void Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, 
 static void ReadCosmo(SDF *sdfp, struct cosmo_s *cosmo, float tpos, float *R0p);
 static void CosmoPush(struct cosmo_s *p, float time);
 static int dark_need_update(float dark_tacc, float dark_dt);
-static float IdtSPHGetCost(const SPHbody *ptr);
+/*  static float IdtSPHGetCost(const SPHbody *ptr); */
+
 /* In shrink.c */
 void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit);
 
@@ -2019,14 +2020,14 @@ dark_need_update(float dark_tacc, float dark_dt)
     return (dark_tacc + dark_dt <= tpos + dt * 1.00001);
 }
 
-static float 
-IdtSPHGetCost(const SPHbody *ptr)
-{
-    if (SPH_need_update(ptr))
-      return (float) ptr->nterms;
-    else
-      return (float) default_nterms;
-}
+/*  static float  */
+/*  IdtSPHGetCost(const SPHbody *ptr) */
+/*  { */
+/*      if (SPH_need_update(ptr)) */
+/*        return (float) ptr->nterms; */
+/*      else */
+/*        return (float) default_nterms; */
+/*  } */
 
 int
 SPH_need_update(const SPHbody *p)
