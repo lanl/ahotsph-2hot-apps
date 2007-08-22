@@ -210,6 +210,7 @@ void SPH_setup(int dim);
 void SetSPHOffset(float *off, float *voff);
 void UnSetSPHOffset(void);
 void update_point_SPHmass(SPHbody *btab, int nobj, void *p, float smooth2, float newt);
+void update_point_SPHmass2(SPHbody *btab, int nobj, float smooth2, float newt);
 
 /* In sphinit.c */
 void *DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel);

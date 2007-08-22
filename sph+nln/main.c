@@ -78,7 +78,8 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 /*  static float IdtSPHGetCost(const SPHbody *ptr); */
 
 /* In shrink.c */
-void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit);
+/*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
+void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -219,6 +220,7 @@ main(int argc, char *argv[])
     int make_sink_tree;
     int has_grav_data;
     int do_point_mass;
+    int do_point_mass2;
 
     MPMY_Init(&argc, &argv);
     singlPrintf("Welcome to the variable O() integrator running on %d procs\n",
@@ -242,6 +244,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_sph", &do_sph, 0);
     SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
+    SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
     if (do_sph || do_grav) {
 	if (!((strncmp(name, "test", 4) == 0))) {
@@ -273,6 +276,10 @@ main(int argc, char *argv[])
 		    Msgf(("lx = %e; ly = %e; lz = %e; accmass = %e\n", 
 			  pmtab->l[0], pmtab->l[1], pmtab->l[2], 
 			  pmtab->accmass));
+		} else if (do_point_mass2) {
+		    SDFgetfloatOrDefault(csdfp, "r_inner", &r_inner, 0.05);
+		    PMgnobj = PMnobj = 0;
+		    pmtab = Malloc(sizeof(body)); /* realloced later */
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
@@ -410,8 +417,9 @@ main(int argc, char *argv[])
 	singlPrintf("int dt_short = %d;\n", dt_short);
 	singlPrintf("float dt_max = %g;\n", dt_max);
     }
-    if (do_point_mass) {
+    if (do_point_mass || do_point_mass2) {
         singlPrintf("float r_inner = %f;\n", r_inner);
+	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
     }
     if( do_output ){
 	singlPrintf("Output to %s.nnnn, every %d steps\n", 
@@ -475,9 +483,10 @@ main(int argc, char *argv[])
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
 
-	if (do_point_mass) {
+	if (do_point_mass || do_point_mass2) {
 	  SPHoldnobj = SPHnobj;
-	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner);
+/*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
+	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
 	  Msgf(("Removed %d bodies from SPHbtab\n", SPHoldnobj-SPHnobj));
 	}
@@ -804,6 +813,10 @@ main(int argc, char *argv[])
 	      update_point_SPHmass(SPHbtab, SPHnobj, p, eps*eps, cosmo.GNewt);
 	    }
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
+	}
+
+	if (do_point_mass2) {
+	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt);
 	}
 
 	MPMY_Sync();

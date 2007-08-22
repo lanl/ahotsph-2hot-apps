@@ -525,3 +525,34 @@ update_point_SPHmass(SPHbody *btab, int SPHnobj,
 }
 
 
+void
+update_point_SPHmass2(SPHbody *btab, int SPHnobj, float smooth2, float newt)
+{
+    /* Hard-wired 2.6e6-mass gravitational source at [0,0,0] */
+    SPHbody *r;
+    float dr2, oneor, oneor2;
+    float phii;
+    float mass = 2.6e6;
+    Vxd(float r);
+    Vxd(float ppos);
+
+    VxS(ppos, = (float)0.0);    
+
+    for (r = btab; r < btab+SPHnobj; r++) {
+	VxVVx(r, = r->pos, - ppos); /* 3 flops */
+	
+	dr2 = Dotx(r, r);	/* 5 flops */
+	if (dr2 != (float)0.0) {	
+	  dr2 += smooth2;
+	
+	  oneor = recipsqrtf(dr2);	/* 8 flops */
+	
+	  oneor2 = oneor * oneor;	/* 17 flops */
+	  phii = newt * oneor * mass;
+	  r->phi -= phii;
+	  VVx(r->acc, -= oneor2 * phii * r);
+	}
+    }
+}
+
+
