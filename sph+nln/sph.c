@@ -401,7 +401,7 @@ SPH_setup(int dim)
     if (ndim == 3)
       cnormk = (float)M_1_PI;
     else if (ndim == 2)
-      Error("Melvyn needs to find this constant\n");
+      cnormk = (float)(M_1_PI*10.0/7.0);
     else if (ndim == 1)
       cnormk = (float)(2.0/3.0);
     else
