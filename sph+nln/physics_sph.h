@@ -63,8 +63,8 @@ typedef struct {		/* don't need all of this info */
 } accbody;
 
 /* When we send a body from node to node, how much must we send??? */
-#define SPHTBODYSZ (8+2*NDIM)*sizeof(float)
-
+/*  #define SPHTBODYSZ (8+2*NDIM)*sizeof(float) */
+#define SPHTBODYSZ offsetof(SPHbody, acc)
 
 /* If you add anything to the outbody structure, make sure to add an */
 /* assignment to the Output routine */
