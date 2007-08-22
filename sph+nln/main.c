@@ -478,7 +478,7 @@ main(int argc, char *argv[])
 	  SPHoldnobj = SPHnobj;
 	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner);
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
-	  singlPrintf("Removed %d bodies from SPHbtab\n", SPHoldnobj-SPHnobj);
+	  Msgf(("Removed %d bodies from SPHbtab\n", SPHoldnobj-SPHnobj));
 	}
 
 	/* comoving smoothing */
