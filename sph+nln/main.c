@@ -153,7 +153,7 @@ main(int argc, char *argv[])
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
     body *pmtab;
-    SPHbody *SPHbtab, *SPHsinkbtab, *q;
+    SPHbody *SPHbtab, *SPHsinkbtab = NULL, *q;
     float eps;			/* Plummer smoothing length */
     float tol;			/* MAC tolerance */
 		/* for big MAC, this is multiplied by M/(rsize*rsize) */
@@ -176,7 +176,7 @@ main(int argc, char *argv[])
     int setpvel = 0;
     char outnamebase[256];
     SDF *csdfp;			/* SDF pointer to control file */
-    SDF *sdfp;
+    SDF *sdfp = NULL;
     float tposlast;
     int save_first;		/* save first step (for acc testing) */
     double pe, ke, te;
@@ -184,7 +184,7 @@ main(int argc, char *argv[])
     double etot;
     double mtot, SPHmtot;
     sortresult_t sortedbtab, SPHsortedbtab, sortedatab;
-    tree_t thetree, SPHtree, SPHsinktree, *sinkptr;
+    tree_t thetree, SPHtree, SPHsinktree, *sinkptr = NULL;
     char name[256];
     int do_BH, do_DL, do_Bmax, do_Arel;
     int MACtype = BMAX_MAC;
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
     int tlow_cut, dt_short, dt_long;
     accbody *SPHatab, *pa;
     int SPHanobj;
-    void *decomp_info;
+    void *decomp_info = NULL;
     int do_restart;
     float dark_tacc = -1e30;	/* initialize so dark_need_update is true */
     float dark_dt;
