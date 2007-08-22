@@ -8,10 +8,17 @@
 
 #define NDIM 3
 #define SPH_SAVE_ACC
+#define POS_IS_DOUBLE
 
 typedef struct {
+#ifdef POS_IS_DOUBLE
+  /* double first for alignment */
+    double pos[NDIM];		/* position of body */
+    float mass;			/* mass of body */
+#else
     float mass;			/* mass of body */
     float pos[NDIM];		/* position of body */
+#endif
     float vel[NDIM];		/* velocity of body */
     float h;			/* smoothing length */
     float rho;			/* density */
@@ -33,7 +40,11 @@ typedef struct {
     float grav_nterms;
     float lvel[NDIM];
     float drho_dt;
+#ifdef POS_IS_DOUBLE
+    double pos_last[NDIM];
+#else
     float pos_last[NDIM];
+#endif
     float hdot;
     float udot;
     float udot_last;

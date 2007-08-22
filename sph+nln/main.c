@@ -163,6 +163,7 @@ main(int argc, char *argv[])
     int first_step = 1;
     int stride = sizeof(body)/sizeof(float);
     int SPHstride = sizeof(SPHbody)/sizeof(float);
+    int SPHstride2 = sizeof(SPHbody)/sizeof(double);
     int do_output;
     int output_freq;
     int timer_freq;
@@ -857,6 +858,8 @@ main(int argc, char *argv[])
 		VVV(pmtab[i].pos_last, = pmtab[i].pos, - dt * pmtab[i].vel);
 	    }
 	    for (i = 0; i < SPHnobj; i++) {
+	      /* Roundoff problems happen here if dt is small and */
+	      /* pos is large and sigle precision */
 		VVV(SPHbtab[i].pos_last, = SPHbtab[i].pos,- dt*SPHbtab[i].vel);
 		SPHbtab[i].udot_last = SPHbtab[i].udot;
 	    }
@@ -879,11 +882,21 @@ main(int argc, char *argv[])
 		  SPHnobj, dt, dt_last);
 	/* One must be careful with this integration scheme, since v */
 	/* is a derived variable.  To really adjust v, change pos_last */
-	PUpdateV(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride, SPHbtab[0].pos_last, 
-		 SPHstride, SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+#ifdef POS_IS_DOUBLE
+	PUpdateVd(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride2, 
+		  SPHbtab[0].pos_last, SPHstride2, SPHbtab[0].acc, SPHstride, 
+		  SPHnobj, dt, dt_last);
+	/* v must be done before x, since pos_last is changed in PUpX */
+	PUpdateXd(SPHbtab[0].pos, SPHstride2, SPHbtab[0].pos_last, SPHstride2,
+		  SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+#else
+	PUpdateV(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride, 
+		 SPHbtab[0].pos_last, SPHstride, SPHbtab[0].acc, SPHstride, 
+		 SPHnobj, dt, dt_last);
 	/* v must be done before x, since pos_last is changed in PUpX */
 	PUpdateX(SPHbtab[0].pos, SPHstride, SPHbtab[0].pos_last, SPHstride,
 		 SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+#endif
 	UpdateSX(&SPHbtab[0].h, SPHstride, &SPHbtab[0].hdot, SPHstride, SPHnobj, dt, dt_last);
 	tpos += dt;
 	tvel += dt;
