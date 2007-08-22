@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdlib.h>
 #include "physics_sph.h"
 #include "vop.h"
 #include "fastflpt.h"
