@@ -34,6 +34,8 @@ typedef struct {
     float vsound;		/* sound speed */
     float rho_est;		/* estimated density */
     float u;			/* internal energy */
+    float temp;                 /* temperature, used to enforce LTE */
+    float du;                   /* change in internal energy this timestep */
     float dt_next;
     /* Things declared above this line are communicated between processors */
     /* so they can be used in in the loop over nbrs in FindRho and ForceSPH */
@@ -41,6 +43,10 @@ typedef struct {
     float acc[NDIM];
     float grav_acc[NDIM];
     float acc_last[NDIM];
+    /* Do these need to go between nodes?  Can things above come down here? */
+    float u_r;                  /* radiation energy density */
+    float du_r;                 /* change in u_r this timestep */
+    float D;                    /* Diffusion coefficient */
     float phi;
     Key_t key;
     unsigned int ident;
@@ -239,6 +245,11 @@ typedef struct{
     float rho_est;
     float vsound;
     float u;
+    float temp;
+    float du;
+    float u_r;
+    float du_r;
+    float D;
     float mass;
     float drho_dt;
     float udot;
@@ -327,4 +338,12 @@ void *WindRead(char *name, void *csdfp, windbody **btabp, int *gnobjp,
 /* In sphplus.c */
 void GravPlusSPH(void **btab, int *nobj, SPHbody *SPHbtab, int SPHnobj);
 void GravMinusSPH(void **btab, int *nobj, accbody **atab, int *anobj);
+
+/* In eos.c */
+double uvst(double t);
+double duvst(double t);
+
+/* In newtraph.c */
+float newtraph(double xl, double xr, double prec, double (*f)(double x), 
+	     double (*df)(double x));
 

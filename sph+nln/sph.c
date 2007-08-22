@@ -34,6 +34,8 @@ static float voffset[NDIM];
 static void (*bodyfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 static void (*cellfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 
+extern int do_diffusion;
+
 void
 SetSPHOffset(float *off, float *voff)
 {
@@ -60,6 +62,8 @@ InheritSPH(const SinkSPH *from, SinkSPH *to, hcell *pp)
 	/* Must accumulate for periodic BC to work */
 	/* Must initialize to zero appropriately */
 	bp->rho += from->rho;
+	bp->du += from->du;       /* Why am I doing this? */
+	bp->du_r += from->du_r;   /* Do I need to do anything else? */
 	bp->drho_dt += from->drho_dt;
 	bp->udot += from->udot;
 	bp->nbrs += from->nbrs;
@@ -103,6 +107,13 @@ InheritSPH(const SinkSPH *from, SinkSPH *to, hcell *pp)
 	to->nbrs = 0;
 	VS(to->M1, = (float)0.0);
 	to->min_nbr_dt = 1e30;
+	/* Diffusion quantities */
+	/* Can some of these be set to zero here?  Like udot above? */
+	to->temp = bp->temp;
+	to->du = bp->du;
+	to->u_r = bp->u_r;
+	to->du_r = bp->du_r;  /* Or = (float)0.0; ? */
+	to->D = bp->D;
     }
 
     if (add_offset) {
@@ -342,6 +353,15 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	    t12 = grpm * qmean * (bp->u - u) * robar1;
 	    dq -= t12;
 	}
+	/* flux-limited diffusion */
+	if (do_diffusion)
+	    if (grpm < 0.0) {  /* What does this condition really mean? */
+		float Dmeanr = 2.0*rij1*sink->D/(sink->D+bp->D)*bp->D;
+
+		sink->du_r += ( (C_LIGHT < Dmeanr) ? C_LIGHT : Dmeanr ) *
+		    (sink->u_r - bp->u_r) * grpm / bp->rho_est;
+	    }
+
 	nbrs++;
       accept:
 	IncrCounter(&SPHrej);
@@ -388,6 +408,11 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
     int i, i1, j;
 
     ndim = dim;
+
+
+    /* Do any diffusion-specific initialization here: */
+    /* Set rmax, luminosity, etc. */
+
 
     /* maximum interaction length and step size */
     v2max = 4.0;
@@ -462,11 +487,16 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	    p->hdot = -0.5*p->h/dt;
 	    ++*limit_low;
 	}
-	p->udot += p->drho_dt * p->pr / (p->rho * p->rho);
+
+	p->udot += p->drho_dt * p->pr / (p->rho * p->rho) + 
+	    ( (do_diffusion) ? (p->du_r/p->rho) /* Diffusion */
+	      : 0.0 );  
 
 	if (!finite(p->udot)) 
 	    Error("Bad value for udot\n");
 
+	/* Are these limits appropriate? */
+	/* Does this enforce the Courant limit correctly with diffusion? */
 	if ( (p->udot * dt > p->u) && !(p->ident & (1<<30)) ) {
 	    p->udot = p->u/dt;
  	    ++*limit_high;
@@ -478,9 +508,13 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
     }
 }
 
+
+double eos_n, eos_u;
+
 void
 update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit)
 {
+    float kes, kff;  /* Opacities (Thomson, free-free) */
     SPHbody *p;
 
     for (p = btab; p < btab+nobj; p++) {
@@ -491,6 +525,27 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
 	  Error("Rho_est is 0\n%s\n", PrintSPHBodyContents(p));
 	p->pr = p->u * (Gamma - (float)1.0) * p->rho_est;
 	p->vsound = sqrtf_fast(Gamma * p->pr / p->rho_est);
+
+	if (do_diffusion) {
+	    /* Set constants in physics_sph.h for now */
+	    /* Or read in from the control file (global)? */
+
+	    /* Calculate temperature from u, then "create" photons (a*T^4) */
+	    eos_n = ((double)(p->rho_est))/((double)(MH));
+	    eos_u = ((double)(p->u))*((double)(p->rho_est));
+
+	    /* Figure out good upper and lower limits for temp */
+	    p->temp = newtraph(4.0e4, 1.5e7, eos_u*1.0e-6, uvst, duvst);
+	    p->u_r = A_COEFF*p->temp*p->temp*p->temp*p->temp;
+	    p->du_r = 0.0;
+
+	    /* Calculate diffusion coefficient */
+	    kes = KES_COEFF;
+	    kff = (KFF_COEFF)*p->rho_est*pow(p->temp, -3.5);
+	    p->D = C_LIGHT / ( 3.0*(kes+kff)*p->rho_est );
+
+	    /* Also, eventually, handle lightbulb approximation here */
+	}
     }
 }
 
