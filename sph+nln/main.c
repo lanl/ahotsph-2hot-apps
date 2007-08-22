@@ -268,8 +268,9 @@ main(int argc, char *argv[])
 		    else SDFgetstring(csdfp, "datafile", iname, sizeof(iname));
 		    sdfp = DarkRead(iname, csdfp, (void **)&pmtab, &PMgnobj, 
 				    &PMnobj, set_id, setpvel);
-		    Msgf(("specangmom = %e; accmass = %e\n", 
-			 pmtab->specangmom, pmtab->accmass));
+		    Msgf(("lx = %e; ly = %e; lz = %e; accmass = %e\n", 
+			  pmtab->l[0], pmtab->l[1], pmtab->l[2], 
+			  pmtab->accmass));
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
@@ -1612,9 +1613,9 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
 	VV(output_btab[i].acc, = btab[i].acc);
 	output_btab[i].phi = btab[i].phi;
 #endif
-	/* Added specangmom and accmass; this is pretty specific to */
+	/* Added l and accmass; this is pretty specific to */
 	/* point masses */
-	output_btab[i].specangmom = btab[i].specangmom;
+	VV(output_btab[i].l, = btab[i].l);
 	output_btab[i].accmass = btab[i].accmass;	
 	output_btab[i].ident = btab[i].ident;
     }

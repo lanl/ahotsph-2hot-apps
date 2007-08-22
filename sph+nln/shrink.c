@@ -24,9 +24,12 @@ ShrinkBtab
 	*q = *p;
       } else {
 	btabp->accmass += p->mass;
-	Msgf(("Point mass gobbled m = %e; total = %e\n", p->mass,
-	      btabp->accmass));
-	/* Still need to update specangmom */
+	btabp->l[0] += p->pos[1]*p->vel[2] - p->pos[2]*p->vel[1];
+	btabp->l[1] += p->pos[2]*p->vel[0] - p->pos[0]*p->vel[2];
+	btabp->l[2] += p->pos[0]*p->vel[1] - p->pos[1]*p->vel[0];
+	Msgf(("Point mass gobbled m = %e; total = %e\nAccreted ang momentum = (%e, %e, %e)\n", 
+	      p->mass, btabp->accmass, 
+	      btabp->l[0], btabp->l[1], btabp->l[2]));
       }
     }
     Free(btab);

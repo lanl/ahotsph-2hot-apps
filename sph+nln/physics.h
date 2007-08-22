@@ -31,7 +31,7 @@ typedef struct {
     unsigned int ident;
     float nterms;
     float pos_last[NDIM];	/* position of body */
-    float specangmom;           /* accreted specific angular momentum */
+    float l[NDIM];           /* accreted angular momentum */
     float accmass;              /* accreted mass */
 } body, *bodyptr;
 
@@ -46,7 +46,7 @@ typedef struct {
     float acc[NDIM];
     float phi;
 #endif
-    float specangmom;           /* accreted specific angular momentum */
+    float l[NDIM];           /* accreted angular momentum */
     float accmass;              /* accreted mass */
     unsigned int ident;		/* unique? identifier */
 } outbody, *outbodyptr;
@@ -62,7 +62,7 @@ typedef struct {
     float vx, vy, vz;		/* velocity of body */\n\
     float ax, ay, az;		/* acceleration */\n\
     float phi;			/* potential */\n\
-    float specangmom;           /* accreted spec ang momentum */\n\
+    float lx, ly, lz;           /* accreted ang momentum */\n\
     float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
@@ -75,7 +75,7 @@ typedef struct {
     float vx, vy;		/* velocity of body */\n\
     float ax, ay;		/* acceleration */\n\
     float phi;			/* potential */\n\
-    float specangmom;           /* accreted spec ang momentum */\n\
+    float lx, ly;           /* accreted ang momentum */\n\
     float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
@@ -90,7 +90,7 @@ typedef struct {
     float mass;			/* mass of body */\n\
     float x, y, z;			/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
-    float specangmom;           /* accreted spec ang momentum */\n\
+    float lx, ly, lz;           /* accreted ang momentum */\n\
     float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
@@ -101,7 +101,7 @@ typedef struct {
     float mass;			/* mass of body */\n\
     float x, y;			/* position of body */\n\
     float vx, vy;		/* velocity of body */\n\
-    float specangmom;           /* accreted spec ang momentum */\n\
+    float lx, ly;           /* accreted ang momentum */\n\
     float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
