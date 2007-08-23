@@ -79,21 +79,20 @@ ShrinkBtab2 (SPHbody **SPHbtabp, int *nobj, float r_limit)
 }
 
 void
-AdjustBtab (SPHbody **SPHbtabp, int *nobj, SPHbody *w, int nwind, 
-	    float dt)
+AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
+	    int windnobj, float r_limit, float dt)
 {
 
-    /* Edit this to remove particles that go outside the boundaries, 
-       or inside the inner radius - both are hardcoded here right now.
-       Also adjust to add particles at location of wind source; 
-       also hardcoded. */
-
+    /* Edit this to remove particles that go outside the boundaries,
+       hardcoded here right now.  Also adjust to add particles at
+       location of wind source; also hardcoded. */
     SPHbody *btab = *SPHbtabp;
     SPHbody *p;
     Stk s;
     SPHbody *q;
-    float rinner = 5.0;  /* Don't hardcode this here...  */
-    float r2 = rinner*rinner;
+    int id;
+    float r2 = r_limit*r_limit;
+    double x, y, z, r;
 
     StkInitEz(&s);
 
@@ -102,38 +101,68 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, SPHbody *w, int nwind,
 	   keep all particles inside reasonable volume of solution
 	   Needs to be more easily adjustable... */
 
-	if ( (Dot(p->pos, p->pos) >= r2)  /* acceptable */
-	     && (fabs(p->pos[0]) <= 150.0) 
-	     && (fabs(p->pos[1]) <= 150.0) 
-	     && (fabs(p->pos[2]) <= 750.0) ) 
+	if ( (Dot(p->pos, p->pos) >= r2)
+	     && (fabs(p->pos[0]) <= 200.0) 
+	     && (fabs(p->pos[1]) <= 200.0) 
+	     && (fabs(p->pos[2]) <= 800.0) ) 
 	    { 
 
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
+
+	    if ( p->ident <= windnobj ) {  /* Add extra particle? */
+		x = p->pos[0];
+		y = p->pos[1];
+		z = p->pos[2]+500.0;  /* HARDCODED WIND SOURCE */
+		r = sqrt(x*x+y*y+z*z);
+
+		if (r > r_limit + 1.0) {  /* Change this when h changes */
+		    id = q->ident;
+		    q->ident += windnobj;  /* Turn off particle addition for
+					      recently pushed particle */
+		    q = StkPush(&s, sizeof(SPHbody));
+
+		    /* Be aware that some quantities not set here are set
+		       only when exact_rho = 1 */
+
+		    q->mass = p->mass;
+
+		    q->pos[0] = x * r_limit / r;
+		    q->pos[1] = y * r_limit / r;
+		    q->pos[2] = z * r_limit / r;
+
+		    VV(q->vel, = 0.5711/r_limit*q->pos);  /* HARDCODED */
+		    q->pos[2] -= 500.0;  /* HARDCODED WIND SOURCE */
+		    VVV(q->pos_last, = q->pos, - dt*q->vel);
+
+		    q->h = 1.324;  /* Needs to be adjusted to match original
+				      particles */
+
+		    q->u = 3.230928e-04;  /* HARDCODED WIND CONDITIONS */
+		    q->pr = 0.0;  /* Fixed in update_intermediate */
+
+		    VS(q->acc, = 0.0);
+		    VS(q->acc_last, = 0.0);
+		    VS(q->grav_acc, = 0.0);
+
+		    q->nterms = 1;  /* Equivalent to SPHFixNterms */
+
+		    /* Lots of possibly-unnecessary initializations */
+		    /* Without diffusion, these should all stay 0 */
+		    q->dt = p->dt;
+		    q->du = 0.0;
+		    q->du_r = 0.0;
+		    q->u_r = 0.0;
+		    q->phi = 0.0;  /* Set this correctly? */
+
+		    q->ident = id;
+
+		    Msgf(("p->pos: %f %f %f; ident: %d\n", q->pos[0], 
+			  q->pos[1], q->pos[2], q->ident));
+		}
+	    }
 	} 
-
-    }
-
-    /* Add particles around wind source; need to take current dt into
-       account to calculate total mass to be added */
-    /* Put in loop over particles in SPHwind */
-
-    for (p = w; p < w+nwind; p++) {
-	q = StkPush(&s, sizeof(SPHbody));
-	*q = *p;
-
-	/* Adjust x,y,z positions */
-	/* To do: Add random rotation to wind source sphere */
-
-	VS(q->pos, *= rinner);
-	q->pos[2] -= 500.0;
-
-	/* Set pos_last to reflect desired velocity */
-	VVV(q->pos_last, = q->pos, - dt*q->vel);
-
-	q->mass = 1.0e-4*dt/(nwind);  /* 1e-5 Msun/yr, total */
-	q->rho = q->mass/(4.0/3.0*M_PI*((rinner+q->h/2.0)-
-					(rinner-q->h/2.0)));
+	/* Else track accreted/ejected material */
     }
 
     Free(btab);
@@ -141,9 +170,4 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, SPHbody *w, int nwind,
     *nobj = StkSz(&s)/sizeof(SPHbody);
     btab = StkBase(&s);
     *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
-
-/*      for (p = *SPHbtabp; p < *SPHbtabp+*nobj; p++) { */
-/*  	Msgf(("p->pos: %f %f %f; id: %d\n", p->pos[0], p->pos[1], p->pos[2], */
-/*  	      p->ident)); */
-/*      } */
 }

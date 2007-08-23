@@ -79,8 +79,9 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 
 /* In shrink.c */
 /*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
-void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit);
-/*  void AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody *w, int nwind,float dt); */
+/* void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit); */
+void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
+		int windnobj, float r_limit, float dt);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -150,14 +151,14 @@ main(int argc, char *argv[])
 {
     int gnobj, nobj;
     int SPHgnobj, SPHnobj, SPHoldnobj;
+    int windgnobj, windnobj;
     float r_inner;
     int PMgnobj, PMnobj;
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
     body *pmtab;
     SPHbody *SPHbtab, *SPHsinkbtab = NULL, *q;
-/*      SPHbody *SPHwind; */ /* For wind sources */
-/*      int windnobj; */
+    windbody *windbtab;
     float eps;			/* Plummer smoothing length */
     float tol;			/* MAC tolerance */
 		/* for big MAC, this is multiplied by M/(rsize*rsize) */
@@ -165,6 +166,7 @@ main(int argc, char *argv[])
     float rmin[NDIM], rmax[NDIM];
     int nsteps;
     int first_step = 1;
+    int added_particles = 0;
     int stride = sizeof(body)/sizeof(float);
     int SPHstride = sizeof(SPHbody)/sizeof(float);
     int SPHstride2 = sizeof(SPHbody)/sizeof(double);
@@ -202,7 +204,8 @@ main(int argc, char *argv[])
     int set_id;
     float dt_last;
     float new_h, new_u;
-    int do_sph, do_grav;
+    int do_sph, do_grav, do_winds;
+    int do_point_mass, do_point_mass2;
     int exact_rho;
     float visc_alpha, visc_beta, visc_epsilon, heat_f1;
     int nbrcut_max, nbrcut_min;
@@ -223,8 +226,6 @@ main(int argc, char *argv[])
     int SPHnupdate;
     int make_sink_tree;
     int has_grav_data;
-    int do_point_mass;
-    int do_point_mass2;
 
     MPMY_Init(&argc, &argv);
     singlPrintf("Welcome to the variable O() integrator running on %d procs\n",
@@ -250,6 +251,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "setpvel", &setpvel, 0);
     SDFgetintOrDefault(csdfp, "do_sph", &do_sph, 0);
     SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
+    SDFgetintOrDefault(csdfp, "do_winds", &do_winds, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
@@ -298,6 +300,13 @@ main(int argc, char *argv[])
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
 		}
+
+		if (do_winds) {
+		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname));
+		    sdfp = WindRead(iname, csdfp, &windbtab, &windgnobj, 
+				    &windnobj);
+		} else windgnobj = windnobj = 0;
+
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
 	    } else {
@@ -500,10 +509,14 @@ main(int argc, char *argv[])
 	if (do_point_mass || do_point_mass2) {
 	  SPHoldnobj = SPHnobj;
 /*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
-  	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner); 
-/*  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHwind, windnobj, dt); */
+/*   	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);  */
+ 	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
+		     windnobj, r_inner, dt_last);
+
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
-	  Msgf(("Removed %d bodies from SPHbtab\n", SPHoldnobj-SPHnobj));
+	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter, 
+		SPHnobj-SPHoldnobj));
+	  if (SPHnobj-SPHoldnobj != 0) added_particles = 1;
 	}
 
 	/* comoving smoothing */
@@ -891,6 +904,16 @@ main(int argc, char *argv[])
 		VVV(SPHbtab[i].pos_last, = SPHbtab[i].pos,- dt*SPHbtab[i].vel);
 		SPHbtab[i].udot_last = SPHbtab[i].udot;
 	    }
+	}
+	else if (added_particles) {
+	    for (i = 0; i < SPHnobj; i++) {
+	      /* Roundoff problems happen here if dt is small and */
+	      /* pos is large and sigle precision */
+		if (SPHbtab[i].ident == 1) {
+		    SPHbtab[i].udot_last = SPHbtab[i].udot;
+		}
+	    }
+	    added_particles = 0;
 	}
 	/* One must be careful with this integration scheme, since v */
 	/* is a derived variable.  To really adjust v, change pos_last */

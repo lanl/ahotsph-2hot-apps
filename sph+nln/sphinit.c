@@ -320,3 +320,47 @@ SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic)
     *nobjp = nobj;
     *btabp = btab;
 }
+
+void *
+WindRead(char *name, void *csdfp, windbody **btabp, int *gnobjp, int *nobjp)
+{
+    SDF *sdfp;
+    int xconf, yconf, zconf;
+    int vxconf, vyconf, vzconf;
+    int rhoconf, vwindconf, uwindconf, identconf;
+    windbody *btab;
+    int nobj, gnobj;
+    
+    singlPrintf("Reading \"%s\"\n", name);
+    sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(windbody),
+		    "xwind", offsetof(windbody, pos[0]), &xconf,
+		    "ywind", offsetof(windbody, pos[1]), &yconf,
+		    "zwind", offsetof(windbody, pos[2]), &zconf,
+		    "vxwind", offsetof(windbody, vel[0]), &vxconf,
+		    "vywind", offsetof(windbody, vel[1]), &vyconf,
+		    "vzwind", offsetof(windbody, vel[2]), &vzconf,
+		    "rhowind", offsetof(windbody, rhowind), &rhoconf,
+		    "vwind", offsetof(windbody, vwind), &vwindconf,
+		    "uwind", offsetof(windbody, uwind), &uwindconf,
+		    "identwind", offsetof(windbody, ident), &identconf,
+		    NULL);
+    nobj = *nobjp;
+    gnobj = *gnobjp;
+    btab = *btabp;
+    Msgf(("Wind data read, windnobj=%d, windgnobj=%d\n", *nobjp, *gnobjp));
+    Msgf(("Nproc:%d, Procnum: %d, Doc: %d\n",
+	  MPMY_Nproc(), MPMY_Procnum(), ilog2(MPMY_Nproc())));
+    if (xconf==0 || yconf==0 || zconf==0) {
+	SinglError("Could not find %s %s %s in wind file!\n",
+		   (xconf==0)? "x" : "",
+		   (yconf==0)? "y" : "",
+		   (zconf==0)? "z" : "");
+    }
+    if (vxconf != vyconf || vxconf != vzconf){
+	SinglError("Missing velocity components!\n");
+    }
+    if (identconf == 0){
+	SinglError("No \"ident\" in wind file, aborting\n");
+    }
+    return sdfp;
+}

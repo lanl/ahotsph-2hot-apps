@@ -62,6 +62,19 @@ typedef struct {
     float min_nbr_dt;
 } SPHbody;
 
+typedef struct {
+#ifdef POS_IS_DOUBLE
+    double pos[NDIM];
+#else
+    float pos[NDIM];
+#endif
+    float vel[NDIM];
+    float rhowind;
+    float vwind;
+    float uwind;
+    unsigned int ident;
+} windbody;
+
 typedef struct {		/* don't need all of this info */
     float grav_acc[NDIM];
     float phi;
@@ -232,6 +245,8 @@ void *InitRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 void DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp, 
 		     SPHbody **SPHbtabp, int *SPHgnobjp, int *SPHnobjp, 
 		     int periodic);
+void *WindRead(char *name, void *csdfp, windbody **btabp, int *gnobjp, 
+	       int *nobjp);
 
 /* In sphplus.c */
 void GravPlusSPH(void **btab, int *nobj, SPHbody *SPHbtab, int SPHnobj);
