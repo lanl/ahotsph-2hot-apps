@@ -236,10 +236,6 @@ DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 		      "vx", offsetof(body, vel[0]), &vxconf,
 		      "vy", offsetof(body, vel[1]), &vyconf,
 		      "vz", offsetof(body, vel[2]), &vzconf,
-		      "lx", offsetof(body, l[0]), &lxconf,
-		      "ly", offsetof(body, l[1]), &lyconf,
-		      "lz", offsetof(body, l[2]), &lzconf,
-                      "accmass", offsetof(body, accmass), &accmassconf,
 		      "ident", offsetof(body, ident), &identconf,
 		      NULL);
     nobj = *nobjp;

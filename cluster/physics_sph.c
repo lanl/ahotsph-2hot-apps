@@ -68,6 +68,7 @@ void SPHFixNterms(SPHbody *btab, int nobj){
     int i;
     for(i=0; i<nobj; i++){
 	btab[i].nterms = 1;
+	btab[i].grav_nterms = 1;
     }
 }
 

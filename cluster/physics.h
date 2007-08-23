@@ -31,8 +31,6 @@ typedef struct {
     unsigned int ident;
     float nterms;
     float pos_last[NDIM];	/* position of body */
-    float l[NDIM];           /* accreted angular momentum */
-    float accmass;              /* accreted mass */
 } body, *bodyptr;
 
 /* When we send a body from node to node, how much must we send??? */
@@ -46,8 +44,6 @@ typedef struct {
     float acc[NDIM];
     float phi;
 #endif
-    float l[NDIM];           /* accreted angular momentum */
-    float accmass;              /* accreted mass */
     unsigned int ident;		/* unique? identifier */
 } outbody, *outbodyptr;
 
@@ -62,8 +58,6 @@ typedef struct {
     float vx, vy, vz;		/* velocity of body */\n\
     float ax, ay, az;		/* acceleration */\n\
     float phi;			/* potential */\n\
-    float lx, ly, lz;           /* accreted ang momentum */\n\
-    float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
 #else
@@ -75,8 +69,6 @@ typedef struct {
     float vx, vy;		/* velocity of body */\n\
     float ax, ay;		/* acceleration */\n\
     float phi;			/* potential */\n\
-    float lx, ly;           /* accreted ang momentum */\n\
-    float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
 #else
@@ -90,8 +82,6 @@ typedef struct {
     float mass;			/* mass of body */\n\
     float x, y, z;			/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
-    float lx, ly, lz;           /* accreted ang momentum */\n\
-    float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
 #else
@@ -101,8 +91,6 @@ typedef struct {
     float mass;			/* mass of body */\n\
     float x, y;			/* position of body */\n\
     float vx, vy;		/* velocity of body */\n\
-    float lx, ly;           /* accreted ang momentum */\n\
-    float accmass;              /* accreted mass */\n\
     unsigned int ident;		/* unique? identifier */\n\
 }"
 #else

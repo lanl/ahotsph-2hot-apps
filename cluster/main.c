@@ -49,6 +49,7 @@ struct cosmo_s{
     float Omega0;
     float Lambda;
     float GNewt;
+    float b;  /* Cluster core radius for Plummer model */
     float Zel_f;		/* the 'f' factor for linearly growing modes,
 				 used only in set_vel = 1/H*Ddot/D.  It's
 				 very close to 1 (exactly?) for flat models. */
@@ -80,10 +81,8 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 /*  static float IdtSPHGetCost(const SPHbody *ptr); */
 
 /* In shrink.c */
-/*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
-/* void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit); */
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-		int windnobj, int windpartpershell, float r_limit, float dt, 
+		int windnobj, int windpartpershell, float dt, 
 		int iter, float tpos, int *added_particles);
 void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, float r_limit, float dt, int iter, float tpos,
@@ -292,17 +291,13 @@ main(int argc, char *argv[])
 		}
 
 		if (do_point_mass) {
+		    /* This doesn't really work anymore */
 		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
 		    if (do_restart) sprintf(iname, "%s.restart", name);
 		    else SDFgetstring(csdfp, "datafile", iname, sizeof(iname));
 		    sdfp = DarkRead(iname, csdfp, (void **)&pmtab, &PMgnobj, 
 				    &PMnobj, set_id, setpvel);
-		    Msgf(("lx = %e; ly = %e; lz = %e; accmass = %e\n", 
-			  pmtab->l[0], pmtab->l[1], pmtab->l[2], 
-			  pmtab->accmass));
 		} else if (do_point_mass2) {
-		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
-		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
 /*  		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname)); */
@@ -318,6 +313,8 @@ main(int argc, char *argv[])
 				    &windnobj);
 		    SDFgetintOrDie(csdfp, "windpart_per_shell", 
 				   &windpartpershell);
+		    SDFgetfloatOrDie(csdfp, "core_radius", &cosmo.b);
+		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
 		} else windgnobj = windnobj = 0;
 
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
@@ -458,6 +455,10 @@ main(int argc, char *argv[])
         singlPrintf("float r_inner = %f;\n", r_inner);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
     }
+    if (do_winds) {
+	singlPrintf("float centmass = %f;\n", centmass);
+	singlPrintf("float core_radius = %f;\n", cosmo.b);
+    }
     singlPrintf("int do_diffusion = %d;\n", do_diffusion);
     if( do_output ){
 	singlPrintf("Output to %s.nnnn, every %d steps\n", 
@@ -518,7 +519,6 @@ main(int argc, char *argv[])
 	VS(q->acc, = 0.0);
 	VS(q->acc_last, = 0.0);
 	VS(q->grav_acc, = 0.0);
-	q->phi = 0.0;
     }
 
     for (nsteps += iter; iter <= nsteps; iter++) {
@@ -529,12 +529,18 @@ main(int argc, char *argv[])
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
 
+	if (do_point_mass2) {
+	    for(q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
+		/* Even if grav isn't on, I still want to zero phi at the
+		   beginning of each iteration */
+		q->phi = 0.0;
+	    }
+	}
+
 	if (do_point_mass || do_point_mass2) {
 	  SPHoldnobj = SPHnobj;
-/*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
-/*   	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);  */
  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
-		     windnobj, windpartpershell, r_inner, dt_last, iter, tpos, 
+		     windnobj, windpartpershell, dt_last, iter, tpos, 
 		     &added_particles);
 /*  	  AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab,  */
 /* 		      windnobj, r_inner, dt_last, iter, tpos,  */
@@ -873,8 +879,8 @@ main(int argc, char *argv[])
 	}
 
 	if (do_point_mass2) {
-	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
-				  centmass);
+	    update_point_SPHmass3(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
+				  centmass, cosmo.b);
 	}
 
 	MPMY_Sync();
@@ -1830,10 +1836,6 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
 	VV(output_btab[i].acc, = btab[i].acc);
 	output_btab[i].phi = btab[i].phi;
 #endif
-	/* Added l and accmass; this is pretty specific to */
-	/* point masses */
-	VV(output_btab[i].l, = btab[i].l);
-	output_btab[i].accmass = btab[i].accmass;	
 	output_btab[i].ident = btab[i].ident;
     }
     Msg("output", ("Doing output of %d bodies\n", output_nobj));
