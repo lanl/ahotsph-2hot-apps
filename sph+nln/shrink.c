@@ -80,7 +80,8 @@ ShrinkBtab2 (SPHbody **SPHbtabp, int *nobj, float r_limit)
 
 void
 AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-	    int windnobj, float r_limit, float dt)
+	    int windnobj, float r_limit, float dt, int iter, float tpos,
+	    int *added_particles)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p;
@@ -102,10 +103,9 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	   keep all particles inside reasonable volume of solution */
 
 	if ( (Dot(p->pos, p->pos) >= r2)
-	     && (fabs(p->pos[0]) <= 500.0) 
-	     && (fabs(p->pos[1]) <= 500.0) 
-	     && (fabs(p->pos[2]) <= 1000.0) ) 
-	    { 
+	     && (fabs(p->pos[0]) <= 800.0) 
+	     && (fabs(p->pos[1]) <= 800.0) 
+	     && (fabs(p->pos[2]) <= 800.0) ) { 
 
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
@@ -115,9 +115,11 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 		wr = sqrt(Dot(wpos, wpos));
 
 		if (wr > r_limit + 0.8*d){ /* Particle far from source? */
+		    *added_particles = 1;  /* Indicate particle addition */
+
 		    id = q->windid;
-		    q->windid += windnobj;  /* Turn off particle addition for
-					      recently pushed particle */
+		    q->windid += windnobj;  /* Turn off addition for
+					       recently pushed particle */
 		    q = StkPush(&s, sizeof(SPHbody));
 
 		    /* Be aware that some quantities not set here are set
@@ -135,6 +137,7 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 		    q->u = windbtab[id].uwind;
 		    q->udot = 0.0;
+		    q->udot_last = 0.0;  /* Just in case */
 		    q->pr = 0.0;  /* Fixed in update_intermediate */
 
 		    VS(q->acc, = 0.0);
@@ -157,12 +160,17 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 		    q->windid = id;
 		    q->ident = 0;  /* Fix in subsequent call to SPHFixId */
 
-		    Msgf(("p->pos: %f %f %f; windid: %d; u: %e\n", q->pos[0], 
-			  q->pos[1], q->pos[2], q->windid, q->u));
+/* 		    Msgf(("p->pos: %f %f %f; windid: %d; u: %e\n",  */
+/* 			  q->pos[0], q->pos[1], q->pos[2], q->windid,  */
+/* 			  q->u)); */
 		}
 	    }
-	} 
-	/* Else track accreted/ejected material */
+	}
+	/* Else track accreted/ejected material; do this right sometime */
+	else {
+	    Msgf(("%d: %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %.10e %u\n", iter, tpos, p->pos[0], p->pos[1], p->pos[2], p->vel[0], p->vel[1], p->vel[2], p->mass, p->rho, p->u, p->h, p->windid));
+	}
+
     }
 
     Free(btab);

@@ -83,7 +83,8 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 /*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
 /* void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit); */
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-		int windnobj, float r_limit, float dt);
+		int windnobj, float r_limit, float dt, int iter, float tpos,
+		int *added_particles);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -513,15 +514,13 @@ main(int argc, char *argv[])
 /*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
 /*   	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);  */
  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
-		     windnobj, r_inner, dt_last);
+		     windnobj, r_inner, dt_last, iter, tpos, 
+		     &added_particles);
 
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
 	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter, 
 		SPHnobj-SPHoldnobj));
 	  SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
-
-	  /* Could fail even with added/removed particles... */
-	  if (SPHnobj-SPHoldnobj != 0) added_particles = 1;
 	}
 
 	/* comoving smoothing */
@@ -2131,12 +2130,12 @@ Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad,
 	dtshortvote = 0;
 	dtlongvote++;
     }
-    if (tbad < tlow_cut/10) {
+    if (tbad < tlow_cut/10 || tbad == 0) {  /* Integer division, buddy */
 	dtlongvote++;
     } else if (tbad > tlow_cut/2) {
 	dtlongvote--;
     }
-    if (tbad > tlow_cut /* || limit_high > 0 || limit_low > 0  */ ) {
+    if (tbad >= tlow_cut || limit_high > 0 || limit_low > 0 ) {
 	dtlongvote = 0;
 	dtshortvote++;
     }
