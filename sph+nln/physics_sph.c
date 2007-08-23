@@ -59,6 +59,9 @@ void SPHFixId(SPHbody *btab, int nobj, int gnobj){
 	else
 	    btab[i].ident = 2*start+i;
     }
+/*     for(i=0; i<nobj; i++) { */
+/* 	btab[i].ident = start + i; */
+/*     } */
 }
 
 void SPHFixNterms(SPHbody *btab, int nobj){

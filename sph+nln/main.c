@@ -85,6 +85,9 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, float r_limit, float dt, int iter, float tpos,
 		int *added_particles);
+void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
+		int windnobj, float r_limit, float dt, int iter, float tpos,
+		int *added_particles, float *newmass);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -114,6 +117,7 @@ static float this_tol, this_eps;
 static float frac_tol;
 static float Gamma;		/* lowercase is a math.h function */
 static int default_nterms;
+static float centmass;
 
 static double gnterms;
 static float courant_number;
@@ -209,6 +213,7 @@ main(int argc, char *argv[])
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
     int do_point_mass, do_point_mass2;
+    float newmass = 0.0, totnewmass = 0.0;
     int exact_rho;
     float visc_alpha, visc_beta, visc_epsilon, heat_f1;
     int nbrcut_max, nbrcut_min;
@@ -294,6 +299,7 @@ main(int argc, char *argv[])
 			  pmtab->accmass));
 		} else if (do_point_mass2) {
 		    SDFgetfloatOrDefault(csdfp, "r_inner", &r_inner, 0.05);
+		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
 /*  		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname)); */
@@ -339,8 +345,8 @@ main(int argc, char *argv[])
 	malloc_print();
     }
 
+    SDFgetfloatOrDefault(csdfp, "epsilon", &eps, 0.0);
     if (do_grav) {
-	SDFgetfloatOrDie(csdfp, "epsilon", &eps);
 	SDFgetintOrDefault(csdfp, "do_DL", &do_DL, 0);
 	SDFgetintOrDefault(csdfp, "do_BH", &do_BH, 0);
 	SDFgetintOrDefault(csdfp, "do_Bmax", &do_Bmax, 0);
@@ -501,6 +507,14 @@ main(int argc, char *argv[])
     this_eps = eps;
     this_tol = tol;
 
+    /* Testing initialization */
+    for (q = SPHbtab; q < SPHbtab+nobj; q++) {
+	VS(q->acc, = 0.0);
+	VS(q->acc_last, = 0.0);
+	VS(q->grav_acc, = 0.0);
+	q->phi = 0.0;
+    }
+
     for (nsteps += iter; iter <= nsteps; iter++) {
 	if (timeout > 0) MPMY_TimeoutReset(timeout);
 	/* Reset timers and counters */
@@ -516,10 +530,15 @@ main(int argc, char *argv[])
  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
 		     windnobj, r_inner, dt_last, iter, tpos, 
 		     &added_particles);
+/*  	  AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab,  */
+/* 		      windnobj, r_inner, dt_last, iter, tpos,  */
+/* 		      &added_particles, &newmass); */
 
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
-	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter, 
-		SPHnobj-SPHoldnobj));
+/* 	  MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM); */
+/* 	  centmass += totnewmass; */
+	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\nBH mass = %f\n", iter, 
+		SPHnobj-SPHoldnobj, centmass));
 	  SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
 	}
 
@@ -848,7 +867,8 @@ main(int argc, char *argv[])
 	}
 
 	if (do_point_mass2) {
-	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt);
+	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
+				  centmass);
 	}
 
 	MPMY_Sync();
@@ -1650,6 +1670,7 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
 		"hubble", SDF_FLOAT, output_h,
 		"redshift", SDF_FLOAT, output_z,
 		"gamma", SDF_FLOAT, Gamma,
+		 "centmass", SDF_FLOAT, centmass, 
 		"ke", SDF_DOUBLE, ke,
 		"pe", SDF_DOUBLE, pe,
 		"te", SDF_DOUBLE, te,
@@ -1754,6 +1775,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "hubble", SDF_FLOAT, output_h,
 	     "redshift", SDF_FLOAT, output_z,
 	     "gamma", SDF_FLOAT, Gamma,
+	     "centmass", SDF_FLOAT, centmass, 
 	     "ke", SDF_DOUBLE, ke,
 	     "pe", SDF_DOUBLE, pe,
 	     "te", SDF_DOUBLE, te,

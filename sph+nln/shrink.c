@@ -179,3 +179,38 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
     btab = StkBase(&s);
     *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
 }
+
+
+void
+AdjustBtab2 (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
+	    int windnobj, float r_limit, float dt, int iter, float tpos,
+	    int *added_particles, float *newmass)
+{
+    SPHbody *btab = *SPHbtabp;
+    SPHbody *p;
+    Stk s;
+    SPHbody *q;
+    float r2 = r_limit*r_limit;
+
+    StkInitEz(&s);
+
+    for (*newmass = 0.0, p = btab; p < btab+*nobj; p++) {
+	/* Keep all particles outside of BH at origin, and
+	   keep all particles inside reasonable volume of solution */
+
+	if (Dot(p->pos, p->pos) >= r2) {
+	    q = StkPush(&s, sizeof(SPHbody));
+	    *q = *p;
+	}
+	/* Else add accreted material */
+	else {
+	    *newmass += p->mass;
+	}
+    }
+
+    Free(btab);
+    StkCrunch(&s);
+    *nobj = StkSz(&s)/sizeof(SPHbody);
+    btab = StkBase(&s);
+    *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
+}
