@@ -1,7 +1,7 @@
 defaultCC:=gcc
 
-CC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -ffast-math -malign-double -march=pentium4 -D_FILE_OFFSET_BITS=64
+CC_SPECIFIC:=-g -Wall
+ARCH_SPECIFIC:=-D__iX86__=686 -ffloat-store -ffast-math -malign-double -march=pentium4
 OPTIMIZE=-O2
 override AGGRESSIVE_OPT=-O3
 LEX:=flex

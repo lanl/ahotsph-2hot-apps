@@ -1,7 +1,7 @@
-defaultCC:=cc
+defaultCC:=gcc
 
-CC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -malign-double
+CC_SPECIFIC:=-g -Wall -ffast-math
+ARCH_SPECIFIC:=-D__iX86__=686 -malign-double -ffloat-store 
 LEX:=flex
 YACC:=bison -y
 RANLIB:=ranlib

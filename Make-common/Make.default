@@ -9,7 +9,7 @@ defaultPAROS:=seq
 endif
 
 ifndef defaultCC
-defaultCC:=cc
+defaultCC:=gcc
 endif
 
 ifndef defaultFC
@@ -33,10 +33,10 @@ ifneq ($(defaultCC),$(CC))
 override ARCH:=$(ARCH)-$(CC)
 endif
 
-ifeq ($(CC),cc)
-OPTIMIZE:=-O2
-CC_SPECIFIC:=$(CC_SPECIFIC) -g -Wall -ffloat-store -ffast-math
-endif
+#ifeq ($(CC),gcc)
+# OPTIMIZE:=
+#CC_SPECIFIC:=$(CC_SPECIFIC) -g -Wall -ffloat-store -ffast-math
+#endif
 
 ifeq ($(FC),g77)
 # OPTIMIZE:=

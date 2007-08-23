@@ -68,6 +68,8 @@ extern size_t ChnUnitSz(Chn *id);
 #undef INLINE
 #if defined (__GNUC__) && !defined (CHNdotC)
 #define INLINE extern __inline__
+#elif defined (__ICC__) && !defined (CHNdotC)
+#define INLINE extern __inline
 #else
 #define INLINE
 #endif

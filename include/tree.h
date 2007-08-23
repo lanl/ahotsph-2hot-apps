@@ -181,6 +181,8 @@ int WalkFlushFreq(int flush_freq);
 #undef INLINE
 #if defined (__GNUC__) && !defined (TREEdotC)
 #define INLINE extern __inline__
+#elif defined (__ICC__) && !defined (TREEdotC)
+#define INLINE extern __inline
 #else
 #define INLINE
 #endif

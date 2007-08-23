@@ -43,6 +43,8 @@ extern const float HeapInf;
 #undef INLINE
 #if defined (__GNUC__) && !defined (HEAPdotC)
 #define INLINE extern __inline__
+#elif defined (__ICC__) && !defined (HEAPdotC)
+#define INLINE extern __inline
 #else
 #define INLINE
 #endif

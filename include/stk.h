@@ -116,6 +116,8 @@ extern void StkGrow(Stk *s, int nbytes);
 #undef INLINE
 #if defined (__GNUC__) && !defined (STKdotC)
 #define INLINE extern __inline__
+#elif defined (__ICC__) && !defined (STKdotC)
+#define INLINE extern __inline
 #else
 #define INLINE
 #endif

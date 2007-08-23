@@ -81,6 +81,8 @@ extern int KeyContained(Key_t outer, Key_t key, int ndim);
 
 #if defined (__GNUC__) && !defined (KEYdotC)
 #define INLINE extern __inline__
+#elif defined (__ICC__) && !defined (KEYdotC)
+#define INLINE extern __inline
 #else
 #define INLINE
 #endif

@@ -13,6 +13,8 @@ static float recip3o2_8bit(float) __attribute__ ((const));
 static const float recip3o2f(float);
 static const float  recip3o2_8bit(float);
 #endif /* __GNUC__ >= 2.5 */
+#elif defined(__ICC__)
+#define INLINE __inline
 #else /* __GNUC__ */
 #define INLINE
 #endif /* __GNUC__ */
