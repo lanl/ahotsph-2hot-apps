@@ -455,6 +455,7 @@ main(int argc, char *argv[])
     if (do_point_mass || do_point_mass2) {
         singlPrintf("float r_inner = %f;\n", r_inner);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
+	singlPrintf("float centmass = %e;\n", centmass);
     }
     if( do_output ){
 	singlPrintf("Output to %s.nnnn, every %d steps\n", 
@@ -525,6 +526,14 @@ main(int argc, char *argv[])
 	ClearEnabledCounters();
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
+
+	if (do_point_mass2) {
+	    for(q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
+		/* Even if grav isn't on, I still want to zero phi at the
+		   beginning of each iteration */
+		q->phi = 0.0;
+	    }
+	}
 
 	if (do_point_mass || do_point_mass2) {
 	  SPHoldnobj = SPHnobj;
