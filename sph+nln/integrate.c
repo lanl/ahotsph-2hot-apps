@@ -303,7 +303,7 @@ PUpdateVsd(float *v, int vstride, double *x, int xstride,
 	   double *xlast, int xlast_stride, float *xddot, int xddot_stride,
 	   unsigned int *select, int select_stride, int n, float dt, float h)
 {
-    float *end = v + n * xstride;
+    float *end = v + n * vstride;
     float tmp[NDIM];
     float h_2dt = (float)0.5*h+dt;
     float oneoh = 1.0 / h;
