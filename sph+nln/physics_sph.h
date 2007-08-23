@@ -62,6 +62,9 @@ typedef struct {
     float min_nbr_dt;
 } SPHbody;
 
+
+/* windbody and WINDOUTBODYDESC need to be padded to a double boundary for
+   correct alignment in memory and on disk */
 typedef struct {
 #ifdef POS_IS_DOUBLE
     double pos[NDIM];
@@ -73,6 +76,7 @@ typedef struct {
     float vwind;
     float uwind;
     unsigned int ident;
+    int dummy;
 } windbody;
 
 typedef struct {		/* don't need all of this info */
@@ -145,6 +149,17 @@ typedef struct {
     unsigned int ident;		/* unique identifier */\n\
 }"
 #endif /* SPH_SAVE_ACC */
+
+#define WINDOUTBODYDESC \
+"struct {\n\
+	double xwind, ywind, zwind;\n\
+	float vxwind, vywind, vzwind;\n\
+	float rhowind;\n\
+	float vwind;\n\
+	float uwind;\n\
+	unsigned int identwind;\n\
+        int dummy;\n\
+}"
 
 typedef struct {
     float mass;

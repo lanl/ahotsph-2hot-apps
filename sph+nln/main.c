@@ -61,6 +61,8 @@ static void SPHSanityCheck(SPHbody *btab, int nobj, int gnobj, double *mtotp);
 static void set_vels(body *p, int n, float real_time);
 static void Output(body *btab, int nobj, const char *outname, int iter);
 static void SPHOutput(SPHbody *btab, int nobj, const char *outname, int iter);
+static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab, 
+		       int windnobj, const char *outname, int iter);
 static SDF *startup(int argc, char **argv);
 static void Periodic(tree_t *tp, float size);
 static void PeriodicSPH(tree_t *tp, float size, float vsize);
@@ -302,7 +304,6 @@ main(int argc, char *argv[])
 		}
 
 		if (do_winds) {
-		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname));
 		    sdfp = WindRead(iname, csdfp, &windbtab, &windgnobj, 
 				    &windnobj);
 		} else windgnobj = windnobj = 0;
@@ -853,7 +854,11 @@ main(int argc, char *argv[])
 	    || (do_output && !first_step
 		&& ((iter+output_freq) % output_freq == 0))
 	    || (save_first && first_step)) {
-	    if (do_sph) SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
+	    if (do_sph) {
+		if (do_winds) WindOutput(SPHbtab, SPHnobj, windbtab, 
+					 windnobj, outnamebase, iter);
+		else SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
+	    }
 	    if (has_grav_data) Output(btab, nobj, outnamebase, iter);
 	    if (do_point_mass) Output(pmtab, PMnobj, outnamebase, iter);
 	}
@@ -1549,6 +1554,114 @@ static void CosmoPush(struct cosmo_s *p, float time){
     Msgf(("After push Z=%g\n", 1./p->a - 1.));
     p->t = time;
 }
+
+
+/* Write out nobj SPH particles; only one node should write wind particles */
+static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab, 
+		       int windnobj, const char *outnamebase, int iter)
+{
+    SPHbody *p;
+    int i;
+    sortresult_t outputsort;
+    SPHoutbody *output_btab;
+    int output_nobj = nobj;
+    float tpos_out = tpos;
+    float tvel_out = tvel; /* changed in Integrate() */
+    double ke, pe, te;
+    MPMY_Comm_request req;
+    int output_gnobj;
+    float output_z, output_h, output_R0;
+    char outname[256];
+
+    sprintf(outname, "%s_sph.%04d", outnamebase, iter);
+    pe = ke = te = 0.0;
+    for (p = btab; p < btab+nobj; p++) {
+	ke += (float)0.5 * p->mass * Dot(p->vel, p->vel);
+	te += p->mass * p->u;
+	pe += (float)0.5 * p->mass * p->phi;
+    }
+    output_btab = Malloc(output_nobj * sizeof(SPHoutbody));
+    for(i=0; i<output_nobj; i++){
+	output_btab[i].mass = btab[i].mass;
+	VV(output_btab[i].pos, = btab[i].pos);
+	VV(output_btab[i].vel, = btab[i].vel);
+	output_btab[i].u = btab[i].u;
+	output_btab[i].h = btab[i].h;
+	output_btab[i].rho = btab[i].rho;
+/*  	output_btab[i].drho_dt = btab[i].drho_dt; */
+	output_btab[i].udot = btab[i].udot;
+#ifdef SPH_SAVE_ACC
+	VV(output_btab[i].acc, = btab[i].acc);
+	VV(output_btab[i].acc_last, = btab[i].acc_last);
+	output_btab[i].phi = btab[i].phi;
+	output_btab[i].dt = btab[i].dt;
+#endif
+ 	output_btab[i].nbrs = btab[i].nbrs;
+	output_btab[i].ident = btab[i].ident;
+    }
+/*     Msg("output", ("Doing output of %d bodies\n", output_nobj)); */
+    Msgf(("Doing output of %d bodies\n", output_nobj));
+    singlPrintf("Trying to sort output\n");
+    pqsortsetup_order(&outputsort, output_btab, output_nobj,
+		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
+    output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
+    output_nobj = outputsort.nobj;
+/*     Msg("output", ("After pqsort, %d outbodies\n", output_nobj)); */
+    Msgf(("After pqsort, %d outbodies\n", output_nobj));
+    MPMY_ICombine_Init(&req);
+    MPMY_ICombine(&ke, &ke, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&pe, &pe, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&te, &te, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&output_nobj, &output_gnobj, 1, MPMY_INT, MPMY_SUM, req);
+    MPMY_ICombine_Wait(req);
+    if (cosmology) {
+	output_z = Znow(tpos_out);
+	output_h = Hnow(tpos_out);
+	output_R0 = R0;
+    } else {
+	output_z = 0.0;
+	output_h = 0.0;
+	output_R0 = sysradius;
+    }
+    SDFwritewind(outname, output_gnobj, output_nobj, 
+		 output_btab, windnobj, windbtab, sizeof(SPHoutbody), 
+		 sizeof(windbody), WINDOUTBODYDESC, SPHOUTBODYDESC, 
+		"npart", SDF_INT, output_gnobj,
+		"iter", SDF_INT, iter,
+		"dt", SDF_FLOAT, dt,
+		"eps", SDF_FLOAT, this_eps,
+		"Gnewt", SDF_FLOAT, cosmo.GNewt,
+		"tolerance", SDF_FLOAT, this_tol,
+		"frac_tolerance", SDF_FLOAT, frac_tol,
+		"iter", SDF_INT, iter,
+		"ndim", SDF_INT, NDIM,
+		"tpos", SDF_FLOAT, tpos_out,
+		"tvel", SDF_FLOAT, tvel_out,
+		"R0", SDF_FLOAT, output_R0,
+		"Omega0", SDF_FLOAT, cosmo.Omega0,
+		"H0", SDF_FLOAT, cosmo.H0,
+		"Lambda_prime", SDF_FLOAT, cosmo.Lambda,
+		"hubble", SDF_FLOAT, output_h,
+		"redshift", SDF_FLOAT, output_z,
+		"gamma", SDF_FLOAT, Gamma,
+		"ke", SDF_DOUBLE, ke,
+		"pe", SDF_DOUBLE, pe,
+		"te", SDF_DOUBLE, te,
+		NULL);
+    Free(output_btab);
+    singlPrintf("\nOutput done.\n");
+#ifndef __DELTA__
+    if (MPMY_Procnum() == 0) {
+	char name[256];
+	sprintf(name, "%s_sph.restart", outnamebase);
+	if (unlink(name))
+	  Shout("unlink of %s failed, errno=%d\n", name, errno);
+	if (symlink(outname, name))
+	  Shout("symlink of %s failed, errno=%d\n", outname, errno);
+    }
+#endif
+}
+
 
 static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter)
 {
