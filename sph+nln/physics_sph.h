@@ -77,13 +77,17 @@ typedef struct {		/* don't need all of this info */
 /* If you add anything to the outbody structure, make sure to add an */
 /* assignment to the Output routine */
 typedef struct {
-    float mass;			/* mass of body */
+#ifdef POS_IS_DOUBLE
+    double pos[NDIM];		/* position of body */
+#else
     float pos[NDIM];		/* position of body */
+#endif
+    float mass;			/* mass of body */
     float vel[NDIM];		/* velocity of body */
     float u;
     float h;
     float rho;
-    float drho_dt;
+/*      float drho_dt; */
     float udot;
 #ifdef SPH_SAVE_ACC
     float acc[NDIM];
@@ -100,13 +104,12 @@ typedef struct {
 #ifdef SPH_SAVE_ACC
 #define SPHOUTBODYDESC \
 "struct {\n\
+    double x, y, z;		/* position of body */\n\
     float mass;			/* mass of body */\n\
-    float x, y, z;			/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
     float rho;			/* density */\n\
-    float drho_dt;		/* time derivative of density */\n\
     float udot;			/* time derivative of u */\n\
     float ax, ay, az;		/* acceleration */\n\
     float lax, lay, laz;	/* acceleration at tpos-dt */\n\
@@ -118,13 +121,12 @@ typedef struct {
 #else
 #define SPHOUTBODYDESC \
 "struct {\n\
+    double x, y, z;		/* position of body */\n\
     float mass;			/* mass of body */\n\
-    float x, y, z;		/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
     float rho;			/* density */\n\
-    float drho_dt;		/* time derivative of density */\n\
     float udot;			/* time derivative of u */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
