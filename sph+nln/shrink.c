@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <strings.h>
 #include <math.h>
+#include "fastflpt.h"
 #include "Msgs.h"
 #include "physics.h"
 #include "physics_sph.h"

@@ -16,14 +16,14 @@
 
 Counter_t SPHCnt, SPHrej, nbrMACCnt;
 
-static float dvtable;
-static float invdvtable;
+static float dvtable; /* == 0.0001 ... */
+static float invdvtable; /* == 10000.0 ... */
 static float cnormk;
 static float wij[MAX_INDEX];
 static float grwij[MAX_INDEX];
 static float fmass[MAX_INDEX];
 static float fpoten[MAX_INDEX];
-static float Gamma = (float)(5.0/3.0);
+static float Gamma = (float)(4.0/3.0);  /* Yikes; remember this */
 static float alpha = (float)1.0;
 static float beta = (float)2.5;
 static float epsil = (float)1e-2;
@@ -185,7 +185,7 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	}
 
 	VxVx(r, -= pos_sink);	/* 8 flops */
-	dr2 = Dotx(r, r);
+	dr2 = Dotx(r, r); /* == 400.0000000032623 */
 
 	if ((rij = sqrtf_fast(dr2)) > extent_src + extent_sink
 	    || dr2 == (float)0.0) {
@@ -195,7 +195,7 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	}
 
 	hmean11 = (float)2.0 / (h + bp->h);
-	hmean21 = hmean11 * hmean11;
+	hmean21 = hmean11 * hmean11; /* == 0.01 */
 	    
 	v2 = dr2 * hmean21;
 	index = v2 * invdvtable;
@@ -203,7 +203,7 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	dxx = v2 - index * dvtable;
 	dwdx = (wij[index+1] - wij[index]) * invdvtable;
 	wtij = (wij[index] + dwdx * dxx ) * hmean21 * hmean11;
-	if (wtij < (float)0.0) Error("Negative wtij = %g\n", wtij);
+	if (wtij < (float)0.0) Error("Negative wtij (macRho) = %g\n", wtij);
 	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
 	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
 
@@ -310,7 +310,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	dxx = vv2 - index * dvtable;
 	dwdx = (wij[index+1] - wij[index]) * invdvtable;
 	wtij = (wij[index] + dwdx * dxx) * hmean21 * hmean11;
-	if (wtij < (float)0.0) Error("Negative wtij = %g\n", wtij);
+	if (wtij < (float)0.0) Error("Negative wtij (macSPH) = %g\n", wtij);
 	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
 	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
 
@@ -461,7 +461,10 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	    ++*limit_low;
 	}
 	p->udot += p->drho_dt * p->pr / (p->rho * p->rho);
-	if (!finite(p->udot)) Error("Bad value for udot\n");
+
+	if (!finite(p->udot)) 
+	    Error("Bad value for udot\n");
+
 	if (p->udot * dt > p->u) {
 	    p->udot = p->u/dt;
 	    ++*limit_high;

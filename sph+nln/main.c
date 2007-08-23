@@ -253,23 +253,27 @@ main(int argc, char *argv[])
 	if (!((strncmp(name, "test", 4) == 0))) {
 	    if (SDFhasname("SPHdatafile", csdfp) || do_restart) {
 		char iname[256];
+
 		if (do_sph) {
 		    SDFgetfloatOrDefault(csdfp, "new_h", &new_h, 0.0);
 		    SDFgetfloatOrDefault(csdfp, "new_u", &new_u, 0.0);
 		    if (do_restart) sprintf(iname, "%s_sph.restart", name);
-		    else SDFgetstring(csdfp, "SPHdatafile", iname, sizeof(iname));
+		    else SDFgetstring(csdfp, "SPHdatafile", iname, 
+				      sizeof(iname));
 		    sdfp = SPHRead(iname, csdfp, &SPHbtab, &SPHgnobj, &SPHnobj,
 				   set_id, setpvel, new_h, new_u);
 		} else SPHgnobj = SPHnobj = 0;
+
 		if (has_grav_data) {
 		    if (do_restart) sprintf(iname, "%s.restart", name);
 		    else SDFgetstring(csdfp, "datafile", iname, sizeof(iname));
-		    sdfp = DarkRead(iname, csdfp, (void **)&btab, &gnobj, &nobj,
-				    set_id, setpvel);
+		    sdfp = DarkRead(iname, csdfp, (void **)&btab, &gnobj, 
+				    &nobj, set_id, setpvel);
 		} else {
 		    gnobj = nobj = 0;
 		    btab = Malloc(sizeof(body)); /* realloced later */
 		}
+
 		if (do_point_mass) {
 		    SDFgetfloatOrDefault(csdfp, "r_inner", &r_inner, 0.05);
 		    if (do_restart) sprintf(iname, "%s.restart", name);
@@ -284,8 +288,8 @@ main(int argc, char *argv[])
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
 /*  		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname)); */
-/*  		    sdfp = SPHRead(iname, csdfp, &SPHwind, &windnobj,&windnobj, */
-/*  				   set_id, setpvel, new_h, new_u); */
+/*   		    sdfp = SPHRead(iname, csdfp, &SPHwind, &windnobj, */
+/* 				   &windnobj, set_id, setpvel, new_h,new_u); */
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
@@ -892,8 +896,9 @@ main(int argc, char *argv[])
 	PUpdateX(btab[0].pos, stride, btab[0].pos_last, stride,
 		 btab[0].acc, stride, nobj, dt, dt_last);
 
-	PUpdateV(pmtab[0].vel, stride, pmtab[0].pos, stride, pmtab[0].pos_last, 
-		 stride, pmtab[0].acc, stride, PMnobj, dt, dt_last);
+	PUpdateV(pmtab[0].vel, stride, pmtab[0].pos, stride, 
+		 pmtab[0].pos_last, stride, pmtab[0].acc, stride, PMnobj, 
+		 dt, dt_last);
 	PUpdateX(pmtab[0].pos, stride, pmtab[0].pos_last, stride,
 		 pmtab[0].acc, stride, PMnobj, dt, dt_last);
 
@@ -1553,16 +1558,18 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	output_btab[i].phi = btab[i].phi;
 	output_btab[i].dt = btab[i].dt;
 #endif
-	output_btab[i].nbrs = btab[i].nbrs;
+ 	output_btab[i].nbrs = btab[i].nbrs;
 	output_btab[i].ident = btab[i].ident;
     }
-    Msg("output", ("Doing output of %d bodies\n", output_nobj));
+/*     Msg("output", ("Doing output of %d bodies\n", output_nobj)); */
+    Msgf(("Doing output of %d bodies\n", output_nobj));
     singlPrintf("Trying to sort output\n");
     pqsortsetup_order(&outputsort, output_btab, output_nobj,
 		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
-    Msg("output", ("After pqsort, %d outbodies\n", output_nobj));
+/*     Msg("output", ("After pqsort, %d outbodies\n", output_nobj)); */
+    Msgf(("After pqsort, %d outbodies\n", output_nobj));
     MPMY_ICombine_Init(&req);
     MPMY_ICombine(&ke, &ke, 1, MPMY_DOUBLE, MPMY_SUM, req);
     MPMY_ICombine(&pe, &pe, 1, MPMY_DOUBLE, MPMY_SUM, req);
@@ -1899,8 +1906,8 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 	if (p->u > max_u) max_u = p->u;
 	if (p->u < min_u) min_u = p->u;
 	if (p->u < 0.0) {
-	    SeriousWarning("Particle has negative energy\n%s\n", 
-			   PrintSPHBodyContents(p));
+	    SeriousWarning("Iter %d: particle has negative energy\n%s\n", 
+			   iter, PrintSPHBodyContents(p));
 	    p->u = 0.0;
 	}
 	rho_err = fabs(fabs(p->rho_est/p->rho) - (float)1.0);

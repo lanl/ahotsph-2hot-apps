@@ -165,17 +165,17 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     
     singlPrintf("Reading \"%s\"\n", name);
     sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
-		      "mass", offsetof(SPHbody, mass), &massconf,
-		      "x", offsetof(SPHbody, pos[0]), &xconf,
-		      "y", offsetof(SPHbody, pos[1]), &yconf,
-		      "z", offsetof(SPHbody, pos[2]), &zconf,
-		      "vx", offsetof(SPHbody, vel[0]), &vxconf,
-		      "vy", offsetof(SPHbody, vel[1]), &vyconf,
-		      "vz", offsetof(SPHbody, vel[2]), &vzconf,
-		      "u", offsetof(SPHbody, u), &uconf,
-		      "h", offsetof(SPHbody, h), &hconf,
-		      "ident", offsetof(SPHbody, ident), &identconf,
-		      NULL);
+		    "mass", offsetof(SPHbody, mass), &massconf,
+		    "x", offsetof(SPHbody, pos[0]), &xconf,
+		    "y", offsetof(SPHbody, pos[1]), &yconf,
+		    "z", offsetof(SPHbody, pos[2]), &zconf,
+		    "vx", offsetof(SPHbody, vel[0]), &vxconf,
+		    "vy", offsetof(SPHbody, vel[1]), &vyconf,
+		    "vz", offsetof(SPHbody, vel[2]), &vzconf,
+		    "u", offsetof(SPHbody, u), &uconf,
+		    "h", offsetof(SPHbody, h), &hconf,
+		    "ident", offsetof(SPHbody, ident), &identconf,
+		    NULL);
     nobj = *nobjp;
     gnobj = *gnobjp;
     btab = *btabp;

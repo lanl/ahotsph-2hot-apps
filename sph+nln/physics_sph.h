@@ -87,7 +87,7 @@ typedef struct {
     float u;
     float h;
     float rho;
-/*      float drho_dt; */
+/*     float drho_dt; */
     float udot;
 #ifdef SPH_SAVE_ACC
     float acc[NDIM];
@@ -95,7 +95,7 @@ typedef struct {
     float phi;
     float dt;
 #endif
-    unsigned int nbrs;
+    unsigned int nbrs; 
     unsigned int ident;		/* unique? identifier */
 } SPHoutbody;
 
@@ -115,7 +115,7 @@ typedef struct {
     float lax, lay, laz;	/* acceleration at tpos-dt */\n\
     float phi;			/* potential */\n\
     float idt;			/* timestep */\n\
-    unsigned int nbrs;		/* number of neighbors */\n\
+    unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
 }"
 #else
@@ -128,7 +128,7 @@ typedef struct {
     float h;			/* smoothing length */\n\
     float rho;			/* density */\n\
     float udot;			/* time derivative of u */\n\
-    unsigned int nbrs;		/* number of neighbors */\n\
+    unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
 }"
 #endif /* SPH_SAVE_ACC */
@@ -185,8 +185,8 @@ void CellCorner(Key_t key, float *corner, float *size);
 /* In physics_sph.c */
 /* There are various void * decls here, since we don't want to have body *s */
 void SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax);
-void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const SPHbody *));
-Key_t SPHGetKey(const SPHbody *p);
+void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const void *));
+Key_t SPHGetKey(const void *p);
 float SPHGetCost(const SPHbody *p);
 Key_t SPHGetKeyFromStruct(const SPHbody *p);
 void SPHFixId(SPHbody *btab, int nobj, int gnobj);
@@ -230,7 +230,8 @@ void *InitRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 	 SPHbody **SPHbtabp, int *SPHgnobjp, int *SPHnobjp, 
 	 int set_id, int setpvel, float new_h, float new_u);
 void DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp, 
-		SPHbody **SPHbtabp, int *SPHgnobjp, int *SPHnobjp, int periodic);
+		     SPHbody **SPHbtabp, int *SPHgnobjp, int *SPHnobjp, 
+		     int periodic);
 
 /* In sphplus.c */
 void GravPlusSPH(void **btab, int *nobj, SPHbody *SPHbtab, int SPHnobj);
