@@ -1,18 +1,19 @@
 # Make sure path is set to use icc/ifc 7.1
 
-defaultCC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/icc
-defaultFC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/ifc
+defaultCC:=icc
+defaultFC:=ifc
 
 CC_SPECIFIC:=-DLONG_LONG_KEYS
 FC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -march=pentium4 -mcpu=pentium4 -D__ICC__ -align -Zp8
+ARCH_SPECIFIC:=-D__iX86__=686 -march=pentium4 -mcpu=pentium4 -D__ICC__ -align -Zp8 -ip -ipo -ipo_obj -vec_report4
+# PROFILE:=-pg -prof_gen -prof_dir${HOME}/sph/profile
 
 # ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 
-override OPTIMIZE=-O3 -tpp7 -xW -ip -ipo -ipo_obj
+override OPTIMIZE=-O3 -tpp7 -xW
 override AGGRESSIVE_OPT=
-# LDFLAGS:=-O3 -tpp7 -xW
-LOADLIBES:=-lsvml
+# LDFLAGS:=
+LOADLIBES:=-L/ss1-raid/opt/intel/compiler71/compiler70/ia32/lib -lm -lsvml
 LEX:=flex
 YACC:=bison -y
 
