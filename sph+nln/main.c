@@ -327,7 +327,7 @@ main(int argc, char *argv[])
 	    }
 	    FixNterms(btab, nobj);
 	    SPHFixNterms(SPHbtab, SPHnobj);
-	    SDFgetfloatOrDefault(sdfp, "Gnewt", &cosmo.GNewt, (float)1.0);
+	    SDFgetfloatOrDie(csdfp, "Gnewt", &cosmo.GNewt);
 	    SDFgetfloatOrDefault(sdfp, "tpos",  &tpos, (float)0.0);
 	    tvel = tpos;
 	    SDFgetintOrDefault  (sdfp, "iter",  &iter, 0);
@@ -376,8 +376,8 @@ main(int argc, char *argv[])
     SDFgetfloatOrDefault(csdfp, "visc_alpha", &visc_alpha, (float)1.0);
     SDFgetfloatOrDefault(csdfp, "visc_beta", &visc_beta, (float)2.0);
     SDFgetfloatOrDefault(csdfp, "visc_epsilon", &visc_epsilon, (float)1e-2);
-    SDFgetfloatOrDefault(csdfp, "heat_f1", &heat_f1, (float)1.0);
-    SDFgetfloatOrDefault(csdfp, "gamma", &Gamma, (float)(5.0/3.0));
+    SDFgetfloatOrDefault(csdfp, "heat_f1", &heat_f1, (float)0.0);
+    SDFgetfloatOrDie(csdfp, "gamma", &Gamma);
     SDFgetfloatOrDefault(csdfp, "courant_number", &courant_number, (float)0.4);
     SDFgetfloatOrDefault(csdfp, "min_h", &min_h, (float)0.0);
     SDFgetfloatOrDefault(csdfp, "max_h", &max_h, (float)1e30);
