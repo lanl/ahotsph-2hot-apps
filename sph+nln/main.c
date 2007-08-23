@@ -80,6 +80,7 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 /* In shrink.c */
 /*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
 void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit);
+/*  void AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody *w, int nwind,float dt); */
 
 static int maxmem(void);
 static int maxheap(void);
@@ -155,6 +156,8 @@ main(int argc, char *argv[])
     body *btab, *p;
     body *pmtab;
     SPHbody *SPHbtab, *SPHsinkbtab = NULL, *q;
+/*      SPHbody *SPHwind; */ /* For wind sources */
+/*      int windnobj; */
     float eps;			/* Plummer smoothing length */
     float tol;			/* MAC tolerance */
 		/* for big MAC, this is multiplied by M/(rsize*rsize) */
@@ -280,6 +283,9 @@ main(int argc, char *argv[])
 		    SDFgetfloatOrDefault(csdfp, "r_inner", &r_inner, 0.05);
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
+/*  		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname)); */
+/*  		    sdfp = SPHRead(iname, csdfp, &SPHwind, &windnobj,&windnobj, */
+/*  				   set_id, setpvel, new_h, new_u); */
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
@@ -486,7 +492,8 @@ main(int argc, char *argv[])
 	if (do_point_mass || do_point_mass2) {
 	  SPHoldnobj = SPHnobj;
 /*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
-	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);
+  	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner); 
+/*  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHwind, windnobj, dt); */
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
 	  Msgf(("Removed %d bodies from SPHbtab\n", SPHoldnobj-SPHnobj));
 	}
