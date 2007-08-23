@@ -3,7 +3,7 @@
 defaultCC:=icc
 defaultFC:=ifc
 
-CC_SPECIFIC:=
+CC_SPECIFIC:=-DLONG_LONG_KEYS
 FC_SPECIFIC:=
 ARCH_SPECIFIC:=-D__iX86__=686 -march=pentium4 -D__ICC__ -align -Zp8
 

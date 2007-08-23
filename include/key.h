@@ -22,11 +22,16 @@
 #define _KTYPE unsigned long int
 #else
 #if defined(LONG_LONG_KEYS)
-#define NK 1
+#define NK 2
 #define _KTYPE unsigned long long int
+#define KEYBITS 94
 #else
 #define NK 2
 #define _KTYPE unsigned long int
+#if defined(__alpha)
+#define KEYBITS 94
+#endif
+
 #endif /* LONG_LONG */
 #endif /* ONE_LONG */
 
@@ -44,7 +49,9 @@ typedef struct {
 } Key_t;
 
 /* Be careful! KEYBITS is not necessarily where the "body" bit is located */
+#ifndef KEYBITS
 #define KEYBITS (CHAR_BIT*sizeof(Key_t))
+#endif
 
 #ifdef __cplusplus
 extern "C"{
@@ -77,12 +84,10 @@ extern int KeyContained(Key_t outer, Key_t key, int ndim);
 }
 #endif /* __cplusplus */
 
-#if defined(__GNUC__) || defined(KEYdotC)
+#if (defined(__GNUC__) || defined(__ICC__)) || defined(KEYdotC)
 
-#if defined (__GNUC__) && !defined (KEYdotC)
+#if (defined (__GNUC__) || defined(__ICC__)) && !defined (KEYdotC)
 #define INLINE extern __inline__
-#elif defined (__ICC__) && !defined (KEYdotC)
-#define INLINE extern __inline
 #else
 #define INLINE
 #endif
