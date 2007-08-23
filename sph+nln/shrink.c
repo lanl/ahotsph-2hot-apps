@@ -82,24 +82,24 @@ void
 AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 	    int windnobj, float r_limit, float dt)
 {
-
-    /* Edit this to remove particles that go outside the boundaries,
-       hardcoded here right now.  Also adjust to add particles at
-       location of wind source; also hardcoded. */
     SPHbody *btab = *SPHbtabp;
     SPHbody *p;
     Stk s;
     SPHbody *q;
-    int id;
+    unsigned int id;
     float r2 = r_limit*r_limit;
-    double x, y, z, r;
+    float wr, wr2;
+    double wpos[NDIM];
+
+    /* d assumes 1000 particles per wind shell - fix this */
+    float d = r_limit * 
+	sqrt( 4.0-1.0 / (pow( sin( M_PI*(1000)/(6.0*( (1000)-2)) ), 2.0 )) );
 
     StkInitEz(&s);
 
     for (p = btab; p < btab+*nobj; p++) {
 	/* Keep all particles outside of BH at origin, and
-	   keep all particles inside reasonable volume of solution
-	   Needs to be more easily adjustable... */
+	   keep all particles inside reasonable volume of solution */
 
 	if ( (Dot(p->pos, p->pos) >= r2)
 	     && (fabs(p->pos[0]) <= 200.0) 
@@ -110,13 +110,12 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
 
-	    if ( p->ident <= windnobj ) {  /* Add extra particle? */
-		x = p->pos[0];
-		y = p->pos[1];
-		z = p->pos[2]+500.0;  /* HARDCODED WIND SOURCE */
-		r = sqrt(x*x+y*y+z*z);
+	    if ( p->ident < windnobj ) {  /* Particle on inner shell? */
+		VVV(wpos, = p->pos, - windbtab[p->ident].pos);
+		wr2 = Dot(wpos, wpos);
 
-		if (r > r_limit + 1.0) {  /* Change this when h changes */
+		if (wr2 > r2 + 2.0*d) {  /* Particle far enough from source? */
+		    wr = sqrt(wr2);
 		    id = q->ident;
 		    q->ident += windnobj;  /* Turn off particle addition for
 					      recently pushed particle */
@@ -127,18 +126,15 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 		    q->mass = p->mass;
 
-		    q->pos[0] = x * r_limit / r;
-		    q->pos[1] = y * r_limit / r;
-		    q->pos[2] = z * r_limit / r;
+		    VVS(q->pos, = wpos, * r_limit / wr);
+		    VV(q->vel, = windbtab[id].vwind/r_limit*q->pos);
+		    VV(q->pos, += windbtab[id].pos);
 
-		    VV(q->vel, = 0.5711/r_limit*q->pos);  /* HARDCODED */
-		    q->pos[2] -= 500.0;  /* HARDCODED WIND SOURCE */
 		    VVV(q->pos_last, = q->pos, - dt*q->vel);
 
-		    q->h = 1.324;  /* Needs to be adjusted to match original
-				      particles */
+		    q->h = 2.2*d;
 
-		    q->u = 3.230928e-04;  /* HARDCODED WIND CONDITIONS */
+		    q->u = windbtab[id].uwind;
 		    q->pr = 0.0;  /* Fixed in update_intermediate */
 
 		    VS(q->acc, = 0.0);
