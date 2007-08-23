@@ -60,6 +60,7 @@ typedef struct {
     float tacc;
     float dt;
     float min_nbr_dt;
+    unsigned int windid;
 } SPHbody;
 
 
@@ -104,7 +105,7 @@ typedef struct {
     float u;
     float h;
     float rho;
-/*     float drho_dt; */
+    float drho_dt;
     float udot;
 #ifdef SPH_SAVE_ACC
     float acc[NDIM];
@@ -114,6 +115,7 @@ typedef struct {
 #endif
     unsigned int nbrs; 
     unsigned int ident;		/* unique? identifier */
+    unsigned int windid;
 } SPHoutbody;
 
 /* This is the descriptor that goes into the SDF header. */
@@ -127,6 +129,7 @@ typedef struct {
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
     float rho;			/* density */\n\
+    float drho_dt;              /* time derivative of rho */\n\
     float udot;			/* time derivative of u */\n\
     float ax, ay, az;		/* acceleration */\n\
     float lax, lay, laz;	/* acceleration at tpos-dt */\n\
@@ -134,6 +137,7 @@ typedef struct {
     float idt;			/* timestep */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    unsigned int windid;        /* wind id */\n\
 }"
 #else
 #define SPHOUTBODYDESC \
@@ -144,9 +148,11 @@ typedef struct {
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
     float rho;			/* density */\n\
+    float drho_dt;              /* time derivative of rho */\n\
     float udot;			/* time derivative of u */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    unsigned int windid;        /* wind id */\n\
 }"
 #endif /* SPH_SAVE_ACC */
 

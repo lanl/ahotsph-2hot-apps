@@ -517,6 +517,7 @@ main(int argc, char *argv[])
 	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
 	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter, 
 		SPHnobj-SPHoldnobj));
+	  SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
 	  if (SPHnobj-SPHoldnobj != 0) added_particles = 1;
 	}
 
@@ -914,7 +915,7 @@ main(int argc, char *argv[])
 	    for (i = 0; i < SPHnobj; i++) {
 	      /* Roundoff problems happen here if dt is small and */
 	      /* pos is large and sigle precision */
-		if (SPHbtab[i].ident == 1) {
+		if (SPHbtab[i].windid < windnobj) {
 		    SPHbtab[i].udot_last = SPHbtab[i].udot;
 		}
 	    }
@@ -1598,15 +1599,14 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
 #endif
  	output_btab[i].nbrs = btab[i].nbrs;
 	output_btab[i].ident = btab[i].ident;
+	output_btab[i].windid = btab[i].windid;
     }
-/*     Msg("output", ("Doing output of %d bodies\n", output_nobj)); */
     Msgf(("Doing output of %d bodies\n", output_nobj));
     singlPrintf("Trying to sort output\n");
     pqsortsetup_order(&outputsort, output_btab, output_nobj,
 		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
-/*     Msg("output", ("After pqsort, %d outbodies\n", output_nobj)); */
     Msgf(("After pqsort, %d outbodies\n", output_nobj));
     MPMY_ICombine_Init(&req);
     MPMY_ICombine(&ke, &ke, 1, MPMY_DOUBLE, MPMY_SUM, req);
@@ -1626,14 +1626,13 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
     SDFwritewind(outname, output_gnobj, output_nobj, 
 		 output_btab, windnobj, windbtab, sizeof(SPHoutbody), 
 		 sizeof(windbody), WINDOUTBODYDESC, SPHOUTBODYDESC, 
-		"npart", SDF_INT, output_gnobj,
+		/* "npart", SDF_INT, output_gnobj, */
 		"iter", SDF_INT, iter,
 		"dt", SDF_FLOAT, dt,
 		"eps", SDF_FLOAT, this_eps,
 		"Gnewt", SDF_FLOAT, cosmo.GNewt,
 		"tolerance", SDF_FLOAT, this_tol,
 		"frac_tolerance", SDF_FLOAT, frac_tol,
-		"iter", SDF_INT, iter,
 		"ndim", SDF_INT, NDIM,
 		"tpos", SDF_FLOAT, tpos_out,
 		"tvel", SDF_FLOAT, tvel_out,
@@ -1738,7 +1737,6 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "Gnewt", SDF_FLOAT, cosmo.GNewt,
 	     "tolerance", SDF_FLOAT, this_tol,
 	     "frac_tolerance", SDF_FLOAT, frac_tol,
-	     "iter", SDF_INT, iter,
 	     "ndim", SDF_INT, NDIM,
 	     "tpos", SDF_FLOAT, tpos_out,
 	     "tvel", SDF_FLOAT, tvel_out,

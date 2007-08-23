@@ -102,22 +102,21 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	   keep all particles inside reasonable volume of solution */
 
 	if ( (Dot(p->pos, p->pos) >= r2)
-	     && (fabs(p->pos[0]) <= 200.0) 
-	     && (fabs(p->pos[1]) <= 200.0) 
-	     && (fabs(p->pos[2]) <= 800.0) ) 
+	     && (fabs(p->pos[0]) <= 1000.0) 
+	     && (fabs(p->pos[1]) <= 1000.0) 
+	     && (fabs(p->pos[2]) <= 1000.0) ) 
 	    { 
 
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
 
-	    if ( p->ident < windnobj ) {  /* Particle on inner shell? */
-		VVV(wpos, = p->pos, - windbtab[p->ident].pos);
-		wr2 = Dot(wpos, wpos);
+	    if ( p->windid < windnobj ) {  /* Particle on inner shell? */
+		VVV(wpos, = p->pos, - windbtab[p->windid].pos);
+		wr = sqrt(Dot(wpos, wpos));
 
-		if (wr2 > r2 + 2.0*d) {  /* Particle far enough from source? */
-		    wr = sqrt(wr2);
-		    id = q->ident;
-		    q->ident += windnobj;  /* Turn off particle addition for
+		if (wr > r_limit + 0.8*d){ /* Particle far from source? */
+		    id = q->windid;
+		    q->windid += windnobj;  /* Turn off particle addition for
 					      recently pushed particle */
 		    q = StkPush(&s, sizeof(SPHbody));
 
@@ -132,9 +131,10 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 		    VVV(q->pos_last, = q->pos, - dt*q->vel);
 
-		    q->h = 2.2*d;
+		    q->h = 1.8*d;  /* Match calculation in writewind.c */
 
 		    q->u = windbtab[id].uwind;
+		    q->udot = 0.0;
 		    q->pr = 0.0;  /* Fixed in update_intermediate */
 
 		    VS(q->acc, = 0.0);
@@ -151,10 +151,11 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 		    q->u_r = 0.0;
 		    q->phi = 0.0;  /* Set this correctly? */
 
-		    q->ident = id;
+		    q->windid = id;
+		    q->ident = 0;  /* Fix in subsequent call to SPHFixId */
 
-		    Msgf(("p->pos: %f %f %f; ident: %d\n", q->pos[0], 
-			  q->pos[1], q->pos[2], q->ident));
+		    Msgf(("p->pos: %f %f %f; windid: %d; u: %e\n", q->pos[0], 
+			  q->pos[1], q->pos[2], q->windid, q->u));
 		}
 	    }
 	} 

@@ -52,9 +52,12 @@ void SPHFixId(SPHbody *btab, int nobj, int gnobj){
     int i;
 
     NobjInitial(gnobj, MPMY_Nproc(), MPMY_Procnum(), &mynobj, &start);
-    VerifyX(mynobj == nobj, Shout("mynobj=%d, nobj=%d, start=%d, gnobj=%d, nproc=%d, procnum=%d\n", mynobj, nobj, start, gnobj, MPMY_Nproc(), MPMY_Procnum()));
+/*     VerifyX(mynobj == nobj, Shout("mynobj=%d, nobj=%d, start=%d, gnobj=%d, nproc=%d, procnum=%d\n", mynobj, nobj, start, gnobj, MPMY_Nproc(), MPMY_Procnum())); */
     for(i=0; i<nobj; i++){
-	btab[i].ident = start+i;
+	if (btab[i].ident & (1 << 30))
+	    btab[i].ident = (2*start+i) | (1 << 30);
+	else
+	    btab[i].ident = 2*start+i;
     }
 }
 
