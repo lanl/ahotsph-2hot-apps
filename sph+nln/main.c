@@ -184,6 +184,7 @@ main(int argc, char *argv[])
     float sort_tol;
     int iter;
     float CWfac;
+    float SPHCWfac;
     int ntimer_detail;
     int log_time = 0;		/* if true, use dt \propto t */
     int comov_eps = 0;		/* if true, use comoving epsilon*/
@@ -361,6 +362,7 @@ main(int argc, char *argv[])
 	SDFgetfloatOrDefault(csdfp, "frac_tol", &frac_tol, 0.0);
     }
     SDFgetfloatOrDefault(csdfp, "CWfac", &CWfac, 0.0);
+    SDFgetfloatOrDefault(csdfp, "SPHCWfac", &SPHCWfac, 0.0);
     if (!do_restart) {
 	SDFgetfloatOrDie(csdfp, "dt", &dt);
 /*  SDFgetfloatOrDefault(csdfp, "dark_dt", &dark_dt, do_grav ? dt : 1e30); */
@@ -1107,6 +1109,15 @@ main(int argc, char *argv[])
 	      p->nterms += gnterms;
 	}
 
+	if (SPHCWfac != 0.0) {
+	    gnterms /= SPHgnobj;
+	    singlPrintf("Avg nterms = %.0f, SPHCWfac is %.2f\n", gnterms,
+			SPHCWfac);
+	    gnterms *= SPHCWfac;
+	    for (q = SPHbtab; q < SPHbtab + SPHnobj; ++q)
+		q->nterms += gnterms;
+	}
+	    
 	first_step = 0;
 	if( Msg_test("memleak") ){
 	    Msg_do("Memory map after iteration %d\n", iter);
