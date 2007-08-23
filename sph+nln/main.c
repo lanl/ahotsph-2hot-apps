@@ -83,8 +83,8 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 /*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
 /* void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit); */
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-		int windnobj, float r_limit, float dt, int iter, float tpos,
-		int *added_particles);
+		int windnobj, int windpartpershell, float r_limit, float dt, 
+		int iter, float tpos, int *added_particles);
 void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, float r_limit, float dt, int iter, float tpos,
 		int *added_particles, float *newmass);
@@ -158,7 +158,7 @@ main(int argc, char *argv[])
 {
     int gnobj, nobj;
     int SPHgnobj, SPHnobj, SPHoldnobj;
-    int windgnobj, windnobj;
+    int windgnobj, windnobj, windpartpershell;
     float r_inner;
     int PMgnobj, PMnobj;
     int SPHsinkgnobj, SPHsinknobj;
@@ -289,7 +289,7 @@ main(int argc, char *argv[])
 		}
 
 		if (do_point_mass) {
-		    SDFgetfloatOrDefault(csdfp, "r_inner", &r_inner, 0.05);
+		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
 		    if (do_restart) sprintf(iname, "%s.restart", name);
 		    else SDFgetstring(csdfp, "datafile", iname, sizeof(iname));
 		    sdfp = DarkRead(iname, csdfp, (void **)&pmtab, &PMgnobj, 
@@ -298,7 +298,7 @@ main(int argc, char *argv[])
 			  pmtab->l[0], pmtab->l[1], pmtab->l[2], 
 			  pmtab->accmass));
 		} else if (do_point_mass2) {
-		    SDFgetfloatOrDefault(csdfp, "r_inner", &r_inner, 0.05);
+		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
 		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
@@ -313,6 +313,8 @@ main(int argc, char *argv[])
 		if (do_winds) {
 		    sdfp = WindRead(iname, csdfp, &windbtab, &windgnobj, 
 				    &windnobj);
+		    SDFgetintOrDie(csdfp, "windpart_per_shell", 
+				   &windpartpershell);
 		} else windgnobj = windnobj = 0;
 
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
@@ -528,7 +530,7 @@ main(int argc, char *argv[])
 /*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
 /*   	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);  */
  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
-		     windnobj, r_inner, dt_last, iter, tpos, 
+		     windnobj, windpartpershell, r_inner, dt_last, iter, tpos, 
 		     &added_particles);
 /*  	  AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab,  */
 /* 		      windnobj, r_inner, dt_last, iter, tpos,  */

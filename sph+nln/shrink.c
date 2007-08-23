@@ -80,8 +80,8 @@ ShrinkBtab2 (SPHbody **SPHbtabp, int *nobj, float r_limit)
 
 void
 AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-	    int windnobj, float r_limit, float dt, int iter, float tpos,
-	    int *added_particles)
+	    int windnobj, int windpartpershell, float r_limit, float dt, 
+	    int iter, float tpos, int *added_particles)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p;
@@ -89,12 +89,13 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
     SPHbody *q;
     unsigned int id;
     float r2 = r_limit*r_limit;
+    float r_wind = 5.0; /* Decoupled from inner boundary size */
     float wr, wr2;
     double wpos[NDIM];
 
-    /* d assumes 1000 particles per wind shell - fix this */
-    float d = r_limit * 
-	sqrt( 4.0-1.0 / (pow( sin( M_PI*(1000)/(6.0*( (1000)-2)) ), 2.0 )) );
+    float d = r_wind * 
+	sqrt( 4.0-1.0 / (pow( sin( M_PI*(windpartpershell)/
+				   (6.0*((windpartpershell)-2)) ), 2.0 )) );
 
     StkInitEz(&s);
 
@@ -103,9 +104,9 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	   keep all particles inside reasonable volume of solution */
 
 	if ( (Dot(p->pos, p->pos) >= r2)
-	     && (fabs(p->pos[0]) <= 800.0) 
-	     && (fabs(p->pos[1]) <= 800.0) 
-	     && (fabs(p->pos[2]) <= 800.0) ) { 
+	     && (fabs(p->pos[0]) <= 3400.0) 
+	     && (fabs(p->pos[1]) <= 3400.0) 
+	     && (fabs(p->pos[2]) <= 3400.0) ) { 
 
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
@@ -114,7 +115,7 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 		VVV(wpos, = p->pos, - windbtab[p->windid].pos);
 		wr = sqrt(Dot(wpos, wpos));
 
-		if (wr > r_limit + 0.8*d){ /* Particle far from source? */
+		if (wr > r_wind + 0.8*d){ /* Particle far from source? */
 		    *added_particles = 1;  /* Indicate particle addition */
 
 		    id = q->windid;
@@ -127,15 +128,15 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 		    q->mass = p->mass;
 
-		    VVS(q->pos, = wpos, * r_limit / wr);
-		    VV(q->vel, = windbtab[id].vwind/r_limit*q->pos);
+		    VVS(q->pos, = wpos, * r_wind / wr);
+		    VV(q->vel, = windbtab[id].vwind/r_wind*q->pos);
 		    VV(q->pos, += windbtab[id].pos);
 
 		    VVV(q->pos_last, = q->pos, - dt*q->vel);
 
 		    q->h = 1.8*d;  /* Match calculation in writewind.c */
 
-		    q->u = windbtab[id].uwind;
+		    q->u = (p->u + windbtab[id].uwind) / 2.0;
 		    q->udot = 0.0;
 		    q->udot_last = 0.0;  /* Just in case */
 		    q->pr = 0.0;  /* Fixed in update_intermediate */
