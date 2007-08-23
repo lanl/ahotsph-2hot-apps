@@ -268,3 +268,55 @@ ABUpdateXs(float *x, int xstride, float *xdot, int xdot_stride,
 	select += select_stride;
     }
 }
+
+/* Press method, 2nd order for 2nd order ode, vector variable */
+/* Equivalent to leapfrog */
+
+void
+PUpdateXsd(double *x, int xstride, double *xlast, int xlast_stride, 
+	   float *xddot, int xddot_stride, 
+	   unsigned int *select, int select_stride, int n, float dt, float h)
+{
+    double *end = x + n * xstride;
+    float tmp[NDIM];
+    float half_dt2_plus_hdt = (float)0.5*dt*(dt+h);
+    float dt_h = dt/h;
+
+    while (x < end) {
+	if (!(*select & (1 << boundary_bit))) {
+	    VVV(tmp, = x, - xlast);
+	    VV(xlast, = x);
+	    VVV(x, += dt_h * tmp, + half_dt2_plus_hdt * xddot);
+	}
+	x += xstride;
+	xlast += xlast_stride;
+	xddot += xddot_stride;
+	select += select_stride;
+    }
+}
+
+/* Press method, 2nd order for xdot of 2nd order ode, vector variable */
+/* Equivalent to leapfrog */
+
+void
+PUpdateVsd(float *v, int vstride, double *x, int xstride, 
+	   double *xlast, int xlast_stride, float *xddot, int xddot_stride,
+	   unsigned int *select, int select_stride, int n, float dt, float h)
+{
+    float *end = v + n * xstride;
+    float tmp[NDIM];
+    float h_2dt = (float)0.5*h+dt;
+    float oneoh = 1.0 / h;
+
+    while (v < end) {
+	if (!(*select & (1 << boundary_bit))) {
+	    VVV(tmp, = x, - xlast);
+	    VVV(v, = oneoh * tmp, + h_2dt * xddot);
+	}
+	v += vstride;
+	x += xstride;
+	xlast += xlast_stride;
+	xddot += xddot_stride;
+	select += select_stride;
+    }
+}

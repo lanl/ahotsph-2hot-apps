@@ -168,6 +168,7 @@ main(int argc, char *argv[])
     int stride = sizeof(body)/sizeof(float);
     int SPHstride = sizeof(SPHbody)/sizeof(float);
     int SPHstride2 = sizeof(SPHbody)/sizeof(double);
+    int SPHstride3 = sizeof(SPHbody)/sizeof(unsigned int);
     int do_output;
     int output_freq;
     int timer_freq;
@@ -229,6 +230,9 @@ main(int argc, char *argv[])
     singlPrintf("Welcome to the variable O() integrator running on %d procs\n",
 		MPMY_Nproc());
     csdfp = startup(argc, argv);
+
+    SetBoundary(30); /* From integrate.c; seems not to be working (?) */
+
     SDFgetintOrDefault(csdfp, "timeout", &timeout, 600);
     if (timeout > 0) MPMY_TimeoutSet(timeout);
 #ifdef __PARAGON__
@@ -902,27 +906,30 @@ main(int argc, char *argv[])
 	PUpdateX(pmtab[0].pos, stride, pmtab[0].pos_last, stride,
 		 pmtab[0].acc, stride, PMnobj, dt, dt_last);
 
-	ABUpdateX(&SPHbtab[0].u, SPHstride, &SPHbtab[0].udot, SPHstride, 
-		  &SPHbtab[0].udot_last, SPHstride, 
-		  SPHnobj, dt, dt_last);
+	ABUpdateXs(&SPHbtab[0].u, SPHstride, &SPHbtab[0].udot, SPHstride, 
+		   &SPHbtab[0].udot_last, SPHstride, &SPHbtab[0].ident,
+		   SPHstride3, SPHnobj, dt, dt_last);
 	/* One must be careful with this integration scheme, since v */
 	/* is a derived variable.  To really adjust v, change pos_last */
 #ifdef POS_IS_DOUBLE
-	PUpdateVd(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride2, 
-		  SPHbtab[0].pos_last, SPHstride2, SPHbtab[0].acc, SPHstride, 
-		  SPHnobj, dt, dt_last);
+	PUpdateVsd(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride2, 
+		   SPHbtab[0].pos_last, SPHstride2, SPHbtab[0].acc, SPHstride, 
+		   &SPHbtab[0].ident, SPHstride3, SPHnobj, dt, dt_last);
 	/* v must be done before x, since pos_last is changed in PUpX */
-	PUpdateXd(SPHbtab[0].pos, SPHstride2, SPHbtab[0].pos_last, SPHstride2,
-		  SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+	PUpdateXsd(SPHbtab[0].pos, SPHstride2, SPHbtab[0].pos_last, SPHstride2,
+		   SPHbtab[0].acc, SPHstride, &SPHbtab[0].ident, SPHstride3, 
+		   SPHnobj, dt, dt_last);
 #else
-	PUpdateV(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride, 
+	PUpdateVs(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride, 
 		 SPHbtab[0].pos_last, SPHstride, SPHbtab[0].acc, SPHstride, 
-		 SPHnobj, dt, dt_last);
+		 &SPHbtab[0].ident, SPHstride3, SPHnobj, dt, dt_last);
 	/* v must be done before x, since pos_last is changed in PUpX */
-	PUpdateX(SPHbtab[0].pos, SPHstride, SPHbtab[0].pos_last, SPHstride,
-		 SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+	PUpdateXs(SPHbtab[0].pos, SPHstride, SPHbtab[0].pos_last, SPHstride,
+		 SPHbtab[0].acc, SPHstride, &SPHbtab[0].ident, SPHstride3, 
+		  SPHnobj, dt, dt_last);
 #endif
-	UpdateSX(&SPHbtab[0].h, SPHstride, &SPHbtab[0].hdot, SPHstride, SPHnobj, dt, dt_last);
+	UpdateSXs(&SPHbtab[0].h, SPHstride, &SPHbtab[0].hdot, SPHstride, 
+		  &SPHbtab[0].ident, SPHstride3, SPHnobj, dt, dt_last);
 	tpos += dt;
 	tvel += dt;
 	dt_last = dt;

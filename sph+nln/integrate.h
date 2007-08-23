@@ -35,5 +35,12 @@ void PUpdateXs(float *x, int xstride, float *xlast, int xlast_stride,
 	       float *xddot, int xddot_stride, 
 	       unsigned int *select, int select_stride, int n, float dt, 
 	       float h);
+void PUpdateXsd(double *x, int xstride, double *xlast, int xlast_stride, 
+		float *xddot, int xddot_stride, unsigned int *select, 
+		int select_stride, int n, float dt, float h);
+void PUpdateVsd(float *v, int vstride, double *x, int xstride, 
+		double *xlast, int xlast_stride, float *xddot, 
+		int xddot_stride, unsigned int *select, int select_stride, 
+		int n, float dt, float h);
 
 void SetBoundary(int bound);
