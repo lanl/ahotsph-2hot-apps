@@ -1,18 +1,19 @@
-defaultCC:=cc
+defaultCC:=gcc
 
 CC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -malign-double
+ARCH_SPECIFIC:=-D__iX86__=686 -ffast-math -malign-double -march=pentium4 -D_FILE_OFFSET_BITS=64
+OPTIMIZE=-O2
+override AGGRESSIVE_OPT=-O3
 LEX:=flex
 YACC:=bison -y
-RANLIB:=ranlib
 
 include $(treedir)/Make-common/Make.default
 
 swsrc:=lsv.c swampi.c
 
 ifeq ($(PAROS),mpi)
-LOADLIBES:=-L/usr/local/mpich/lib/LINUX/ch_p4 -lmpi
-PAROSCFLAGS:=-I/usr/local/mpich/include
+LOADLIBES:=-L/ss1-raid/local/mpich-1.2.4-ssh/lib -lmpich -lpmpich
+PAROSCFLAGS:=-I/ss1-raid/local/mpich-1.2.4-ssh/include
 endif
 
 ifeq ($(PAROS),lam)

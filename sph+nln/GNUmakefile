@@ -25,11 +25,11 @@ include $(treedir)/Make-common/Make.generic
 
 $(objdir)/grav$(objsuf) : grav.c
 	$(CC) $(CFLAGS) $(AGGRESSIVE_OPT) -c grav.c
-	mv grav$(objsuf) $(objdir)
+	-@mv grav$(objsuf) $(objdir)
 
 $(objdir)/sph$(objsuf) : sph.c
 	$(CC) $(CFLAGS) $(AGGRESSIVE_OPT) -c sph.c
-	mv sph$(objsuf) $(objdir)
+	-@mv sph$(objsuf) $(objdir)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

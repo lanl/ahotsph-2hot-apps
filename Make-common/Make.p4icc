@@ -1,10 +1,14 @@
-defaultCC:=cc
+defaultCC:=icc -static
+defaultFC:=ifc -static
 
 CC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -malign-double
+FC_SPECIFIC:=-O3 -tpp7 -xW
+ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -D_FILE_OFFSET_BITS=64
+override OPTIMIZE=-O3 -tpp7 -xW 
+override AGGRESSIVE_OPT=-O3 -tpp7 -xW 
+LOADLIBES:=-lsvml
 LEX:=flex
 YACC:=bison -y
-RANLIB:=ranlib
 
 include $(treedir)/Make-common/Make.default
 

@@ -17,7 +17,7 @@ defaultFC:=g77
 endif
 
 ifndef OPTIMIZE
-OPTIMIZE=
+OPTIMIZE:=
 endif
 
 PAROS:=$(defaultPAROS)
@@ -33,13 +33,13 @@ ifneq ($(defaultCC),$(CC))
 override ARCH:=$(ARCH)-$(CC)
 endif
 
-ifeq ($(CC),gcc)
-OPTIMIZE:=
-CC_SPECIFIC:=$(CC_SPECIFIC) -g -Wall -ffast-math
+ifeq ($(CC),cc)
+OPTIMIZE:=-O2
+CC_SPECIFIC:=$(CC_SPECIFIC) -g -Wall -ffloat-store -ffast-math
 endif
 
 ifeq ($(FC),g77)
-OPTIMIZE:=
+# OPTIMIZE:=
 FC_SPECIFIC:=$(FC_SPECIFIC) -g -ffast-math
 endif
 
