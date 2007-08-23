@@ -240,7 +240,8 @@ main(int argc, char *argv[])
 		MPMY_Nproc());
     csdfp = startup(argc, argv);
 
-    SetBoundary(30); /* From integrate.c; seems not to be working (?) */
+    SetBoundary(30); /* From integrate.c; if you change this, also change
+			it in SPHDiags */
 
     SDFgetintOrDefault(csdfp, "timeout", &timeout, 600);
     if (timeout > 0) MPMY_TimeoutSet(timeout);
@@ -2033,58 +2034,60 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
     avg_nbrs = 0.0;
     tlow = 0;
     for (p = btab; p < btab+nobj; p++) {
-	VV(com, += p->mass*p->pos);
-	VV(comv, += p->mass*p->vel);
-	VV(force, += p->mass*p->acc);
-	sacc2 = Dot(p->acc, p->acc);
-	acc2 += sacc2;
-	mtot += p->mass;
-	gnterms += p->nterms;
 	avg_nbrs += p->nbrs;
-	if (p->nterms <= 0) SeriousWarning("nterms is %f\n", p->nterms);
-	if (p->h > max_h) max_h = p->h;
-	if (p->h < min_h) min_h = p->h;
-	if (p->vsound/p->h > max_vsound)
-	  max_vsound = p->vsound/p->h;
-	dti = p->h/p->vsound;
-	tx = p->rho/fabs(p->drho_dt);
-	if (tx < dti) dti = tx;
-	tx = p->u/fabs(p->udot);
-	if (tx < dti) dti = tx;
-	dti *= courant_number;
-	if (p->min_nbr_dt == 1e30) { 
-	   /* This could happen if there are no nbrs. */
-	    SeriousWarning("Ignoring min_nbr_dt of %g\n", p->min_nbr_dt);
-	} else {
-	    p->dt = p->min_nbr_dt;
+	if (!(p->ident & (1<<30))) {  /* If not a boundary particle... */
+	    VV(com, += p->mass*p->pos);
+	    VV(comv, += p->mass*p->vel);
+	    VV(force, += p->mass*p->acc);
+	    sacc2 = Dot(p->acc, p->acc);
+	    acc2 += sacc2;
+	    mtot += p->mass;
+	    gnterms += p->nterms;
+	    if (p->nterms <= 0) SeriousWarning("nterms is %f\n", p->nterms);
+	    if (p->h > max_h) max_h = p->h;
+	    if (p->h < min_h) min_h = p->h;
+	    if (p->vsound/p->h > max_vsound)
+		max_vsound = p->vsound/p->h;
+	    dti = p->h/p->vsound;
+	    tx = p->rho/fabs(p->drho_dt);
+	    if (tx < dti) dti = tx;
+	    tx = p->u/fabs(p->udot);
+	    if (tx < dti) dti = tx;
+	    dti *= courant_number;
+	    if (p->min_nbr_dt == 1e30) { 
+		/* This could happen if there are no nbrs. */
+		SeriousWarning("Ignoring min_nbr_dt of %g\n", p->min_nbr_dt);
+	    } else {
+		p->dt = p->min_nbr_dt;
+	    }
+	    if (dti > dt_max && 2.0*p->dt < dt_max) p->dt_next = 2.0*p->dt;
+	    else if (dti > 2.0*p->dt) p->dt_next = 2.0*p->dt;
+	    else if (dti < p->dt) {
+		p->dt *= 0.5;
+		p->dt_next = p->dt;
+	    }
+	    if (dti < min_dt)
+		min_dt = dti;
+	    if (dti < dt)
+		tlow++;
+	    if (p->dt_next > dt_max) p->dt_next = dt_max;
+	    if (p->rho > max_rho) max_rho = p->rho;
+	    if (p->rho < min_rho) min_rho = p->rho;
+	    if (p->u > max_u) max_u = p->u;
+	    if (p->u < min_u) min_u = p->u;
+	    if (p->u < 0.0) {
+		SeriousWarning("Iter %d: particle has negative energy\n%s\n", 
+			       iter, PrintSPHBodyContents(p));
+		p->u = 0.0;
+	    }
+	    rho_err = fabs(fabs(p->rho_est/p->rho) - (float)1.0);
+	    rms_rho_err2 += rho_err*rho_err;
+	    if (rho_err > max_rho_err) max_rho_err = rho_err;
 	}
-	if (dti > dt_max && 2.0*p->dt < dt_max) p->dt_next = 2.0*p->dt;
-	else if (dti > 2.0*p->dt) p->dt_next = 2.0*p->dt;
-	else if (dti < p->dt) {
-	    p->dt *= 0.5;
-	    p->dt_next = p->dt;
-	}
-	if (dti < min_dt)
-	  min_dt = dti;
-	if (dti < dt)
-	  tlow++;
-	if (p->dt_next > dt_max) p->dt_next = dt_max;
 	if (p->nbrs > max_nbrs)
-	  max_nbrs = p->nbrs;
+	    max_nbrs = p->nbrs;
 	if (p->nbrs < min_nbrs)
-	  min_nbrs = p->nbrs;
-	if (p->rho > max_rho) max_rho = p->rho;
-	if (p->rho < min_rho) min_rho = p->rho;
-	if (p->u > max_u) max_u = p->u;
-	if (p->u < min_u) min_u = p->u;
-	if (p->u < 0.0) {
-	    SeriousWarning("Iter %d: particle has negative energy\n%s\n", 
-			   iter, PrintSPHBodyContents(p));
-	    p->u = 0.0;
-	}
-	rho_err = fabs(fabs(p->rho_est/p->rho) - (float)1.0);
-	rms_rho_err2 += rho_err*rho_err;
-	if (rho_err > max_rho_err) max_rho_err = rho_err;
+	    min_nbrs = p->nbrs;	    
     }
     AddCounter(&NtermsCnt, (int)gnterms); /* might overflow?? */
     

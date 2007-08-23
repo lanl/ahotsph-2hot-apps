@@ -465,11 +465,11 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	if (!finite(p->udot)) 
 	    Error("Bad value for udot\n");
 
-	if (p->udot * dt > p->u) {
+	if ( (p->udot * dt > p->u) && !(p->ident & (1<<30)) ) {
 	    p->udot = p->u/dt;
 	    ++*limit_high;
 	}
-	if (p->udot * dt < -0.333*p->u) {
+	if ( (p->udot * dt < -0.333*p->u) && !(p->ident & (1<<30)) ) {
 	    p->udot = -0.333*p->u/dt;
 	    ++*limit_low;
 	}
