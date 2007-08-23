@@ -73,7 +73,7 @@ static void FixGlobalForce(body *bp, int n);
 static void Fix_h(SPHbody *btab, int nobj, int nbrcut_max, int nbrcut_min, float nbrcut_fac, float max_h, float min_h);
 static void Diags(body *btab, int nobj, double ke, double pe, double *etot, float dt_last, int iter, int gnobj);
 static void SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot, float dt_last, int iter, int gnobj, float *tmin, int *tbad);
-static void Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, int dtshort, int dtlong);
+static void Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, int dtshort, int dtlong, int limit_high, int limit_low);
 static void ReadCosmo(SDF *sdfp, struct cosmo_s *cosmo, float tpos, float *R0p);
 static void CosmoPush(struct cosmo_s *p, float time);
 static int dark_need_update(float dark_tacc, float dark_dt);
@@ -353,8 +353,9 @@ main(int argc, char *argv[])
     SDFgetfloatOrDefault(csdfp, "CWfac", &CWfac, 0.0);
     if (!do_restart) {
 	SDFgetfloatOrDie(csdfp, "dt", &dt);
-	SDFgetfloatOrDefault(csdfp, "dark_dt", &dark_dt, do_grav ? dt : 1e30);
+/*  SDFgetfloatOrDefault(csdfp, "dark_dt", &dark_dt, do_grav ? dt : 1e30); */
     }
+    SDFgetfloatOrDefault(csdfp, "dark_dt", &dark_dt, do_grav ? dt : 1e30);
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
     SDFgetintOrDefault(csdfp, "log_time", &log_time, 0);
     SDFgetintOrDefault(csdfp, "comov_eps", &comov_eps, 0);
@@ -518,6 +519,8 @@ main(int argc, char *argv[])
 	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter, 
 		SPHnobj-SPHoldnobj));
 	  SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
+
+	  /* Could fail even with added/removed particles... */
 	  if (SPHnobj-SPHoldnobj != 0) added_particles = 1;
 	}
 
@@ -996,10 +999,15 @@ main(int argc, char *argv[])
 	if (do_point_mass) Diags(pmtab, PMnobj, dark_ke, dark_pe, &etot, dt_last, iter, PMgnobj);
 	if (do_sph) SPHDiags(SPHbtab, SPHnobj, ke, pe, te, &etot, dt_last, iter, SPHgnobj, 
 	      &tmin, &tbad);
-	if (adaptive_dt) Fix_dt(&dt, (dark_dt < dt_max) ? dark_dt : dt_max, 
-				tlow_cut, tmin, tbad, dt_short, dt_long);
+
 	MPMY_Combine(udot_limit, udot_limit, 2, MPMY_INT, MPMY_SUM);
-	singlPrintf("udot_limit high: %d low: %d\n", udot_limit[0], udot_limit[1]);
+
+	if (adaptive_dt) Fix_dt(&dt, (dark_dt < dt_max) ? dark_dt : dt_max, 
+				tlow_cut, tmin, tbad, dt_short, dt_long,
+				udot_limit[0], udot_limit[1]);
+
+	singlPrintf("udot_limit high: %d low: %d\n", udot_limit[0], 
+		    udot_limit[1]);
 	singlPrintf("Total Energy: %g\n", etot);
 
 	StopTimer(&StepTot);
@@ -2112,7 +2120,8 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 }
 
 static void
-Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, int dtshort, int dtlong)
+Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, 
+       int dtshort, int dtlong, int limit_high, int limit_low)
 {
     static int dtlongvote;
     static int dtshortvote;
@@ -2127,11 +2136,12 @@ Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, int dtshort,
     } else if (tbad > tlow_cut/2) {
 	dtlongvote--;
     }
-    if (tbad > tlow_cut) {
+    if (tbad > tlow_cut /* || limit_high > 0 || limit_low > 0  */ ) {
 	dtlongvote = 0;
 	dtshortvote++;
     }
 
+    /* singlPrintf("Votes: short: %d; long %d\n", dtshortvote, dtlongvote); */
     if (dtshortvote > dtshort) {
 	singlPrintf(("Adjusting dt down by factor of 1/2\n"));
 	*dt *= (float)(1./2.);

@@ -102,8 +102,8 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 	   keep all particles inside reasonable volume of solution */
 
 	if ( (Dot(p->pos, p->pos) >= r2)
-	     && (fabs(p->pos[0]) <= 1000.0) 
-	     && (fabs(p->pos[1]) <= 1000.0) 
+	     && (fabs(p->pos[0]) <= 500.0) 
+	     && (fabs(p->pos[1]) <= 500.0) 
 	     && (fabs(p->pos[2]) <= 1000.0) ) 
 	    { 
 
@@ -143,9 +143,12 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 		    q->nterms = 1;  /* Equivalent to SPHFixNterms */
 
+		    q->tacc = -1e30;
+
 		    /* Lots of possibly-unnecessary initializations */
 		    /* Without diffusion, these should all stay 0 */
-		    q->dt = p->dt;
+		    q->dt = q->dt_next = dt;  /* CORRECT?? */
+		    q->min_nbr_dt = 1e30;  /* Just testing */
 		    q->du = 0.0;
 		    q->du_r = 0.0;
 		    q->u_r = 0.0;
