@@ -1,3 +1,4 @@
+#define NO_MSGS
 #include "abm.h"
 #include "tree.h"
 #include "mpmy.h"
@@ -18,7 +19,6 @@
 #define REPLIES_PER_PKT 20 /* used to be 5. */
 Counter_t DeferCnt;
 Counter_t RequestCnt;
-Timer_t WalkImbalTm;
 Timer_t WalkDeferTm;
 		
 /* Should there be a data structure with all this in it??? */
@@ -65,6 +65,28 @@ static ABMhndlr_t *walkhndlrs[2]; /* = {&reqhndlr, &replyhnlr}; */
 #define WALKTAG 3210
 static ABMpktz_t copyContents;
 static int szContents(hcell *pp);
+
+#if 0 /* This didn't have any beneficial effect.  Perhaps more
+	 experimentation with the nskip values would help */
+/* Do it as a macro so every call has a 'private' defer_cnt */
+#define ABMFlushMaybe(abmp, nskip) do{\
+  static int defer_cnt = 0;\
+  if( defer_cnt++ >= (nskip) ){\
+    defer_cnt = 0;\
+    ABMFlush(abmp);\
+  }\
+}while(0)
+#else
+#define ABMFlushMaybe(abmp, nskip) ABMFlush(abmp)
+#endif
+
+#define ABMPollMaybe(abmp, nskip) do{\
+  static int defer_cnt = 0;\
+  if( defer_cnt-- <= 0 ){\
+    defer_cnt = (nskip);\
+    if (ABMPoll(abmp) < 0) Error("ABMPoll failed\n");\
+  }\
+}while(0)
 
 static void 
 setupWalk(tree_t *srctp, tree_t *sinktp, int sinksz,
@@ -168,6 +190,7 @@ walkv(void *sink, const Stk *parent_unacc, Stk *unacceptable,
     nextin = &walkstk1;
     toggle = 0;
     while ((nvec = StkSz(in)/sizeof(Key_t)) > 0) {
+        ABMPollMaybe(&Abm, 20);
 	if (nvec > max_pp_vec) {
 	    max_pp_vec = nvec + 512;
 	    pp_vec = Realloc(pp_vec, max_pp_vec * sizeof(hcellptr));
@@ -217,14 +240,10 @@ walkv(void *sink, const Stk *parent_unacc, Stk *unacceptable,
 	    nextin = &walkstk2;
 	    toggle = 1;
 	}
-	/* ABMPoll(&Abm); */
-	ABMFlush(&Abm);
     }
+    ABMFlushMaybe(&Abm, 30);	/* every time we descend a level */
 }
 
-int pollcounter;
-
-#define USE_ABMPOLLWAIT
 /* This version does deferrals only for the duration of the MACv. */
 /* It might be worthwhile to defer for longer by keeping separate defer */
 /* lists at each level and putting another loop around the whole thing. */
@@ -235,46 +254,34 @@ static void Walkbody(int commonlev, int bodylev){
     int ndef, i;
     Key_t *key_vec;
     int foundone;
-#ifndef USE_ABMPOLLWAIT
-    int noprogress, noprogress_limit;
-
-    noprogress_limit = NOPROGRESS;
-#endif
 
     for(l=commonlev; l<bodylev; l++){
-        if (pollcounter++ % 5 == 0) ABMPoll(&Abm);
-	ABMFlush(&Abm);
 	Inherit(sink_tbl[l], sink_tbl[l+1], hc_tbl[l+1]);
-  	if (sink_tbl[l+1] == NULL) {  /* Long delay in Interact likely */
-	    ABMPoll(&Abm);
-	    ABMFlush(&Abm);
-	}
 	sink = sink_tbl[l+1];
 	StkClear(&def1);
 	StkClear(&unacc[l+1]);
+	ABMPollMaybe(&Abm, 200);
 	walkv(sink, &unacc[l], &unacc[l+1], &def1);
-
 	deffrom = &def1;
 	defto = &def2;
 	foundone = 1;		/* ???? could be 0 the first time ???  */
 	while( StkSz(deffrom) ){
 	    StkClear(defto);
-	    StartTimer(&WalkDeferTm);
-	    ABMFlush(&Abm);
+	    ABMFlushMaybe(&Abm, 100); /* every time we are deferred */
 	    /* We can't get out of here until something arrives, so
 	       we might be better off calling PollWait, which >>might<<
 	       be more sociable about letting somebody else have the CPU */
-#ifndef USE_ABMPOLLWAIT
-	    ABMPoll(&Abm);
-#else
 	    /* But we shouldn't wait if some new stuff has arrived since 
 	       last time because there might be oodles of good stuff
 	       available in memory to chew on... */
-	    if( !foundone )
-		ABMPollWait(&Abm);
-	    else
-		ABMPoll(&Abm);
-#endif
+	    if( !foundone ){
+		StartTimer(&WalkDeferTm);
+		if( ABMPollWait(&Abm) < 0 )
+		    Error("ABMPollWait failed\n");
+		StopTimer(&WalkDeferTm);
+	    }else{
+	        ABMPollMaybe(&Abm, 200);
+	    }
 	    /* This code is almost identical to the code in walkv...*/
 	    ndef = StkSz(deffrom)/sizeof(Key_t);
 	    key_vec = StkBase(deffrom);
@@ -311,29 +318,6 @@ static void Walkbody(int commonlev, int bodylev){
 		    assert(type & REQUESTED);
 		}
 	    }
-#ifndef USE_ABMPOLLWAIT
-	    /* This is all useless if we use ABMPollWait because we will
-	       never loop more than once. */
-	    if( !foundone ){
-		if( (++noprogress) == noprogress_limit ){
-		    SeriousWarning("Not making any progress on deferrals for %d loops\n", noprogress);
-		    Msg_do("sink lev=%d, bodylev=%d, ndef=%d\nbodyhc: %s\n", 
-			   l, bodylev, ndef, hcellPrint(hc_tbl[bodylev]));
-		    for(i=0; i<ndef; i++){
-			Msg_do("ppvec[%d]: %s\n", i, hcellPrint(pp_vec[i]));
-		    }
-		    MPMY_Diagnostic(Msg_do);
-		    noprogress_limit <<= 1; /* double the limit */
-		    Msg_flush();
-		}
-	    }else{
-		if( noprogress_limit > NOPROGRESS )
-		    SeriousWarning("Progress Restored!\n");
-		noprogress = 0;
-		noprogress_limit = NOPROGRESS;
-	    }
-#endif	    
-	    StopTimer(&WalkDeferTm);
 	    walkv(sink, &arrived, &unacc[l+1], defto);
 	    deftmp = deffrom;
 	    deffrom = defto;
@@ -342,6 +326,7 @@ static void Walkbody(int commonlev, int bodylev){
     }
     if( TreeLocal(hc_tbl[bodylev]->type) ) 
 	Inherit(sink_tbl[bodylev], NULL, hc_tbl[bodylev]);
+    ABMFlushMaybe(&Abm, 2);		/* every time we finish a body */
 }
 
 static int preWalk(tree_t *tp, hcell *hp){
@@ -408,13 +393,12 @@ WalkNT(tree_t *sinktp)
 void 
 WalkTerminate(void)
 {
-    StartTimer(&WalkImbalTm);
     ABMIamDone(&Abm);
     while( !ABMAllDone(&Abm) ){
-	ABMPoll(&Abm);
+	if( ABMPoll(&Abm) < 0 )
+	    Error("ABMPoll fails while waiting for Alldone\n");
 	ABMFlush(&Abm);
     }
-    StopTimer(&WalkImbalTm);
     ABMShutdown(&Abm);
     Srctp = NULL;
     MACv = NULL;
