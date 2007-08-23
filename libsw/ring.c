@@ -2,6 +2,8 @@
 #include "Malloc.h"
 #include "mpmy.h"
 #include "gc.h"
+#include "singlio.h"
+#include <string.h>
 #include "Msgs.h"
 
 #define MSGTYPE 142

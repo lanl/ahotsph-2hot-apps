@@ -173,6 +173,7 @@ int MPMY_Sync(void) {
 /* Any system specific stuff gets handled by a system-specific finalizer */
 int MPMY_Finalize(void){
   MPI_Finalize();
+  return MPMY_SUCCESS;
 }
 
 int MPMY_Init(int *argcp, char ***argvp) {
@@ -189,7 +190,7 @@ int MPMY_Init(int *argcp, char ***argvp) {
 
 #ifndef _AIX	/* We need a CPU timer, and MPI doesn't have one */
 #define HAVE_MPMY_TIMERS
-#include "timers_swampi.c"
+#include "timers_mpi.c"
 #endif
 
 #if defined(__CM5__) || defined(_AIX)

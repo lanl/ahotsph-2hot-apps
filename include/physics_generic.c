@@ -39,7 +39,7 @@ typedef struct{float pos[NDIM];} cell;
 static float Rmin[NDIM], Rsize;
 static float keyfactor;
 static Key_t
-phkey(unsigned int ikey[NDIM], unsigned int depth, int start, int type);
+phkey(unsigned long ikey[NDIM], unsigned int depth, int start, int type);
 static unsigned int
 phkey_rev(Key_t key, unsigned int ikey[NDIM], int depth, int start, int type);
 
@@ -382,7 +382,7 @@ static void setup(void){
 }
 
 static 
-Key_t phkey(unsigned int ikey[NDIM], unsigned int depth, int start, int type){
+Key_t phkey(unsigned long ikey[NDIM], unsigned int depth, int start, int type){
     Key_t ret;
     unsigned int bits;
     unsigned int rshift;

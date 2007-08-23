@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "abm.h"
 #include "protos.h"
 #include "Assert.h"

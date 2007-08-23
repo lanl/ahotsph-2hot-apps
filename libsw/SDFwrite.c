@@ -101,7 +101,7 @@ SDFwrite_alist(const char *filename, int gnobj, int nobj,
     double dval;
     char *sval;
     char *name;
-    char *buf;
+    const char *buf;
     int len;
     int mode;
     int ok, allok, retried;
@@ -168,7 +168,7 @@ SDFwrite_alist(const char *filename, int gnobj, int nobj,
 	/* It's only memory, after all */
 	len = header_len+bsize*nobj;
 	buf = header_buf = Realloc(header_buf, len);
-	memcpy(buf+header_len, btab, bsize*nobj);
+	memcpy(header_buf+header_len, btab, bsize*nobj);
     } else {
 	len = bsize*nobj;
 	buf = btab;

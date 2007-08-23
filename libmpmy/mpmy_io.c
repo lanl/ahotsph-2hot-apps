@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #include <stdio.h>
 #include "Assert.h"
 #include "protos.h"

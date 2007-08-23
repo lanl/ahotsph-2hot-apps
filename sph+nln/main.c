@@ -145,7 +145,7 @@ chk_slow(int die)
 }
 #endif
 
-void
+int
 main(int argc, char *argv[])
 {
     int gnobj, nobj;
@@ -2038,10 +2038,10 @@ ReadCosmo(SDF *sdfp, struct cosmo_s *cosmo, float tpos, float *R0p)
 }
 
 /* This is a mess. physics_generic.c needs a better abstraction */
-Key_t SPHGetKey(const SPHbody *p)
+Key_t SPHGetKey(const void *p)
 {
     body t;
-    VV(t.pos, = p->pos);
+    VV(t.pos, = ((SPHbody *)p)->pos);
     return GETKEY(&t);
 }
 

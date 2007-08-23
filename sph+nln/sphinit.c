@@ -277,7 +277,8 @@ SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic)
     int gnobj, nobj;
     SPHbody *btab, *p;
     float new_u;
-    float h, rsq;
+    float h;
+/*     float rsq; */
 
     singlPrintf("Generating random dataset\n");
     if (SDFgetint(csdfp, "nobj", gnobjp))
@@ -298,17 +299,19 @@ SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic)
 	clear_tregs();	/* avoid system bug */
 #endif
 	p->mass = 1.0 / gnobj;		 /*   set masses equal */
-	if (periodic) {
-	    rsq = cube_rand(&ranstate, NDIM, p->pos);
-	} else {
-	    rsq = sphere_rand(&ranstate, NDIM, p->pos);
-	}
-	if (cencon == 1) {
-	    rsq = -1.0/sqrt(rsq);
-	    VV(p->vel, = rsq * p->pos);
-	} else {
-	    VS(p->vel, = 0.0);
-	}
+	/* Removed because cube_rand and sphere_rand both expect positions
+	   as floats anyway... */
+/* 	if (periodic) { */
+/* 	    rsq = cube_rand(&ranstate, NDIM, p->pos); */
+/* 	} else { */
+/* 	    rsq = sphere_rand(&ranstate, NDIM, p->pos); */
+/* 	} */
+/* 	if (cencon == 1) { */
+/* 	    rsq = -1.0/sqrt(rsq); */
+/* 	    VV(p->vel, = rsq * p->pos); */
+/* 	} else { */
+/* 	    VS(p->vel, = 0.0); */
+/* 	} */
 	p->h = h;
 	p->u = new_u;
     }

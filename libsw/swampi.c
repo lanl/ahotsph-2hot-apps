@@ -173,7 +173,7 @@ static double hwtick;
 
 static double hwclock_offset;
 
-#if defined( __linux__ ) && defined(__GNUC__)
+#if defined( __linux__ ) && ( defined(__GNUC__) || defined(__ICC__) )
 #define DEFAULT_MHZ 1200.e6
 static double
 mhz_from_proc(){
