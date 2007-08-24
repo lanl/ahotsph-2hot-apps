@@ -1,4 +1,2 @@
 Objfiles
-Objfiles
-swampi.i686
-swampi.sun5
+*.il
