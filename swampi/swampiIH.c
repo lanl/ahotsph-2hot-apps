@@ -23,7 +23,7 @@ void log_end(void);
 void run(void);
 
 #ifndef LOGFILE
-#define LOGFILE "/tmp/swampi_log"
+#define LOGFILE "/raid/gaber/swampi_log"
 #endif
 static time_t date;
 static FILE *logfile;
