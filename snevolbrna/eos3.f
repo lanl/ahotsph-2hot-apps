@@ -86,12 +86,14 @@ c
          stop
       endif
       tgo=tgo+1.
-      abari=1d0/(xhe4ni/4.d0+xc12ni/12.d0+
-     $     xo16ni/16.d0+
-     $     xne20ni/20.d0+xmg24ni/24.d0+
-     $     xsi28ni/28.d0+xni56ni/56.d0+
-     $     xco56ni/56.d0+xfe56ni/56.d0+
-     $     xpi+xni)
+
+c     Commented out 8/18/2004 (gmr, clf)
+c      abari=1d0/(xhe4ni/4.d0+xc12ni/12.d0+
+c     $     xo16ni/16.d0+
+c     $     xne20ni/20.d0+xmg24ni/24.d0+
+c     $     xsi28ni/28.d0+xni56ni/56.d0+
+c     $     xco56ni/56.d0+xfe56ni/56.d0+
+c     $     xpi+xni)
 c
 c--assume chemical freeze-out
 c
@@ -103,12 +105,14 @@ c      print *, 'calling eosfl',rhoi,ui
      $     xpi,xni,xpfi,p2i,p3i,p4i,ufreezi,
      $     xmuei,xmuhi,etai,temprev,
      $     yeprev,xpprev,xnprev)
-      abari=1d0/(xhe4ni/4.d0+xc12ni/12.d0+
-     $     xo16ni/16.d0+
-     $     xne20ni/20.d0+xmg24ni/24.d0+
-     $     xsi28ni/28.d0+xni56ni/56.d0+
-     $     xco56ni/56.d0+xfe56ni/56.d0+
-     $     xpi+xni)
+
+c     Commented out 8/18/2004 (gmr, clf)
+c      abari=1d0/(xhe4ni/4.d0+xc12ni/12.d0+
+c     $     xo16ni/16.d0+
+c     $     xne20ni/20.d0+xmg24ni/24.d0+
+c     $     xsi28ni/28.d0+xni56ni/56.d0+
+c     $     xco56ni/56.d0+xfe56ni/56.d0+
+c     $     xpi+xni)
       if (ifleosi.eq.0) then
          call rootemp2u(rhoi,ui,tempi,yei,abari,
      1        ptot,cs,etai,stot)
@@ -193,10 +197,12 @@ c         print *, tgo,dtburn,dtbrni,tempi,rhoi
 c         print *, xhe4ni, xc12ni,xo16ni,xne20ni,xmg24ni,
 c     $        xsi28ni,xni56ni,xpi,xni
 c      end if
-      call burner(dtburn,dtbrni,tempi,rhoi,ui,
-     $     uburni,dui,abari,pmassi,etai,ifleosi,
-     $     xhe4ni,xc12ni,xo16ni,xne20ni,xmg24ni,
-     $     xsi28ni,xni56ni,xpi,xni,iexpl)
+
+c     Turned off burning - 8/18/2004 (gmr, clf)
+c      call burner(dtburn,dtbrni,tempi,rhoi,ui,
+c     $     uburni,dui,abari,pmassi,etai,ifleosi,
+c     $     xhe4ni,xc12ni,xo16ni,xne20ni,xmg24ni,
+c     $     xsi28ni,xni56ni,xpi,xni,iexpl)
 c
       dt=dble(dtburn)
 c      call nidecay(dt,pmassi,xni56ni,xco56ni,xfe56ni,udecayi)
@@ -220,7 +226,9 @@ c         print *, xhe4ni,xc12ni,xo16ni,xne20ni,xmg24ni,
 c     $        xsi28ni,xni56ni,xpi,xni,dtbrni
 c      end if
  102  format(18(1pe12.4))
-      ui=ui+uburni+udecayi
+
+c     uburni is only modified in burner - commented out 8/18/2004 (gmr, clf)
+c      ui=ui+uburni+udecayi
 c      if (uburni.gt.0) print *, ui, uburni
       if (xhe4ni.lt.1.d-25) then
          xhe4ni=0.

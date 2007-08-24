@@ -250,8 +250,8 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     if (!(rhoconf && abarconf && tempconf && yeconf && xpconf && xnconf 
 	  && u2conf &&ifleosconf && ufreezconf))
       SinglError("Missing required field in initial data\n");
-    if (xhe4nconf == 0)
-      SinglError("Missing required field in composition ahe data\n");
+/*     if (xhe4nconf == 0) */
+/*       SinglError("Missing required field in composition ahe data\n"); */
     if (xpfconf == 0) {
       for (p = btab; p < btab+nobj; p++) p->xpf = p->rho * 1.204e-9 * p->ye;
     }
