@@ -24,15 +24,16 @@ endif
 
 else
 
-OPTIMIZE:=-O2
+OPTIMIZE:=-O3 -qstrict
 FOPTIMIZE:=-O3 -qstrict
 AGGRESSIVE_OPT:=-O4
 
 ifeq ($(ARCH),pwr)
 CC_SPECIFIC:=-qfloat=hsflt -qarch=pwr
 else
-CC_SPECIFIC:=-qfloat=hsflt -qtune=pwr3 -qarch=pwr3 -qmaxmem=65536 -qinline=0 -qinline+StkAlign:StkPush:StkPushData:StkPeek:StkClear:StkBase:StkSz:StkTop
-FC_SPECIFIC:=-qtune=pwr3 -qarch=pwr3 -qmaxmem=65536
+CC_SPECIFIC:=-qipa -qhot -qfloat=hsflt -qtune=pwr3 -qarch=pwr3 -qcache=auto -qmaxmem=65536 -bmaxdata:0x20000000
+#CC_SPECIFIC:=-qfloat=hsflt -qtune=pwr3 -qarch=pwr3 -qmaxmem=65536 -qinline=0 -qinline+StkAlign:StkPush:StkPushData:StkPeek:StkClear:StkBase:StkSz:StkTop
+FC_SPECIFIC:=-qtune=pwr3 -qarch=pwr3 -qmaxmem=65536 -qextname
 
 endif
 
@@ -44,9 +45,12 @@ asmdir:=asm-power
 swsrc:=gnusort.c lsv.c sigio_dump.c
 
 ifeq ($(PAROS),mpi)
-LD=$(CC) -binitfini:poe_remote_main
-LOADLIBES:= $(LOADLIBES) -L/usr/lpp/ppe.poe/lib -L/usr/lpp/ppe.poe/lib/ip -lmpi -lvtd -lm 
+LD=$(CC) -binitfini:poe_remote_main -O4
+LOADLIBES:= $(LOADLIBES) -L/usr/lpp/ppe.poe/lib -L/usr/lpp/ppe.poe/lib/ip -lmpi -lvtd -lm -lxlf90
 PAROSCFLAGS:=-I/usr/lpp/ppe.poe/include
+else
+LD=$(CC) -binitfini:poe_remote_main -O4
+LOADLIBES:=$(LOADLIBES) -lm -lxlf
 endif
 
 #PRELOAD:=-L/usr/common/usg/gcc/3.0.4/lib/gcc-lib/rs6000-ibm-aix4.3.3.0/3.0.4/power -lgcc

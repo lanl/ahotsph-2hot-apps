@@ -1,7 +1,8 @@
-defaultCC:=gcc
+defaultCC:=/usr/bin/gcc
+defaultFC:=/usr/bin/g77
 
 CC_SPECIFIC:=-g -Wall 
-ARCH_SPECIFIC:=-D__iX86__=686 -malign-double -ffloat-store 
+ARCH_SPECIFIC:=-D__iX86__=686 -D_FILE_OFFSET_BITS=64
 LEX:=flex
 YACC:=bison -y
 RANLIB:=ranlib

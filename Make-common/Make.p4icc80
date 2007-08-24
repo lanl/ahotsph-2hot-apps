@@ -1,0 +1,33 @@
+defaultCC:=/ss1-raid/opt/intel/compiler80/bin/icc
+defaultFC:=/ss1-raid/opt/intel/compiler80/bin/ifort -nofor_main
+
+CC_SPECIFIC:=-DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
+FC_SPECIFIC:=-O2 -tpp7 -xW
+ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -D_FILE_OFFSET_BITS=64 -DUSE_SYSTEM_MALLOC -vec_report1
+override OPTIMIZE=-O2 -tpp7 -xW -g
+override AGGRESSIVE_OPT=-O3 -tpp7 -xW -ip -g
+LDFLAGS:=-g -Qoption,ld,-rpath=/ss1-raid/opt/intel/compiler80/lib
+LOADLIBES:=-lsvml
+LEX:=flex
+YACC:=bison -y
+
+include $(treedir)/Make-common/Make.default
+
+swsrc:=lsv.c swampi.c
+#asmdir:=asm-sse
+#asmsrc=do_grav_sse_noswiz.s do_grav_sse_noswiz_eps.s
+
+ifeq ($(PAROS),mpi)
+LOADLIBES:=-L/usr/local/mpich/lib/LINUX/ch_p4 -lmpi
+PAROSCFLAGS:=-I/usr/local/mpich/include
+endif
+
+ifeq ($(PAROS),lam)
+LOADLIBES:=-L/usr/local/lam/lib -lmpi -ltstdio -ltrillium -largs -lt
+PAROSCFLAGS:=-I/usr/local/lam/h
+endif
+
+ifeq ($(PAROS),pvm)
+LOADLIBES:=-L/usr/local/pvm3/lib/LINUX -lpvm3
+PAROSCFLAGS:=-I/usr/local/pvm3/include
+endif

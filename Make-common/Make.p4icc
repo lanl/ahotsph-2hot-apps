@@ -1,17 +1,15 @@
-# Make sure path is set to use icc/ifc 7.1
-
 defaultCC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/icc
 defaultFC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/ifc
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS
+CC_SPECIFIC:=-DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
 FC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -march=pentium4 -mcpu=pentium4 -D__ICC__ -align -Zp8 -vec_report1
+ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -D_FILE_OFFSET_BITS=64 -vec_report1
 
 # ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 
-override OPTIMIZE=-O3 -tpp7 -xW -ip -ipo -ipo_obj
+override OPTIMIZE=-O2 -tpp7 -xW
 override AGGRESSIVE_OPT=
-# LDFLAGS:=-O3 -tpp7 -xW
+#LDFLAGS:=-Qoption,ld,-rpath=/ss1-raid/opt/intel/compiler71/compiler70/ia32/lib
 LOADLIBES:=-lsvml
 LEX:=flex
 YACC:=bison -y
