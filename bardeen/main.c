@@ -83,10 +83,8 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 /*  static float IdtSPHGetCost(const SPHbody *ptr); */
 
 /* In shrink.c */
-/*  void ShrinkBtab(SPHbody **SPHbtabp, body *btabp, int *nobj, float r_limit); */
-/* void ShrinkBtab2(SPHbody **SPHbtabp, int *nobj, float r_limit); */
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-		int windnobj, int windpartpershell, float r_limit, float dt, 
+		int windnobj, int windpartpershell, float dt, 
 		int iter, float tpos, int *added_particles);
 void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, float r_limit, float dt, int iter, float tpos,
@@ -556,10 +554,8 @@ main(int argc, char *argv[])
 
 	if (do_point_mass || do_point_mass2) {
 	  SPHoldnobj = SPHnobj;
-/*  	  ShrinkBtab((SPHbody **)&SPHbtab, pmtab, &SPHnobj, r_inner); */
-/*   	  ShrinkBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);  */
  	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
-		     windnobj, windpartpershell, r_inner, dt_last, iter, tpos, 
+		     windnobj, windpartpershell, dt_last, iter, tpos, 
 		     &added_particles);
 /*  	  AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab,  */
 /* 		      windnobj, r_inner, dt_last, iter, tpos,  */
