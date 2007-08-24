@@ -163,14 +163,14 @@ typedef struct {
 }"
 #define SPHSHORTOUTBODYDESC \
 "struct {\n\
-    double x, y, z;		/* position of body */\n\
-    float mass;			/* mass of body */\n\
-    float vx, vy, vz;		/* velocity of body */\n\
-    float u;			/* internal energy */\n\
-    float h;			/* smoothing length */\n\
-    float rho;			/* density */\n\
+    double x, y, z;           /* position of body */\n\
+    float mass;                       /* mass of body */\n\
+    float vx, vy, vz;         /* velocity of body */\n\
+    float u;                  /* internal energy */\n\
+    float h;                  /* smoothing length */\n\
+    float rho;                        /* density */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
-    unsigned int ident;		/* unique identifier */\n\
+    unsigned int ident;               /* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
 }"
 #else
@@ -190,14 +190,14 @@ typedef struct {
 }"
 #define SPHSHORTOUTBODYDESC \
 "struct {\n\
-    double x, y, z;		/* position of body */\n\
-    float mass;			/* mass of body */\n\
-    float vx, vy, vz;		/* velocity of body */\n\
-    float u;			/* internal energy */\n\
-    float h;			/* smoothing length */\n\
-    float rho;			/* density */\n\
+    double x, y, z;           /* position of body */\n\
+    float mass;                       /* mass of body */\n\
+    float vx, vy, vz;         /* velocity of body */\n\
+    float u;                  /* internal energy */\n\
+    float h;                  /* smoothing length */\n\
+    float rho;                        /* density */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
-    unsigned int ident;		/* unique identifier */\n\
+    unsigned int ident;               /* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
 }"
 #endif /* SPH_SAVE_ACC */
