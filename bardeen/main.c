@@ -301,9 +301,6 @@ main(int argc, char *argv[])
 		    else SDFgetstring(csdfp, "datafile", iname, sizeof(iname));
 		    sdfp = DarkRead(iname, csdfp, (void **)&pmtab, &PMgnobj, 
 				    &PMnobj, set_id, setpvel);
-		    Msgf(("lx = %e; ly = %e; lz = %e; accmass = %e\n", 
-			  pmtab->l[0], pmtab->l[1], pmtab->l[2], 
-			  pmtab->accmass));
 		} else if (do_point_mass2) {
 		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
 		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
@@ -1942,10 +1939,6 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
 	VV(output_btab[i].acc, = btab[i].acc);
 	output_btab[i].phi = btab[i].phi;
 #endif
-	/* Added l and accmass; this is pretty specific to */
-	/* point masses */
-	VV(output_btab[i].l, = btab[i].l);
-	output_btab[i].accmass = btab[i].accmass;	
 	output_btab[i].ident = btab[i].ident;
     }
     Msg("output", ("Doing output of %d bodies\n", output_nobj));

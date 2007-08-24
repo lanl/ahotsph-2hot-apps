@@ -222,7 +222,6 @@ DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
     SDF *sdfp;
     int massconf, xconf, yconf, zconf;
     int vxconf, vyconf, vzconf;
-    int lxconf, lyconf, lzconf, accmassconf;
     int identconf;
     body *btab;
     int nobj, gnobj;
@@ -236,10 +235,6 @@ DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 		      "vx", offsetof(body, vel[0]), &vxconf,
 		      "vy", offsetof(body, vel[1]), &vyconf,
 		      "vz", offsetof(body, vel[2]), &vzconf,
-		      "lx", offsetof(body, l[0]), &lxconf,
-		      "ly", offsetof(body, l[1]), &lyconf,
-		      "lz", offsetof(body, l[2]), &lzconf,
-                      "accmass", offsetof(body, accmass), &accmassconf,
 		      "ident", offsetof(body, ident), &identconf,
 		      NULL);
     nobj = *nobjp;
@@ -257,13 +252,6 @@ DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
     }
     if (vxconf != vyconf || vxconf != vzconf){
 	if (setpvel) SinglError("Missing velocity components!\n");
-    }
-    if (accmassconf==0 || lxconf==0 || lyconf==0 || lzconf==0) {
-        SinglError("Could not find %s %s %s %s in data file!\n", 
-                   (lxconf==0)? "lx" : "",
-                   (lyconf==0)? "ly" : "",
-                   (lzconf==0)? "lz" : "",
-                   (accmassconf==0)? "accmass" : "");
     }
     if (identconf == 0 || set_id){
 	SinglWarning("No \"ident\" in file, numbering sequentially\n");
