@@ -1,5 +1,0 @@
-WARNING (Single mode): sphinit.c (196) in SPHRead :
-No "ident" in file, numbering sequentially
-unlink of gabesedov-chris_sph.restart failed, errno=2
-WARNING: tree.c (384) in make_tree :
-Identical keys: 5264470722.40457010403, parent = 0526447072.54045701040 L     -1 0x08 0, using slot 0

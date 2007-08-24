@@ -1,6 +1,0 @@
-data "../sph+nln/gabesedov-chris/gabesedov-chris_sph.0100"
-sdfread
-limits x mass
-box
-points x mass
-quit
