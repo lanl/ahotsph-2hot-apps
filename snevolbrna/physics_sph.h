@@ -335,6 +335,12 @@ typedef struct{
     float xfac;			/* geometrical factor */
 } SinkSPH;
 
+typedef struct {
+    float pos[NDIM];
+    float vel[NDIM];
+    float mass;
+} bndry_t;
+
 /* External Fortran linkage */
 #define Fortran(x) x##_
 /* GNU Fortran adds two underscores if there is an underscore in the name */
@@ -392,6 +398,8 @@ void UnSetSPHOffset(void);
 void SetSPHRotate(float angle);
 void UnSetSPHRotate(void);
 void update_point_SPHmass(SPHbody *btab, int nobj, void *p, float smooth2, float newt);
+void update_point_SPHmass_bndry(SPHbody *btab, int SPHnobj, float newt, 
+				bndry_t bndry);
 
 /* In sphinit.c */
 void *DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel);

@@ -47,11 +47,11 @@ static void (*cellfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 
 
 
-#ifdef __GNUC__
-#define INLINE inline
-#else
-#define INLINE
-#endif
+/* #ifdef __GNUC__ */
+/* #define INLINE inline */
+/* #else */
+/* #define INLINE */
+/* #endif */
 
 INLINE float MAX(float a, float b)
 {
@@ -773,12 +773,26 @@ update_point_SPHmass(SPHbody *btab, int SPHnobj,
     }
 }
 
+void
+update_point_SPHmass_bndry(SPHbody *btab, int SPHnobj, float newt, 
+			   bndry_t bndry)
+{
+    SPHbody *r;
+    float dr2, oneor, oneor2;
+    float phii;
+    Vxd(float r);
 
+    for (r = btab; r < btab+SPHnobj; r++) {
 
+	VxVV(r, = r->pos, - bndry.pos);
+	
+	dr2 = Dotx(r, r);
 
-
-
-
-
-
-
+	oneor = recipsqrtf(dr2);
+	
+	oneor2 = oneor * oneor;
+	phii = newt * oneor * bndry.mass;
+	r->phi -= phii;
+	VVx(r->acc, -= oneor2 * phii * r);
+    }
+}

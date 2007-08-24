@@ -83,6 +83,10 @@ static void SPHWrapAngularPeriodic(SPHbody *bp, int n, float aleph);
 static int maxmem(void);
 static int maxheap(void);
 
+/* In shrink.c */
+void AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, 
+		float newt, float tpos);
+
 float Znow(float time);
 float Hnow(float time);
 
@@ -118,6 +122,8 @@ static int adaptive_dt;
 static int independent_dt;
 static int dark_independent_dt;
 
+static bndry_t bndry;
+
 #define MAXCOEF 16
 
 static void fpe_handler(int x)
@@ -130,7 +136,7 @@ int
 main(int argc, char *argv[])
 {
     int gnobj, nobj;
-    int SPHgnobj, SPHnobj;
+    int SPHgnobj, SPHnobj, SPHoldnobj;
     int PMgnobj, PMnobj;
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
@@ -200,6 +206,8 @@ main(int argc, char *argv[])
     int make_sink_tree;
     int has_grav_data;
     int do_point_mass;
+    int do_absorbing_bndry;
+    float newmass = 0.0, totnewmass = 0.0;
     int kernel_ncoef1, kernel_ncoef2;
     double kernel_coef1[MAXCOEF], kernel_coef2[MAXCOEF];
     float aleph_degrees, aleph;		/* opening angle */
@@ -227,6 +235,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_sph", &do_sph, 0);
     SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
+    SDFgetintOrDefault(csdfp, "do_absorbing_bndry", &do_absorbing_bndry, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
     if (do_sph || do_grav) {
 	if (!((strncmp(name, "test", 4) == 0))) {
@@ -263,6 +272,19 @@ main(int argc, char *argv[])
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
+		}
+		if (do_absorbing_bndry) {
+		    SDFgetfloatOrDie(sdfp, "bndry_x", &(bndry.pos[0]));
+		    SDFgetfloatOrDie(sdfp, "bndry_y", &(bndry.pos[1]));
+#if NDIM==3
+		    SDFgetfloatOrDie(sdfp, "bndry_z", &(bndry.pos[2]));
+#endif
+		    SDFgetfloatOrDie(sdfp, "bndry_vx", &(bndry.vel[0]));
+		    SDFgetfloatOrDie(sdfp, "bndry_vy", &(bndry.vel[1]));
+#if NDIM==3
+		    SDFgetfloatOrDie(sdfp, "bndry_vz", &(bndry.vel[2]));
+#endif
+		    SDFgetfloatOrDie(sdfp, "bndry_mass", &(bndry.mass));
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -447,6 +469,19 @@ main(int argc, char *argv[])
     singlPrintf("float rb = %.4f;\n", rb);
     singlPrintf("float rbout = %.4f;\n", rbout);
     singlPrintf("float vb = %.4f;\n", vb);
+    if (do_absorbing_bndry) {
+	singlPrintf("float bndry_x = %g;\n", bndry.pos[0]);
+	singlPrintf("float bndry_y = %g;\n", bndry.pos[1]);
+#if NDIM==3
+	singlPrintf("float bndry_z = %g;\n", bndry.pos[2]);
+#endif
+	singlPrintf("float bndry_vx = %g;\n", bndry.vel[0]);
+	singlPrintf("float bndry_vy = %g;\n", bndry.vel[1]);
+#if NDIM==3
+	singlPrintf("float bndry_vz = %g;\n", bndry.vel[2]);
+#endif
+	singlPrintf("float bndry_mass = %g;\n", bndry.mass);
+    }
     if (log_time) Error("This code does not support log_time\n");
     if (cosmology) {
 	singlPrintf("int cosmology = %d;\n", cosmology);
@@ -518,6 +553,21 @@ main(int argc, char *argv[])
 	ClearEnabledCounters();
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
+
+	if (do_absorbing_bndry) {
+	    /* Absorb particles, adjust bndry mass */
+	    SPHoldnobj = SPHnobj;
+	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, bndry, &newmass, 
+		       cosmo.GNewt, tpos);
+
+	    /* Track accreted momentum too? */
+
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM);
+	    bndry.mass += totnewmass;
+	    Msgf(("Iter %d: removed %d bodies from SPHbtab\nBndry mass = %g\n",
+		  iter, SPHoldnobj-SPHnobj, bndry.mass));
+	}
 
 #if 1
     /* Used 500.0 until step 6000 of tstnew */
@@ -950,8 +1000,11 @@ main(int argc, char *argv[])
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
 	}
 
+	if (do_absorbing_bndry)
+	    update_point_SPHmass_bndry(SPHbtab, SPHnobj, cosmo.GNewt, bndry);
+
 	MPMY_Sync();
-#if 1
+#if 0
 	for (q = SPHbtab; q < SPHbtab+SPHnobj; q++)
 	  Msgf(("%s\n", PrintSPHBodyContents(q)));
 #endif
@@ -1019,6 +1072,9 @@ main(int argc, char *argv[])
 		SPHbtab[i].udot2_last = SPHbtab[i].udot2;
 	    }
 	}
+	if (do_absorbing_bndry)
+	    UpdateX(bndry.pos, sizeof(bndry_t), bndry.vel, sizeof(bndry_t), 1, 
+		    dt, dt_last);
 	/* One must be careful with this integration scheme, since v */
 	/* is a derived variable.  To really adjust v, change pos_last */
 	PUpdateV(btab[0].vel, stride, btab[0].pos, stride, btab[0].pos_last, 
@@ -1093,6 +1149,7 @@ main(int argc, char *argv[])
 	MPMY_Combine(udot_limit, udot_limit, 2, MPMY_INT, MPMY_SUM);
 	singlPrintf("udot_limit high: %d low: %d\n", udot_limit[0], udot_limit[1]);
 	singlPrintf("Total Energy: %g\n", etot);
+	singlPrintf("Central mass: %g\n", bndry.mass);
 
 	StopTimer(&StepTot);
 	StopTimer(&StepTotWC);
@@ -1837,6 +1894,13 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "hmin", SDF_FLOAT, hmin,
 	     "max_u", SDF_FLOAT, max_u,
 	     "min_u", SDF_FLOAT, min_u,
+	     "bndry_x", SDF_FLOAT, bndry.pos[0],
+	     "bndry_y", SDF_FLOAT, bndry.pos[1],
+	     "bndry_z", SDF_FLOAT, bndry.pos[2],
+	     "bndry_vx", SDF_FLOAT, bndry.vel[0],
+	     "bndry_vy", SDF_FLOAT, bndry.vel[1],
+	     "bndry_vz", SDF_FLOAT, bndry.vel[2],
+	     "bndry_mass", SDF_FLOAT, bndry.mass,
 	     NULL);
     Free(output_btab);
     singlPrintf("\nOutput done.\n");
