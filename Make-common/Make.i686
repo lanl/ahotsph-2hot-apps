@@ -5,6 +5,7 @@ ARCH_SPECIFIC:=-D__iX86__=686 -malign-double -ffloat-store
 LEX:=flex
 YACC:=bison -y
 RANLIB:=ranlib
+LOADLIBES:=-lm
 
 include $(treedir)/Make-common/Make.default
 

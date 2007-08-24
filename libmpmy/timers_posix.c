@@ -28,12 +28,14 @@
 #if defined(sun) || defined(__INTEL_SSD__) || defined(_AIX) || defined(__iX86__)
 # define USE_GETTIMEOFDAY
 # include <sys/time.h>
-# ifndef __SUN5__
+# if defined(_AIX)
+extern int gettimeofday(struct timeval *tp, void *tzp);
+# elif !defined(__SUN5__)
 /* On Solaris2.5 systems, gettimeofday is declared in sys/time.h.  On
    Solaris2.4 systems it is not.  Both of them are __SUN5__ in our
    terminology.  This #ifndef therefore gives a warning on 2.4, but
    without it, compilation would fail on 2.5...  */
-extern int gettimeofday(struct timeval *tp, void *tzp);
+extern int gettimeofday(struct timeval *tp, struct timezone *tzp);
 # endif
 #else  /* don't use gettimeofday. use time() instead */
 extern time_t time(time_t *);

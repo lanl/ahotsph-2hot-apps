@@ -41,7 +41,7 @@ static Chn commchn;
 #define IN 1
 #define OUT 2
 
-int MPMY_Isend(void *buf, int cnt, int dest, int tag,
+int MPMY_Isend(const void *buf, int cnt, int dest, int tag,
 	       MPMY_Comm_request *reqp) {
     struct comm_s *comm = ChnAlloc(&commchn);
 
@@ -144,7 +144,7 @@ int MPMY_Wait(MPMY_Comm_request req, MPMY_Status *stat) {
 #define HAVE_MPMY_SHIFT
 #define SHIFT_TAG 0x1492
 int MPMY_Shift(int proc, void *recvbuf, int recvcnt, 
-	       void *sendbuf, int sendcnt, MPMY_Status *stat) {
+	       const void *sendbuf, int sendcnt, MPMY_Status *stat) {
     MPI_Status status;
     int count;
 

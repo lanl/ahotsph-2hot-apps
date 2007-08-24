@@ -44,8 +44,8 @@ asmdir:=asm-power
 swsrc:=gnusort.c lsv.c sigio_dump.c
 
 ifeq ($(PAROS),mpi)
-LD=$(FC) -binitfini:poe_remote_main
-LOADLIBES:= $(LOADLIBES) -L/usr/lpp/ppe.poe/lib -L/usr/lpp/ppe.poe/lib/ip -lmpi -lvtd 
+LD=$(CC) -binitfini:poe_remote_main
+LOADLIBES:= $(LOADLIBES) -L/usr/lpp/ppe.poe/lib -L/usr/lpp/ppe.poe/lib/ip -lmpi -lvtd -lm 
 PAROSCFLAGS:=-I/usr/lpp/ppe.poe/include
 endif
 

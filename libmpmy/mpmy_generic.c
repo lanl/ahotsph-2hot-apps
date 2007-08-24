@@ -25,7 +25,7 @@ int MPMY_Flick(void){return MPMY_SUCCESS;}
 #endif /* HAVE_MPMY_FLICK */
 
 #ifndef HAVE_MPMY_IRSEND
-int MPMY_Irsend(void *buf, int cnt, int dest, int tag, MPMY_Comm_request *req){
+int MPMY_Irsend(const void *buf, int cnt, int dest, int tag, MPMY_Comm_request *req){
     return MPMY_Isend(buf, cnt, dest, tag, req);
 }
 #endif /* HAVE_MPMY_IRSEND */
