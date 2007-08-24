@@ -490,7 +490,7 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 
 	p->udot += p->drho_dt * p->pr / (p->rho * p->rho) + 
 	    ( (do_diffusion) ? (p->du_r/p->rho) /* Diffusion */
-	      : 0.0 );  
+	      : 0.0 );
 
 	if (!finite(p->udot)) 
 	    Error("Bad value for udot\n");
