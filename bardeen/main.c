@@ -174,6 +174,7 @@ main(int argc, char *argv[])
     int i;
     float rmin[NDIM], rmax[NDIM];
     int nsteps;
+    int wc_limit;
     int first_step = 1;
     int added_particles = 0;
     int stride = sizeof(body)/sizeof(float);
@@ -239,6 +240,7 @@ main(int argc, char *argv[])
     int SPHnupdate;
     int make_sink_tree;
     int has_grav_data;
+    double tottime = 0.0;
 
     MPMY_Init(&argc, &argv);
     singlPrintf("Welcome to the variable O() integrator running on %d procs\n",
@@ -376,6 +378,7 @@ main(int argc, char *argv[])
     }
     SDFgetfloatOrDefault(csdfp, "dark_dt", &dark_dt, do_grav ? dt : 1e30);
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
+    SDFgetintOrDefault(csdfp, "wc_limit", &wc_limit, 0);
     SDFgetintOrDefault(csdfp, "log_time", &log_time, 0);
     SDFgetintOrDefault(csdfp, "comov_eps", &comov_eps, 0);
     SDFgetfloatOrDefault(csdfp, "comov_eps_epoch", &comov_eps_epoch, 10.0);
@@ -439,6 +442,8 @@ main(int argc, char *argv[])
     singlPrintf("float epsilon = %g;\n", eps);
     singlPrintf("int iter = %d;\n", iter);
     singlPrintf("int nsteps = %d;\n", nsteps);
+    if (wc_limit) 
+	singlPrintf("int wc_limit = %d;\n", wc_limit);
     singlPrintf("int nproc = %d;\n", MPMY_Nproc());
     singlPrintf("int do_Bmax = %d;\n", do_Bmax);
     singlPrintf("int do_BH = %d;\n", do_BH);
@@ -903,7 +908,9 @@ main(int argc, char *argv[])
 	if (ForceOutput()
 	    || (do_output && !first_step
 		&& ((iter+output_freq) % output_freq == 0))
-	    || (save_first && first_step)) {
+	    || (save_first && first_step)
+	    || (wc_limit 
+		&& ((double)wc_limit - tottime < 45.0 + 3.0*StepTotWC.max))) {
 	    if (do_sph) {
 		if (do_winds) { 
 		    if (short_output) 
@@ -923,6 +930,19 @@ main(int argc, char *argv[])
 
 	if (ForceStop()) {
 	    singlPrintf("Stopping.\n");
+	    break;
+	}
+
+	if (wc_limit && 
+	    ((double)wc_limit - tottime < 45.0 + 3.0*StepTotWC.max)) {
+	    int th, tm, ts, wh, wm, ws;
+	    th = (int)floor(tottime/3600.0);
+	    tm = (int)floor((tottime - (double)(th*3600))/60.0);
+	    ts = (int)floor(tottime - (double)(th*3600) - (double)(tm*60));
+	    wh = wc_limit/3600;
+	    wm = (wc_limit - 3600*wh)/60;
+	    ws = wc_limit - 3600*wh - 60*wm;
+	    singlPrintf("Stopping (tottime = %02d:%02d:%02d, wc_limit = %02d:%02d:%02d).\n", th, tm, ts, wh, wm, ws);
 	    break;
 	}
 
@@ -1117,6 +1137,8 @@ main(int argc, char *argv[])
 	}
 	MPMY_Combine(&SPHnupdate, &SPHnupdate, 1, MPMY_INT, MPMY_SUM);
 	singlPrintf("Updated %d SPH accs\n", SPHnupdate);
+	tottime += StepTotWC.max;
+	singlPrintf("Total WC time: %.2f\n", tottime);
 	singlFflush();
 
 	/* This can greatly improve the load balance */
