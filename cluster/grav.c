@@ -139,6 +139,10 @@ do_grav_u2(const float *p, const float *end, const float *pos0, float *mass0,
     *phi0 = phi;
 }
 
+#if defined(__T3D__) || defined (_IBMR2)
+#define USE_CHEB_RSQRT
+#endif
+
 #ifdef USE_CHEB_RSQRT
 #include "karp.h"
 

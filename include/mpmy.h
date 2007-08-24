@@ -62,8 +62,8 @@ int MPMY_BcastTag(void *buf, int count, MPMY_Datatype type, int sendproc, int Ta
    the status.
 */
 int MPMY_Init(int *argcp, char ***argvp);
-int MPMY_Isend(const void *buf, int cnt, int dest, int tag, MPMY_Comm_request *req);
-int MPMY_Irsend(const void *buf, int cnt, int dest, int tag, MPMY_Comm_request *req);
+int MPMY_Isend(void *buf, int cnt, int dest, int tag, MPMY_Comm_request *req);
+int MPMY_Irsend(void *buf, int cnt, int dest, int tag, MPMY_Comm_request *req);
 int MPMY_Irecv(void *buf, int cnt, int src, int tag, MPMY_Comm_request *req);
 int MPMY_Test(MPMY_Comm_request request, int *flag, MPMY_Status *stat);
 int MPMY_Wait(MPMY_Comm_request request, MPMY_Status *stat);
@@ -98,7 +98,7 @@ void PrintMPMYDiags(void);
 
 */
 int MPMY_Shift(int proc, void *recvbuf, int recvcnt, 
-	       const void *sendbuf, int sendcnt, MPMY_Status *stat);
+	       void *sendbuf, int sendcnt, MPMY_Status *stat);
 	       
 int MPMY_Shift_overlap(int proc, void *recvbuf, int recvcnt,
 		       const void *sendbuf, int sendcnt,  MPMY_Status *stat);
