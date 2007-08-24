@@ -474,7 +474,9 @@ main(int argc, char *argv[])
 	singlPrintf("float centmass = %f;\n", centmass);
 	singlPrintf("float core_radius = %f;\n", cosmo.b);
     }
-    singlPrintf("int do_diffusion = %d;\n", do_diffusion);
+    if (do_diffusion) {
+	singlPrintf("int do_diffusion = %d;\n", do_diffusion);
+    }
     if( do_output ){
  	if (short_output) singlPrintf("Short ");
 	singlPrintf("Output to %s.nnnn, every %d steps\n", 
