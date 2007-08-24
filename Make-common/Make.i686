@@ -1,6 +1,6 @@
 defaultCC:=gcc
 
-CC_SPECIFIC:=-g -Wall -O2 -ffast-math
+CC_SPECIFIC:=-g -Wall 
 ARCH_SPECIFIC:=-D__iX86__=686 -malign-double -ffloat-store 
 LEX:=flex
 YACC:=bison -y
