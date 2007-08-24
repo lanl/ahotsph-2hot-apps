@@ -85,3 +85,8 @@ Key_t SPHOutIdentKey(const SPHoutbody *bp)
 {
     return KeyLshift(KeyInt(bp->ident), KEYBITS/2);
 }
+
+Key_t SPHShortOutIdentKey(const SPHshortoutbody *bp)
+{
+    return KeyLshift(KeyInt(bp->ident), KEYBITS/2);
+}

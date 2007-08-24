@@ -118,6 +118,22 @@ typedef struct {
     unsigned int windid;
 } SPHoutbody;
 
+typedef struct {
+#ifdef POS_IS_DOUBLE
+    double pos[NDIM];		/* position of body */
+#else
+    float pos[NDIM];		/* position of body */
+#endif
+    float mass;			/* mass of body */
+    float vel[NDIM];		/* velocity of body */
+    float u;
+    float h;
+    float rho;
+    unsigned int nbrs; 
+    unsigned int ident;		/* unique? identifier */
+    unsigned int windid;
+} SPHshortoutbody;
+
 /* This is the descriptor that goes into the SDF header. */
 
 #ifdef SPH_SAVE_ACC
@@ -139,6 +155,18 @@ typedef struct {
     unsigned int ident;		/* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
 }"
+#define SPHSHORTOUTBODYDESC \
+"struct {\n\
+    double x, y, z;		/* position of body */\n\
+    float mass;			/* mass of body */\n\
+    float vx, vy, vz;		/* velocity of body */\n\
+    float u;			/* internal energy */\n\
+    float h;			/* smoothing length */\n\
+    float rho;			/* density */\n\
+    unsigned int nbrs;          /* number of neighbors */\n\
+    unsigned int ident;		/* unique identifier */\n\
+    unsigned int windid;        /* wind id */\n\
+}"
 #else
 #define SPHOUTBODYDESC \
 "struct {\n\
@@ -150,6 +178,18 @@ typedef struct {
     float rho;			/* density */\n\
     float drho_dt;              /* time derivative of rho */\n\
     float udot;			/* time derivative of u */\n\
+    unsigned int nbrs;          /* number of neighbors */\n\
+    unsigned int ident;		/* unique identifier */\n\
+    unsigned int windid;        /* wind id */\n\
+}"
+#define SPHSHORTOUTBODYDESC \
+"struct {\n\
+    double x, y, z;		/* position of body */\n\
+    float mass;			/* mass of body */\n\
+    float vx, vy, vz;		/* velocity of body */\n\
+    float u;			/* internal energy */\n\
+    float h;			/* smoothing length */\n\
+    float rho;			/* density */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
@@ -227,6 +267,7 @@ void SPHFixId(SPHbody *btab, int nobj, int gnobj);
 void SPHFixNterms(SPHbody *btab, int nobj);
 Key_t accbodyGetKey(const void *ptr);
 Key_t SPHOutIdentKey(const SPHoutbody *bp);
+Key_t SPHShortOutIdentKey(const SPHshortoutbody *bp);
 
 /* In sphcofm.c */
 void SPHSetupCofm(int MACtype, float tol, float rel_tol);

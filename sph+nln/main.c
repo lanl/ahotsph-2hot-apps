@@ -63,6 +63,8 @@ static void Output(body *btab, int nobj, const char *outname, int iter);
 static void SPHOutput(SPHbody *btab, int nobj, const char *outname, int iter);
 static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab, 
 		       int windnobj, const char *outname, int iter);
+static void ShortWindOutput(SPHbody *btab, int nobj, windbody *windbtab, 
+		       int windnobj, const char *outname, int iter);
 static SDF *startup(int argc, char **argv);
 static void Periodic(tree_t *tp, float size);
 static void PeriodicSPH(tree_t *tp, float size, float vsize);
@@ -180,6 +182,7 @@ main(int argc, char *argv[])
     int SPHstride3 = sizeof(SPHbody)/sizeof(unsigned int);
     int do_output;
     int output_freq;
+    int short_output;
     int timer_freq;
     float sort_tol;
     int iter;
@@ -408,6 +411,7 @@ main(int argc, char *argv[])
     }
     if( do_output ){
 	SDFgetintOrDefault(csdfp, "output_freq", &output_freq, nsteps);
+	SDFgetintOrDefault(csdfp, "short_output", &short_output, 0);
     }else{
 	output_freq = 1;
     }
@@ -460,6 +464,7 @@ main(int argc, char *argv[])
 	singlPrintf("float centmass = %e;\n", centmass);
     }
     if( do_output ){
+	if (short_output) singlPrintf("Short ");
 	singlPrintf("Output to %s.nnnn, every %d steps\n", 
 	       outnamebase, output_freq);
     }else{
@@ -892,9 +897,16 @@ main(int argc, char *argv[])
 		&& ((iter+output_freq) % output_freq == 0))
 	    || (save_first && first_step)) {
 	    if (do_sph) {
-		if (do_winds) WindOutput(SPHbtab, SPHnobj, windbtab, 
-					 windnobj, outnamebase, iter);
-		else SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
+		if (do_winds) { 
+		    if (short_output) 
+			ShortWindOutput(SPHbtab, SPHnobj, windbtab, 
+					windnobj, outnamebase, iter);
+		    else
+			WindOutput(SPHbtab, SPHnobj, windbtab, 
+				   windnobj, outnamebase, iter);
+		}
+		else
+		    SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
 	    }
 	    if (has_grav_data) Output(btab, nobj, outnamebase, iter);
 	    if (do_point_mass) Output(pmtab, PMnobj, outnamebase, iter);
@@ -1697,6 +1709,86 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
 		"ke", SDF_DOUBLE, ke,
 		"pe", SDF_DOUBLE, pe,
 		"te", SDF_DOUBLE, te,
+		NULL);
+    Free(output_btab);
+    singlPrintf("\nOutput done.\n");
+#ifndef __DELTA__
+    if (MPMY_Procnum() == 0) {
+	char name[256];
+	sprintf(name, "%s_sph.restart", outnamebase);
+	if (unlink(name))
+	  Shout("unlink of %s failed, errno=%d\n", name, errno);
+	if (symlink(outname, name))
+	  Shout("symlink of %s failed, errno=%d\n", outname, errno);
+    }
+#endif
+}
+
+
+/* Write out nobj SPH particles; only one node should write wind particles */
+static void ShortWindOutput(SPHbody *btab, int nobj, windbody *windbtab, 
+			    int windnobj, const char *outnamebase, int iter)
+{
+    SPHbody *p;
+    int i;
+    sortresult_t outputsort;
+    SPHshortoutbody *output_btab;
+    int output_nobj = nobj;
+    float tpos_out = tpos;
+    float tvel_out = tvel; /* changed in Integrate() */
+    MPMY_Comm_request req;
+    int output_gnobj;
+    float output_z, output_h, output_R0;
+    char outname[256];
+
+    sprintf(outname, "%s_sph.%04d", outnamebase, iter);
+    output_btab = Malloc(output_nobj * sizeof(SPHshortoutbody));
+    for(i=0; i<output_nobj; i++){
+	output_btab[i].mass = btab[i].mass;
+	VV(output_btab[i].pos, = btab[i].pos);
+	VV(output_btab[i].vel, = btab[i].vel);
+	output_btab[i].u = btab[i].u;
+	output_btab[i].h = btab[i].h;
+	output_btab[i].rho = btab[i].rho;
+ 	output_btab[i].nbrs = btab[i].nbrs;
+	output_btab[i].ident = btab[i].ident;
+	output_btab[i].windid = btab[i].windid;
+    }
+    Msgf(("Doing output of %d bodies\n", output_nobj));
+    singlPrintf("Trying to sort output\n");
+    pqsortsetup_order(&outputsort, output_btab, output_nobj,
+		      sizeof(SPHshortoutbody), 0.1F, 1, Realloc_f);
+    output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHShortOutIdentKey);
+    output_nobj = outputsort.nobj;
+    Msgf(("After pqsort, %d outbodies\n", output_nobj));
+    MPMY_ICombine_Init(&req);
+    MPMY_ICombine(&output_nobj, &output_gnobj, 1, MPMY_INT, MPMY_SUM, req);
+    MPMY_ICombine_Wait(req);
+    if (cosmology) {
+	output_z = Znow(tpos_out);
+	output_h = Hnow(tpos_out);
+	output_R0 = R0;
+    } else {
+	output_z = 0.0;
+	output_h = 0.0;
+	output_R0 = sysradius;
+    }
+    SDFwritewind(outname, output_gnobj, output_nobj, 
+		 output_btab, windnobj, windbtab, sizeof(SPHshortoutbody), 
+		 sizeof(windbody), WINDOUTBODYDESC, SPHSHORTOUTBODYDESC, 
+		 /* "npart", SDF_INT, output_gnobj, */
+		 "iter", SDF_INT, iter,
+		 "dt", SDF_FLOAT, dt,
+		 "eps", SDF_FLOAT, this_eps,
+		 "Gnewt", SDF_FLOAT, cosmo.GNewt,
+		 "tolerance", SDF_FLOAT, this_tol,
+		 "frac_tolerance", SDF_FLOAT, frac_tol,
+		 "ndim", SDF_INT, NDIM,
+		 "tpos", SDF_FLOAT, tpos_out,
+		 "tvel", SDF_FLOAT, tvel_out,
+		 "R0", SDF_FLOAT, output_R0,
+		 "gamma", SDF_FLOAT, Gamma,
+		 "centmass", SDF_FLOAT, centmass, 
 		NULL);
     Free(output_btab);
     singlPrintf("\nOutput done.\n");
