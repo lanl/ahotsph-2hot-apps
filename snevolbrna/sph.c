@@ -313,7 +313,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VxdV(const float pos_sink, = sink->pos);
     VxdV(const float v, = sink->vel);
     const float h = sink->h;
-    const float pro2 = (sink->pr) / (sink->rho_est * sink->rho_est);
+    const float pro2 = (sink->pr / sink->rho_est) / sink->rho_est;
     const float mass = sink->mass;
     const float rho_est = sink->rho_est;
     const float vsound = sink->vsound;
@@ -403,8 +403,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	grpm = bp->mass * grwtij;
 	wpm = bp->mass * wtij;
 
-	poro2 = grpm * (pro2 + (bp->pr) 
-			/ (bp->rho_est * bp->rho_est));
+	poro2 = grpm * (pro2 + (bp->pr / bp->rho_est) / bp->rho_est);
 	rij1 = (float)1.0 / rij;
 	VxVx(runi, = rij1 * r);
 	VxVx(f, += poro2 * runi);
@@ -562,8 +561,10 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	    p->hdot = -0.5*p->h/dt;
 	    ++*limit_low;
 	}
-	p->udot += p->drho_dt * (p->pr) / (p->rho * p->rho);
-	if (!finite(p->udot)) Error("Bad value for udot\n");
+	p->udot += (p->drho_dt / p->rho) * (p->pr / p->rho);
+	if (!finite(p->udot)) {
+	    Error("Bad value for udot: #%d: drho_dt: %e; pr: %e; rho; %e; nbrs: %d\n", p->ident, p->drho_dt, p->pr, p->rho, p->nbrs);
+	}
 	p->udot2 /= p->temp;
 	if (!finite(p->udot2)) Error("Bad value for udot2\n");
 	if (p->temp/p->temprev > 1.05) {
