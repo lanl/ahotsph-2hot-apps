@@ -2289,7 +2289,7 @@ Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad,
     } else if (tbad > tlow_cut/2) {
 	dtlongvote--;
     }
-    if (tbad >= tlow_cut || limit_high >= tlow_cut || limit_low >= tlow_cut ) {
+    if (tbad > tlow_cut || limit_high > 0 || limit_low > 0 ) {
 	dtlongvote = 0;
 	dtshortvote++;
     }
