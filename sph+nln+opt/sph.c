@@ -158,36 +158,25 @@ nbrMAC(SinkSPH *sink, hcell **source_vec, int *result, int n)
 void
 macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 {
-    const float extent_sink = sink->extent;
-    VxdV(const float pos_sink, = sink->pos);
-    const float h = sink->h;
     Vxd(float r);
     Vxd(float dv);
-    float extent_src;
-    int daughters;
-    int i;
+    float extent_src, v2, wtij, grwtij, hmean11, hmean21, dxx, dr2;
+    int daughters, i, index;
     SPHbody *bp = 0;
-    float projv;
-    float v2;
-    float rij;
-    float wtij, grwtij;
-    float hmean11, hmean21;
-    float dxx, dwdx, dgrwdx;
-    int index;
+    hcellptr source;
     int nbrs = 0;
     float rhoi = (float)0.0;
     float divvi = (float)0.0;
-    float dr2;
     int interactions = 0;
       
     for (i = 0; i < n; i++) {
-	const hcellptr source = source_vec[i];
+	source = source_vec[i];
 
 	if (Sub_Flags(source)) {
-	    const SPHcell *cp = source->ptr;
-	    VxV(r, = cp->pos);	
-	    extent_src = cp->bmax + cp->lap;
-	    daughters = cp->daughters;
+	    VxV(r, = ((SPHcell *)(source->ptr))->pos);	
+	    extent_src = ((SPHcell *)(source->ptr))->bmax + 
+		((SPHcell *)(source->ptr))->lap;
+	    daughters = ((SPHcell *)(source->ptr))->daughters;
 	} else {
 	    bp = source->ptr;
 	    VxV(r, = bp->pos);
@@ -195,43 +184,40 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	    daughters = 1;
 	}
 
-	VxVx(r, -= pos_sink);	/* 8 flops */
+	VxV(r, -= sink->pos);	/* 8 flops */
 	dr2 = Dotx(r, r); /* == 400.0000000032623 */
 
-	if ((rij = sqrtf_fast(dr2)) > extent_src + extent_sink
+	if (sqrtf_fast(dr2) > extent_src + sink->extent
 	    || dr2 == (float)0.0) {
-	    goto accept;
+	    interactions += daughters;
+	    result[i] = MAC_ACCEPT;
+	    continue;
 	} else if (daughters != 1) {
-	    goto failed;
+	    result[i] = MAC_SPLIT_SRC;
+	    continue;
 	}
 
-	hmean11 = (float)2.0 / (h + bp->h);
+	hmean11 = (float)2.0 / (sink->h + bp->h);
 	hmean21 = hmean11 * hmean11; /* == 0.01 */
 	    
 	v2 = dr2 * hmean21;
 	index = v2 * invdvtable;
 	if (index >= MAX_INDEX) Error("Index too large\n");
 	dxx = v2 - index * dvtable;
-	dwdx = (wij[index+1] - wij[index]) * invdvtable;
-	wtij = (wij[index] + dwdx * dxx ) * hmean21 * hmean11;
+	wtij = (wij[index] + (wij[index+1] - wij[index]) * invdvtable * dxx ) * hmean21 * hmean11;
 	if (wtij < (float)0.0) Error("Negative wtij (macRho) = %g\n", wtij);
-	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
-	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
+	grwtij = (grwij[index] + (grwij[index+1] - grwij[index]) * invdvtable * dxx) * hmean21 * hmean21;
 
 	rhoi += bp->mass * wtij;
 
 	/* velocity divergence times density */
 	VxVV(dv, = bp->vel, - sink->vel);
-	projv = grwtij * Dotx(dv, r) * recipsqrtf(dr2);
-	divvi -= bp->mass * projv;
+	divvi -= bp->mass * grwtij * Dotx(dv, r) * recipsqrtf(dr2);
 
 	nbrs++;
-      accept:
+
 	interactions += daughters;
 	result[i] = MAC_ACCEPT;
-	continue;
-      failed:
-	result[i] = MAC_SPLIT_SRC;
     }
 
     sink->interactions += interactions;
@@ -244,50 +230,33 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 void
 macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 {
-    const float extent_sink = sink->extent;
-    VxdV(const float pos_sink, = sink->pos);
-    VxdV(const float v, = sink->vel);
-    const float h = sink->h;
     const float pro2 = sink->pr / (sink->rho_est * sink->rho_est);
-    const float mass = sink->mass;
-    const float rho_est = sink->rho_est;
-    const float vsound = sink->vsound;
-    const float u = sink->u;
     Vxd(float r);
     Vxd(float f);
     Vxd(float dv);
     Vxd(float smv);
-    float min_nbr_dt = sink->min_nbr_dt;
-    float extent_src;
-    int daughters;
-    int i;
+    float extent_src, hmean11, hmean21, dr2, vv, vv2, dxx, wtij, grwtij;
+    float robar1, grpm, poro2, projv, vsbar, t12;
+    float rij, rij1;
+    int daughters, i, index;
     SPHbody *bp = 0;
-    float hmean11, hmean21;
-    int index;
+    hcellptr source;
     int nbrs = 0;
     float rhoi = (float)0.0;
     float divvi = (float)0.0;
-    float dr2;
     Vxd(float runi);
     float dq = (float)0.0;
-    float vv, vv2;
-    float dxx, dwdx, wtij, dgrwdx, grwtij;
-    float rapm, robar1, grpm, wpm;
-    float poro2;
-    float projv, vsbar, est_divv, t12;
-    float rij, rij1;
     int interactions = 0;
 
     VxS(f, = (float)0.0);
     VxS(smv, = (float)0.0);
     for (i = 0; i < n; i++) {
-	const hcellptr source = source_vec[i];
+	source = source_vec[i];
 
 	if (Sub_Flags(source)) {
-	    const SPHcell *cp = source->ptr;
-	    VxV(r, = cp->pos);	
-	    extent_src = cp->bmax + cp->lap;
-	    daughters = cp->daughters;
+	    VxV(r, = ((SPHcell *)(source->ptr))->pos);	
+	    extent_src = ((SPHcell *)(source->ptr))->bmax + ((SPHcell *)(source->ptr))->lap;
+	    daughters = ((SPHcell *)(source->ptr))->daughters;
 	} else {
 	    bp = source->ptr;
 	    VxV(r, = bp->pos);
@@ -297,21 +266,26 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	      Error("RhoEst is <= 0 for %s\n", hcellPrint(source));
 	}
 
-	VxVx(r, -= pos_sink);	/* 8 flops */
+	VxV(r, -= sink->pos);	/* 8 flops */
 	dr2 = Dotx(r, r);
 	
-	sink->nterms += 1;
+	++(sink->nterms);
 
-	if ((rij = sqrtf_fast(dr2)) > extent_src + extent_sink
+	if ((rij = sqrtf_fast(dr2)) > extent_src + sink->extent
 	    || dr2 == (float)0.0) {
-	    goto accept;
+	    IncrCounter(&SPHrej);
+	    interactions += daughters;
+	    result[i] = MAC_ACCEPT;
+	    continue;
 	} else if (daughters != 1) {
-	    goto failed;
+	    IncrCounter(&SPHrej);
+	    result[i] = MAC_SPLIT_SRC;
+	    continue;
 	}
 
-	if (bp->dt_next < min_nbr_dt) min_nbr_dt = bp->dt_next;
+	if (bp->dt_next < sink->min_nbr_dt) sink->min_nbr_dt = bp->dt_next;
 
-	hmean11 = (float)2.0 / (h + bp->h);
+	hmean11 = (float)2.0 / (sink->h + bp->h);
 	hmean21 = hmean11 * hmean11;
 
 	vv2 = dr2 * hmean21;	/* v2 and v renamed to avoid conflict */
@@ -319,60 +293,52 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	if (index >= MAX_INDEX) Error("Index too large\n");
 	vv = rij * hmean11;
 	dxx = vv2 - index * dvtable;
-	dwdx = (wij[index+1] - wij[index]) * invdvtable;
-	wtij = (wij[index] + dwdx * dxx) * hmean21 * hmean11;
+	wtij = (wij[index] + (wij[index+1] - wij[index]) * invdvtable * dxx) * hmean21 * hmean11;
 	if (wtij < (float)0.0) Error("Negative wtij (macSPH) = %g\n", wtij);
-	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
-	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
+	grwtij = (grwij[index] + (grwij[index+1] - grwij[index]) * invdvtable * dxx) * hmean21 * hmean21;
 
-	rapm = mass / bp->mass;
-	robar1 = (float)2.0 / (rho_est + bp->rho_est);
+	/* rapm = sink->mass / bp->mass; */
+	robar1 = (float)2.0 / (sink->rho_est + bp->rho_est);
 	grpm = bp->mass * grwtij;
-	wpm = bp->mass * wtij;
 
 	poro2 = grpm * (pro2 + bp->pr / (bp->rho_est * bp->rho_est));
-	rij1 = (float)1.0 / rij;
+	rij1 = recipf(rij);
 	VxVx(runi, = rij1 * r);
 	VxVx(f, += poro2 * runi);
-	VxVVx(dv, = bp->vel, - v);
-	VxVx(smv, += robar1 * wpm * dv);
+	VxVV(dv, = bp->vel, - sink->vel);
+	VxVx(smv, += robar1 * bp->mass * wtij * dv);
 	projv = Dotx(dv, runi);
 
-	rhoi += bp->mass * wtij;
-	divvi -= bp->mass * grwtij * projv;
-
 	/* artificial viscosity and energy dissipation */
-	vsbar = (float)0.5 * (vsound + bp->vsound);
+	vsbar = (float)0.5 * (sink->vsound + bp->vsound);
 	if (projv < (float)0.0 && alpha != (float)0.0) {
-	    est_divv = projv * vv / (vv2 + epsil);
-	    t12 = grpm * est_divv * (beta * est_divv - alpha * vsbar) * robar1;
+	    t12 = grpm * projv * vv / (vv2 + epsil) * (beta * projv * vv / (vv2 + epsil) - alpha * vsbar) * robar1;
 	    VxVx(f, += t12 * runi);
 	    dq += t12 * projv;
 	}
 	/* artificial heat conduction */
 	if (heatf1 != (float)0.0) {
 	    float qmean = heatf1 * vsbar / hmean11;
-	    t12 = grpm * qmean * (bp->u - u) * robar1;
+	    t12 = grpm * qmean * (bp->u - sink->u) * robar1;
 	    dq -= t12;
 	}
 	/* flux-limited diffusion */
 	if (do_diffusion)
-	    if (grpm < 0.0) {  /* What does this condition really mean? */
+	    if (grpm < 0.0) {  /* What does this condition mean? */
 		float Dmeanr = 2.0*rij1*sink->D/(sink->D+bp->D)*bp->D;
 
 		sink->du_r += ( (C_LIGHT < Dmeanr) ? C_LIGHT : Dmeanr ) *
 		    (sink->u_r - bp->u_r) * grpm / bp->rho_est;
 	    }
 
+	rhoi += bp->mass * wtij;
+	divvi -= bp->mass * grwtij * projv;
+
 	nbrs++;
-      accept:
+
 	IncrCounter(&SPHrej);
 	interactions += daughters;
 	result[i] = MAC_ACCEPT;
-	continue;
-      failed:
-	IncrCounter(&SPHrej);
-	result[i] = MAC_SPLIT_SRC;
     }
     sink->interactions += interactions;
     sink->rho += rhoi;
@@ -382,7 +348,6 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VVx(sink->lvel, += smv);
     sink->nbrs += nbrs;
     sink->nterms += nbrs*8;
-    sink->min_nbr_dt = min_nbr_dt;
 }
 
 void
