@@ -212,6 +212,7 @@ main(int argc, char *argv[])
     float dt_last;
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
+    int do_plummer;
     int do_point_mass, do_point_mass2;
     float newmass = 0.0, totnewmass = 0.0;
     int exact_rho;
@@ -262,6 +263,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_diffusion", &do_diffusion, 0);
     SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
     SDFgetintOrDefault(csdfp, "do_winds", &do_winds, 0);
+    SDFgetintOrDefault(csdfp, "do_plummer", &do_plummer, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
@@ -313,9 +315,12 @@ main(int argc, char *argv[])
 				    &windnobj);
 		    SDFgetintOrDie(csdfp, "windpart_per_shell", 
 				   &windpartpershell);
+		} else windgnobj = windnobj = 0;
+
+		if (do_plummer) {
 		    SDFgetfloatOrDie(csdfp, "core_radius", &cosmo.b);
 		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
-		} else windgnobj = windnobj = 0;
+		}
 
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -451,11 +456,12 @@ main(int argc, char *argv[])
 	singlPrintf("int dt_short = %d;\n", dt_short);
 	singlPrintf("float dt_max = %g;\n", dt_max);
     }
-    if (do_point_mass || do_point_mass2) {
+    if (do_point_mass || do_point_mass2 || do_grav ) {
         singlPrintf("float r_inner = %f;\n", r_inner);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
     }
-    if (do_winds) {
+    if (do_plummer) {
+	singlPrintf("int do_plummer = %d;\n", do_plummer);
 	singlPrintf("float centmass = %f;\n", centmass);
 	singlPrintf("float core_radius = %f;\n", cosmo.b);
     }
@@ -878,7 +884,7 @@ main(int argc, char *argv[])
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
 	}
 
-	if (do_point_mass2) {
+	if (do_point_mass2 || do_plummer) {
 	    update_point_SPHmass3(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
 				  centmass, cosmo.b);
 	}

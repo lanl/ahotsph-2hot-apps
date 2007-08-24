@@ -617,6 +617,7 @@ void
 update_point_SPHmass3(SPHbody *btab, int SPHnobj, float smooth2, float newt, 
 		      float mass, float b)
 {
+    /* Plummer model */
     SPHbody *r;
     float dr2b2, oneor, oneor2;
     float phii;
@@ -627,7 +628,6 @@ update_point_SPHmass3(SPHbody *btab, int SPHnobj, float smooth2, float newt,
 
     for (r = btab; r < btab+SPHnobj; r++) {
 
-	/* Plummer model */
 	VxVVx(r, = r->pos, - ppos);
 	
 	dr2b2 = Dotx(r, r) + b*b;
