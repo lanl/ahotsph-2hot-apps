@@ -11,6 +11,7 @@
 #include "vop.h"
 #include "singlio.h"
 
+extern float bh_rplus;
 
 void
 AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
@@ -116,29 +117,21 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 
 void
-AdjustBtab2 (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-	    int windnobj, float r_limit, float dt, int iter, float tpos,
-	    int *added_particles, float *newmass)
+AdjustBtab2 (SPHbody **SPHbtabp, int *nobj)
 {
     SPHbody *btab = *SPHbtabp;
-    SPHbody *p;
+    SPHbody *p, *q;
     Stk s;
-    SPHbody *q;
-    float r2 = r_limit*r_limit;
+    float r2 = bh_rplus * bh_rplus;
 
     StkInitEz(&s);
 
-    for (*newmass = 0.0, p = btab; p < btab+*nobj; p++) {
-	/* Keep all particles outside of BH at origin, and
-	   keep all particles inside reasonable volume of solution */
+    for (p = btab; p < btab+*nobj; p++) {
+	/* Keep all particles outside of bh_rplus */
 
 	if (Dot(p->pos, p->pos) >= r2) {
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
-	}
-	/* Else add accreted material */
-	else {
-	    *newmass += p->mass;
 	}
     }
 

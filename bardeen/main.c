@@ -49,6 +49,7 @@ struct cosmo_s{
     float Omega0;
     float Lambda;
     float GNewt;
+    float c;  /* Speed of light */
     float b;  /* Cluster core radius for Plummer model */
     float Zel_f;		/* the 'f' factor for linearly growing modes,
 				 used only in set_vel = 1/H*Ddot/D.  It's
@@ -86,9 +87,7 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, int windpartpershell, float dt, 
 		int iter, float tpos, int *added_particles);
-void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
-		int windnobj, float r_limit, float dt, int iter, float tpos,
-		int *added_particles, float *newmass);
+void AdjustBtab2(SPHbody **SPHbtabp, int *nobj);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -119,6 +118,8 @@ static float frac_tol;
 static float Gamma;		/* lowercase is a math.h function */
 static int default_nterms;
 static float centmass;
+static float bh_S;
+float bh_rplus;
 
 static double gnterms;
 static float courant_number;
@@ -218,6 +219,8 @@ main(int argc, char *argv[])
     int do_sph, do_grav, do_winds;
     int do_plummer;
     int do_point_mass, do_point_mass2;
+    int do_bardeen;
+    float bh_a;
     float newmass = 0.0, totnewmass = 0.0;
     int exact_rho;
     float visc_alpha, visc_beta, visc_epsilon, heat_f1;
@@ -271,6 +274,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_plummer", &do_plummer, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
+    SDFgetintOrDefault(csdfp, "do_bardeen", &do_bardeen, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
     if (do_sph || do_grav) {
 	if (!((strncmp(name, "test", 4) == 0))) {
@@ -325,6 +329,11 @@ main(int argc, char *argv[])
 		if (do_plummer) {
 		    SDFgetfloatOrDie(csdfp, "core_radius", &cosmo.b);
 		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
+		}
+		if (do_bardeen) {
+		    SDFgetfloatOrDie(csdfp, "centmass", &centmass);
+		    SDFgetfloatOrDie(csdfp, "bh_a", &bh_a);
+		    SDFgetfloatOrDie(csdfp, "clight", &cosmo.c);
 		}
 
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
@@ -474,6 +483,19 @@ main(int argc, char *argv[])
 	singlPrintf("float centmass = %f;\n", centmass);
 	singlPrintf("float core_radius = %f;\n", cosmo.b);
     }
+    singlPrintf("int do_bardeen = %d;\n", do_bardeen);
+    if (do_bardeen) {
+	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
+	singlPrintf("float clight = %e;\n", cosmo.c);
+	singlPrintf("float centmass = %f;\n", centmass);
+	bh_rplus = cosmo.GNewt * centmass / (cosmo.c * cosmo.c);
+	singlPrintf("float bh_rplus = %f;\n", bh_rplus);
+	bh_S = (bh_a * cosmo.GNewt * cosmo.GNewt * centmass * centmass) 
+	    / (cosmo.c * cosmo.c * cosmo.c);
+	singlPrintf("float bh_a = %f;\n", bh_a);
+	singlPrintf("float bh_S = %f;\n", bh_S);
+	
+    }	
     if (do_diffusion) {
 	singlPrintf("int do_diffusion = %d;\n", do_diffusion);
     }
@@ -547,29 +569,37 @@ main(int argc, char *argv[])
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
 
-	if (do_point_mass2) {
-	    for(q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
+/* 	if (do_point_mass2) { */
+/* 	    for(q = SPHbtab; q < SPHbtab+SPHnobj; q++) { */
 		/* Even if grav isn't on, I still want to zero phi at the
 		   beginning of each iteration */
-		q->phi = 0.0;
-	    }
-	}
+/* 		q->phi = 0.0; */
+/* 	    } */
+/* 	} */
 
 	if (do_point_mass || do_point_mass2) {
-	  SPHoldnobj = SPHnobj;
- 	  AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
-		     windnobj, windpartpershell, dt_last, iter, tpos, 
-		     &added_particles);
-/*  	  AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab,  */
-/* 		      windnobj, r_inner, dt_last, iter, tpos,  */
-/* 		      &added_particles, &newmass); */
+	    SPHoldnobj = SPHnobj;
+	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, 
+		       windnobj, windpartpershell, dt_last, iter, tpos, 
+		       &added_particles);
+/* 	    AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, windbtab, */
+/* 			windnobj, r_inner, dt_last, iter, tpos, */
+/* 			&added_particles, &newmass); */
 
-	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
-/* 	  MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM); */
-/* 	  centmass += totnewmass; */
-	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\nBH mass = %f\n", iter, 
-		SPHnobj-SPHoldnobj, centmass));
-	  SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+/* 	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM); */
+/* 	    centmass += totnewmass; */
+	    Msgf(("Iter: %d: Added %d bodies to SPHbtab\nBH mass = %f\n", 
+		  iter, SPHnobj-SPHoldnobj, centmass));
+	    SPHFixId(SPHbtab, SPHnobj, SPHgnobj);
+	}
+
+	if (do_bardeen) {
+	    SPHoldnobj = SPHnobj;
+	    AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj);
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+	    Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", 
+		  iter, SPHnobj-SPHoldnobj));
 	}
 
 	/* comoving smoothing */
@@ -899,6 +929,11 @@ main(int argc, char *argv[])
 	if (do_point_mass2 || do_plummer) {
 	    update_point_SPHmass3(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
 				  centmass, cosmo.b);
+	}
+
+	if (do_bardeen) {
+	    update_point_mass_bardeen(SPHbtab, SPHnobj, cosmo.GNewt, 
+				      centmass, bh_rplus, bh_S);
 	}
 
 	MPMY_Sync();

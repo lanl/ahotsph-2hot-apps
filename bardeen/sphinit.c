@@ -159,7 +159,7 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     int massconf, xconf, yconf, zconf;
     int vxconf, vyconf, vzconf;
     int hconf, uconf;
-    int identconf, windidconf;
+    int identconf;
     SPHbody *btab, *p; 
     int nobj, gnobj;
     
@@ -175,7 +175,6 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
 		    "u", offsetof(SPHbody, u), &uconf,
 		    "h", offsetof(SPHbody, h), &hconf,
 		    "ident", offsetof(SPHbody, ident), &identconf,
-		    "windid", offsetof(SPHbody, windid), &windidconf,
 		    NULL);
     nobj = *nobjp;
     gnobj = *gnobjp;
@@ -196,9 +195,6 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     if (identconf == 0 || set_id){
 	SinglWarning("No \"ident\" in file, numbering sequentially\n");
 	SPHFixId(btab, nobj, gnobj);
-    }
-    if (windidconf == 0) {
-	SinglWarning("No \"windid\" in file; are you using wind source?\n");
     }
     if (new_h != (float)0.0) {
 	singlPrintf("Setting h to %f\n", new_h);

@@ -643,3 +643,32 @@ update_point_SPHmass3(SPHbody *btab, int SPHnobj, float smooth2, float newt,
 }
 
 
+void
+update_point_mass_bardeen(SPHbody *btab, int nobj, float G, 
+			  float mass, float rplus, float S)
+{
+    /* From Nelson & Papaloizou (2000), eqs. 8 and 16 */
+    SPHbody *r;
+    float oneor, grav_const;
+    Vxd(float r);
+    Vxd(float ppos);
+
+    VxS(ppos, = (float)0.0);  /* BH fixed at origin */
+
+    for (r = btab; r < btab+nobj; r++) {
+
+	VxVVx(r, = r->pos, - ppos);
+
+	r2 = Dotx(r, r);
+
+	oneor = recipsqrtf(r2);
+
+	grav_const = G*mass*oneor*oneor*oneor * (1.0 + 6.0*rplus*oneor) 
+	    - 2.0*S*sqrt(G*mass*pow(oneor, 7)) 
+	    + 13.5*S*r->pos[2]*r->pos[2]*sqrt(G*mass*pow(oneor, 11));
+	
+	VVx(r->acc, -= grav_const * r);
+    }
+}
+
+

@@ -308,6 +308,8 @@ void UnSetSPHOffset(void);
 void update_point_SPHmass(SPHbody *btab, int nobj, void *p, float smooth2, float newt);
 void update_point_SPHmass2(SPHbody *btab, int nobj, float smooth2, float newt, float mass);
 void update_point_SPHmass3(SPHbody *btab, int nobj, float smooth2, float newt, float mass, float b);
+void update_point_mass_bardeen(SPHbody *btab, int nobj, float G, float mass, float rplus, float S);
+
 
 /* In sphinit.c */
 void *DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel);
