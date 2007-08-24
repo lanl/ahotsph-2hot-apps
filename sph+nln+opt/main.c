@@ -517,7 +517,7 @@ main(int argc, char *argv[])
     this_tol = tol;
 
     /* Testing initialization */
-    for (q = SPHbtab; q < SPHbtab+nobj; q++) {
+    for (q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
 	VS(q->acc, = 0.0);
 	VS(q->acc_last, = 0.0);
 	VS(q->grav_acc, = 0.0);
