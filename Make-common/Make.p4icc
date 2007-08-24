@@ -5,7 +5,7 @@ defaultFC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/ifc
 
 CC_SPECIFIC:=-DLONG_LONG_KEYS
 FC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -march=pentium4 -mcpu=pentium4 -D__ICC__ -align -Zp8
+ARCH_SPECIFIC:=-D__iX86__=686 -march=pentium4 -mcpu=pentium4 -D__ICC__ -align -Zp8 -vec_report1
 
 # ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 
