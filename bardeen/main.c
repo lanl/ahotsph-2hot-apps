@@ -49,6 +49,7 @@ struct cosmo_s{
     float Omega0;
     float Lambda;
     float GNewt;
+    float b;  /* Cluster core radius for Plummer model */
     float Zel_f;		/* the 'f' factor for linearly growing modes,
 				 used only in set_vel = 1/H*Ddot/D.  It's
 				 very close to 1 (exactly?) for flat models. */
@@ -217,6 +218,7 @@ main(int argc, char *argv[])
     float dt_last;
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
+    int do_plummer;
     int do_point_mass, do_point_mass2;
     float newmass = 0.0, totnewmass = 0.0;
     int exact_rho;
@@ -267,6 +269,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_diffusion", &do_diffusion, 0);
     SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
     SDFgetintOrDefault(csdfp, "do_winds", &do_winds, 0);
+    SDFgetintOrDefault(csdfp, "do_plummer", &do_plummer, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
@@ -296,14 +299,13 @@ main(int argc, char *argv[])
 		}
 
 		if (do_point_mass) {
+		    /* This doesn't really work anymore */
 		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
 		    if (do_restart) sprintf(iname, "%s.restart", name);
 		    else SDFgetstring(csdfp, "datafile", iname, sizeof(iname));
 		    sdfp = DarkRead(iname, csdfp, (void **)&pmtab, &PMgnobj, 
 				    &PMnobj, set_id, setpvel);
 		} else if (do_point_mass2) {
-		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
-		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
 /*  		    SDFgetstring(csdfp, "windfile", iname, sizeof(iname)); */
@@ -320,6 +322,11 @@ main(int argc, char *argv[])
 		    SDFgetintOrDie(csdfp, "windpart_per_shell", 
 				   &windpartpershell);
 		} else windgnobj = windnobj = 0;
+
+		if (do_plummer) {
+		    SDFgetfloatOrDie(csdfp, "core_radius", &cosmo.b);
+		    SDFgetfloatOrDie(sdfp, "centmass", &centmass);
+		}
 
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -457,12 +464,18 @@ main(int argc, char *argv[])
 	singlPrintf("int dt_short = %d;\n", dt_short);
 	singlPrintf("float dt_max = %g;\n", dt_max);
     }
-    if (do_point_mass || do_point_mass2) {
+    if (do_point_mass || do_point_mass2 || do_grav ) {
         singlPrintf("float r_inner = %f;\n", r_inner);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
-	singlPrintf("float centmass = %e;\n", centmass);
     }
-    singlPrintf("int do_diffusion = %d;\n", do_diffusion);
+    if (do_plummer) {
+	singlPrintf("int do_plummer = %d;\n", do_plummer);
+	singlPrintf("float centmass = %f;\n", centmass);
+	singlPrintf("float core_radius = %f;\n", cosmo.b);
+    }
+    if (do_diffusion) {
+	singlPrintf("int do_diffusion = %d;\n", do_diffusion);
+    }
     if( do_output ){
 	if (short_output) singlPrintf("Short ");
 	singlPrintf("Output to %s.nnnn, every %d steps\n", 
@@ -523,7 +536,6 @@ main(int argc, char *argv[])
 	VS(q->acc, = 0.0);
 	VS(q->acc_last, = 0.0);
 	VS(q->grav_acc, = 0.0);
-	q->phi = 0.0;
     }
 
     for (nsteps += iter; iter <= nsteps; iter++) {
@@ -885,9 +897,9 @@ main(int argc, char *argv[])
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
 	}
 
-	if (do_point_mass2) {
-	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
-				  centmass);
+	if (do_point_mass2 || do_plummer) {
+	    update_point_SPHmass3(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
+				  centmass, cosmo.b);
 	}
 
 	MPMY_Sync();

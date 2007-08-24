@@ -613,3 +613,33 @@ update_point_SPHmass2(SPHbody *btab, int SPHnobj, float smooth2, float newt,
 }
 
 
+void
+update_point_SPHmass3(SPHbody *btab, int SPHnobj, float smooth2, float newt, 
+		      float mass, float b)
+{
+    /* Plummer model */
+    SPHbody *r;
+    float dr2b2, oneor, oneor2;
+    float phii;
+    Vxd(float r);
+    Vxd(float ppos);
+
+    VxS(ppos, = (float)0.0);  /* Body fixed at origin */
+
+    for (r = btab; r < btab+SPHnobj; r++) {
+
+	VxVVx(r, = r->pos, - ppos);
+	
+	dr2b2 = Dotx(r, r) + b*b;
+
+	oneor = recipsqrtf(dr2b2);
+	
+	oneor2 = oneor * oneor;
+	phii = newt * oneor * mass;
+	r->phi -= phii;
+	VVx(r->acc, -= oneor2 * phii * r);
+
+    }
+}
+
+
