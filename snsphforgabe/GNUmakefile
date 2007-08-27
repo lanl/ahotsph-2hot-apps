@@ -25,11 +25,20 @@ include $(treedir)/Make-common/Make.$(ARCH)
 
 include $(treedir)/Make-common/Make.generic
 
-ifeq ($(defaultCC),icc)
+ifeq ($(findstring icc,$(defaultCC)),icc)
 $(objdir)/sleos$(objsuf) : sleos.f
-	$(FC) $(CFLAGS) -mp1 -c sleos.f
+	$(FC) $(FFLAGS) -mp1 -c sleos.f
 	mv sleos$(objsuf) $(objdir)
 endif
+
+# $(objdir)/eos3$(objsuf) : eos3.f
+# 	$(FC) $(FFLAGS) -mp1 -c eos3.f
+# 	mv eos3$(objsuf) $(objdir)
+
+# $(objdir)/nse4d$(objsuf) : nse4d.f
+# 	$(FC) $(FFLAGS) -mp1 -c nse4d.f
+# 	mv nse4d$(objsuf) $(objdir)
+# endif
 
 $(objdir)/grav$(objsuf) : grav.c
 	$(CC) $(CFLAGS) $(AGGRESSIVE_OPT) -c grav.c

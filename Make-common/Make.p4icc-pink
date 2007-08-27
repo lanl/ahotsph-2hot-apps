@@ -1,6 +1,9 @@
-INTEL_LICENSE_FILE:=/opt/Intel/fortran/8.1/licenses/license.dat:/opt/Intel/c/8.1/licenses/license.dat
+# INTEL_LICENSE_FILE:=/opt/Intel/fortran/8.1/licenses/license.dat:/opt/Intel/c/8.1/licenses/license.dat
 defaultCC:=/opt/Intel/c/8.1/bin/icc
 defaultFC:=/opt/Intel/fortran/8.1/bin/ifort -nofor_main
+
+# defaultCC:=/opt/Intel/7.1IA32/compiler70/ia32/bin/icc
+# defaultFC:=/opt/Intel/7.1IA32/compiler70/ia32/bin/ifc
 
 CC_SPECIFIC:=-DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
 FC_SPECIFIC:=
