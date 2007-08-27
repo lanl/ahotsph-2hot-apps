@@ -1,9 +1,10 @@
-defaultCC:=icc
-defaultFC:=ifort -nofor_main
+INTEL_LICENSE_FILE:=/opt/Intel/fortran/8.1/licenses/license.dat:/opt/Intel/c/8.1/licenses/license.dat
+defaultCC:=/opt/Intel/c/8.1/bin/icc
+defaultFC:=/opt/Intel/fortran/8.1/bin/ifort -nofor_main
 
 CC_SPECIFIC:=-DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
 FC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -align -Zp8
+ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -align -Zp8 -DUSE_SYSTEM_MALLOC
 
 # ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 
@@ -18,6 +19,7 @@ include $(treedir)/Make-common/Make.default
 swsrc:=lsv.c swampi.c
 
 ifeq ($(PAROS),mpi)
+MPIHOME:=/usr/lampi-1.5.11/gm
 LOADLIBES:=-L$(MPIHOME)/lib -lmpi -lsvml
 PAROSCFLAGS:=-I$(MPIHOME)/include
 endif
@@ -26,11 +28,6 @@ ifeq ($(PAROS),mpich)
 LOADLIBES:=-L$(MPIHOME)/lib -lmpich -lgm -lpthread -lsvml
 PAROSCFLAGS:=-I$(MPIHOME)/include
 endif
-
-#ifeq ($(PAROS),mpich)
-#LOADLIBES:=-L/ss1-raid/local/mpich-1.2.5-ssh/lib -lmpich
-#PAROSCFLAGS:=-I/ss1-raid/local/mpich-1.2.5-ssh/include
-#endif
 
 ifeq ($(PAROS),mpich2)
 LOADLIBES:=-L/ss1-raid/local/mpich2-0.92/lib -lmpich
