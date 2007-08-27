@@ -2,7 +2,7 @@ defaultCC:=/usr/bin/gcc
 defaultFC:=/usr/bin/g77
 
 CC_SPECIFIC:=-g -Wall 
-ARCH_SPECIFIC:=-D__iX86__=686 -D_FILE_OFFSET_BITS=64
+ARCH_SPECIFIC:=-D__iX86__=686 -DUSE_SYSTEM_MALLOC -malign-double -ffloat-store
 LEX:=flex
 YACC:=bison -y
 RANLIB:=ranlib
