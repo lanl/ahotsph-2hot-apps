@@ -8,7 +8,7 @@ libname=libsw
 
 # The "Salmon Warren Utility library"
 src:= \
-Malloc.c 	key.c \
+bigmalloc.c 	key.c \
 Msgs.c		error.c 	files.c \
 chn.c		dll.c \
 stk.c		heap.c		randoms.c \
@@ -34,7 +34,7 @@ $(objdir)/Malloc$(objsuf):
 $(objdir)/Malloc$(objsuf):
 $(objdir)/Malloc$(objsuf): $(treedir)/include/Msgs.h
 $(objdir)/Malloc$(objsuf):
-$(objdir)/Malloc$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/Malloc.h
+$(objdir)/Malloc$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/bigmalloc.h
 $(objdir)/Malloc$(objsuf): $(treedir)/include/error.h $(treedir)/include/malloc.h
 $(objdir)/key$(objsuf):
 $(objdir)/key$(objsuf):
@@ -47,7 +47,7 @@ $(objdir)/Msgs$(objsuf):
 $(objdir)/Msgs$(objsuf):
 $(objdir)/Msgs$(objsuf):
 $(objdir)/Msgs$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/timers.h
-$(objdir)/Msgs$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/Msgs$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/Msgs$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/Msgs.h
 $(objdir)/Msgs$(objsuf): $(treedir)/include/protos.h
 $(objdir)/error$(objsuf):
@@ -74,7 +74,7 @@ $(objdir)/files$(objsuf):
 $(objdir)/files$(objsuf):
 $(objdir)/files$(objsuf):
 $(objdir)/files$(objsuf):
-$(objdir)/files$(objsuf): $(treedir)/include/protos.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/files$(objsuf): $(treedir)/include/protos.h $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/files$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/mpmy.h
 $(objdir)/files$(objsuf): $(treedir)/include/timers.h
 $(objdir)/chn$(objsuf):
@@ -83,18 +83,18 @@ $(objdir)/chn$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/ch
 $(objdir)/chn$(objsuf):
 $(objdir)/dll$(objsuf): $(treedir)/include/chn.h
 $(objdir)/dll$(objsuf):
-$(objdir)/dll$(objsuf): $(treedir)/include/dll.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/dll$(objsuf): $(treedir)/include/dll.h $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/dll$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/stk$(objsuf): $(treedir)/include/stk.h
 $(objdir)/stk$(objsuf):
 $(objdir)/stk$(objsuf):
-$(objdir)/stk$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/stk$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/stk$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/heap$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/error.h
 $(objdir)/heap$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/heap$(objsuf):
 $(objdir)/heap$(objsuf):
-$(objdir)/heap$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/heap.h
+$(objdir)/heap$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/heap.h
 $(objdir)/randoms$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/randoms$(objsuf): $(treedir)/include/randoms.h
 $(objdir)/malloc$(objsuf):
@@ -135,7 +135,7 @@ $(objdir)/SDFwrite$(objsuf):
 $(objdir)/SDFwrite$(objsuf):
 $(objdir)/SDFwrite$(objsuf):
 $(objdir)/SDFwrite$(objsuf): $(treedir)/include/SDF.h
-$(objdir)/SDFwrite$(objsuf): $(treedir)/include/SDFwrite.h $(treedir)/include/Malloc.h
+$(objdir)/SDFwrite$(objsuf): $(treedir)/include/SDFwrite.h $(treedir)/include/bigmalloc.h
 $(objdir)/SDFwrite$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/SDFwrite$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/timers.h $(treedir)/include/mpmy_io.h
 $(objdir)/SDFwrite$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/protos.h $(treedir)/include/singlio.h
@@ -154,10 +154,10 @@ $(objdir)/SDFread$(objsuf):
 $(objdir)/SDFread$(objsuf):
 $(objdir)/SDFread$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/timers.h $(treedir)/include/SDF.h
 $(objdir)/SDFread$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/error.h
-$(objdir)/SDFread$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/Malloc.h
+$(objdir)/SDFread$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/bigmalloc.h
 $(objdir)/SDFread$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/verify.h $(treedir)/include/SDFread.h
 $(objdir)/SDFread$(objsuf): $(treedir)/include/gc.h $(treedir)/include/singlio.h
-$(objdir)/ring$(objsuf): $(treedir)/include/ring.h $(treedir)/include/Malloc.h
+$(objdir)/ring$(objsuf): $(treedir)/include/ring.h $(treedir)/include/bigmalloc.h
 $(objdir)/ring$(objsuf):
 $(objdir)/ring$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/ring$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/timers.h $(treedir)/include/gc.h
@@ -168,7 +168,7 @@ $(objdir)/obstack$(objsuf):
 $(objdir)/obstack$(objsuf):
 $(objdir)/obstack$(objsuf):
 $(objdir)/obstack$(objsuf):
-$(objdir)/mpmy_combine$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/mpmy_combine$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/mpmy_combine$(objsuf):
 $(objdir)/mpmy_combine$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/mpmy_combine$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/timers.h $(treedir)/include/stk.h
@@ -180,14 +180,14 @@ $(objdir)/counters$(objsuf): $(treedir)/include/timers.h $(treedir)/include/mpmy
 $(objdir)/counters$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/mpmy_gather$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/timers.h $(treedir)/include/Msgs.h
 $(objdir)/mpmy_gather$(objsuf):
-$(objdir)/mpmy_gather$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/Malloc.h
+$(objdir)/mpmy_gather$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/bigmalloc.h
 $(objdir)/mpmy_gather$(objsuf):
 $(objdir)/mpmy_gather$(objsuf): $(treedir)/include/error.h $(treedir)/include/gc.h $(treedir)/include/verify.h
 $(objdir)/memfile$(objsuf):
 $(objdir)/memfile$(objsuf):
 $(objdir)/memfile$(objsuf):
 $(objdir)/memfile$(objsuf):
-$(objdir)/memfile$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/memfile$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/memfile$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/Msgs.h
 $(objdir)/memfile$(objsuf):
 $(objdir)/memfile$(objsuf): $(treedir)/include/protos.h $(treedir)/include/mpmy.h $(treedir)/include/timers.h
@@ -203,7 +203,7 @@ $(objdir)/msgdirinit$(objsuf):
 $(objdir)/msgdirinit$(objsuf):
 $(objdir)/msgdirinit$(objsuf):
 $(objdir)/msgdirinit$(objsuf):
-$(objdir)/msgdirinit$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/msgdirinit$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/msgdirinit$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/msgdirinit$(objsuf): $(treedir)/include/mpmy_abnormal.h $(treedir)/include/protos.h
 $(objdir)/msgdirinit$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/mpmy.h $(treedir)/include/timers.h
@@ -222,7 +222,7 @@ $(objdir)/abm$(objsuf):
 $(objdir)/abm$(objsuf): $(treedir)/include/abm.h $(treedir)/include/chn.h
 $(objdir)/abm$(objsuf): $(treedir)/include/dll.h $(treedir)/include/mpmy.h $(treedir)/include/timers.h
 $(objdir)/abm$(objsuf): $(treedir)/include/protos.h $(treedir)/include/Assert.h $(treedir)/include/error.h
-$(objdir)/abm$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/Malloc.h
+$(objdir)/abm$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/bigmalloc.h
 $(objdir)/abm$(objsuf): $(treedir)/include/Msgs.h
 $(objdir)/abm$(objsuf):
 $(objdir)/abm$(objsuf): $(treedir)/include/verify.h $(treedir)/include/gc.h
@@ -230,7 +230,7 @@ $(objdir)/batch$(objsuf): $(treedir)/include/batch.h $(treedir)/include/mpmy.h $
 $(objdir)/batch$(objsuf): $(treedir)/include/stk.h
 $(objdir)/batch$(objsuf):
 $(objdir)/batch$(objsuf):
-$(objdir)/batch$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/batch$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/batch$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/batch$(objsuf): $(treedir)/include/Msgs.h
 $(objdir)/batch$(objsuf):
@@ -251,7 +251,7 @@ $(objdir)/mpi_reduce$(objsuf):
 $(objdir)/mpi_reduce$(objsuf):
 $(objdir)/mpi_reduce$(objsuf):
 $(objdir)/mpi_reduce$(objsuf): $(treedir)/include/swampi.h $(treedir)/include/stk.h
-$(objdir)/mpi_reduce$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/mpi_reduce$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/mpi_reduce$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/mpi_reduce$(objsuf): $(treedir)/include/gc.h $(treedir)/include/Msgs.h
 $(objdir)/mpi_reduce$(objsuf):

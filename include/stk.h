@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <string.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 /* A quick and dirty stack implementation.  Less functionality than */
 /* the RMS obstack.  Is it faster?  */

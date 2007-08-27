@@ -26,7 +26,7 @@
 #include "error.h"
 #include "Msgs.h"
 #include "Assert.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 #ifdef __DO_SWAP__
 /* There's probably a better way to do most of the multi-word swaps... */

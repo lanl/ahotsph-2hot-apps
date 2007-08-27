@@ -4,7 +4,7 @@
 #include "mpmy.h"
 #include "key.h"
 #include "Msgs.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "error.h"
 #include "chn.h"
 #include "stk.h"

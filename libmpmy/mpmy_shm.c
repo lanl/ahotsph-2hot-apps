@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "chn.h"
 #include "protos.h"
 #include "Msgs.h"

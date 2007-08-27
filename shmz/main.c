@@ -7,12 +7,12 @@
 #include "SDF.h"
 #include "SDFread.h"
 #include "SDFwrite.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "ring.h"
 #include "vop.h"
 #include "timers.h"
 #include "Msgs.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "malloc.h"
 
 Timer_t StepTot, StepTotWC, BuildTot;

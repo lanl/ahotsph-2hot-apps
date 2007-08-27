@@ -2,7 +2,7 @@
 #include <sys/time.h>
 #include "mpmy_time.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 extern int readrtc(struct timestruc_t *);
 

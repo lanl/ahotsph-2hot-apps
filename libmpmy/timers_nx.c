@@ -2,7 +2,7 @@
 /* Assume that nx.h/cube.h/mesh.h is already included. */
 #include "mpmy_time.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 #ifndef __PARAGON__
 extern void hwclock(esize_t *);

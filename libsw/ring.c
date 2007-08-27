@@ -1,5 +1,5 @@
 #include "ring.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "mpmy.h"
 #include "gc.h"
 #include "singlio.h"

@@ -33,7 +33,7 @@ $(objdir)/cofm$(objsuf): $(treedir)/include/tree.h
 $(objdir)/cofm$(objsuf):
 $(objdir)/cofm$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/cofm$(objsuf):
-$(objdir)/cofm$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h
+$(objdir)/cofm$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -45,7 +45,7 @@ $(objdir)/grav$(objsuf):
 $(objdir)/grav$(objsuf):
 $(objdir)/grav$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/grav$(objsuf):
-$(objdir)/grav$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h
+$(objdir)/grav$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h
 $(objdir)/grav$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/grav$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/grav$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -56,7 +56,7 @@ $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/mac$(objsuf):
-$(objdir)/mac$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h
+$(objdir)/mac$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h
 $(objdir)/mac$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/mac$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/mac$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -84,7 +84,7 @@ $(objdir)/main$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/error.h
 $(objdir)/main$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/SDF.h
 $(objdir)/main$(objsuf):
 $(objdir)/main$(objsuf): $(treedir)/include/protos.h $(treedir)/include/macr.h $(treedir)/include/malloc.h
-$(objdir)/main$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/SDFwrite.h $(treedir)/include/SDFread.h
+$(objdir)/main$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/SDFwrite.h $(treedir)/include/SDFread.h
 $(objdir)/main$(objsuf): physics.h $(treedir)/include/tree.h $(treedir)/include/timers.h
 $(objdir)/main$(objsuf): $(treedir)/include/key.h
 $(objdir)/main$(objsuf):
@@ -102,7 +102,7 @@ $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf): $(treedir)/include/stk.h
-$(objdir)/physics$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/physics$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/physics$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/physics$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/physics$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/physics_generic.c
@@ -123,7 +123,7 @@ $(objdir)/print$(objsuf):
 $(objdir)/print$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/print$(objsuf):
 $(objdir)/print$(objsuf): $(treedir)/include/stk.h
-$(objdir)/print$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/print$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/print$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/print$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/print$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/protos.h

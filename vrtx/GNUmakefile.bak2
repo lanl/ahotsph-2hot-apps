@@ -54,7 +54,7 @@ main_vrtx$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 main_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -80,7 +80,7 @@ cofm_vrtx$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 cofm_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -95,7 +95,7 @@ mac$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 mac$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 mac$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 mac$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-mac$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+mac$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 mac$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 mac$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 mac$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -107,7 +107,7 @@ physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/tree.h
 physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 physics_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -128,7 +128,7 @@ relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/tree.h
 relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 relaxomega$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -143,7 +143,7 @@ omegat$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 omegat$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 omegat$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 omegat$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-omegat$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+omegat$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 omegat$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 omegat$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
 omegat$(objsuf): /home/sampson8/msw/s/tree16/include/pqsort.h structures.h
@@ -156,7 +156,7 @@ mono_vrtx$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
 mono_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/pqsort.h structures.h
@@ -168,7 +168,7 @@ quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/tree.h
 quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 quads_vrtx$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -184,7 +184,7 @@ print$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 print$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 print$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 print$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-print$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+print$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 print$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 print$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 print$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -197,7 +197,7 @@ diags$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h physics_vrtx.h
 diags$(objsuf): /home/sampson8/msw/s/tree16/include/tree.h
 diags$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 diags$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-diags$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+diags$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 diags$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 diags$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 diags$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -211,7 +211,7 @@ remesh$(objsuf): /home/sampson8/msw/s/tree16/include/tree.h
 remesh$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 remesh$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 remesh$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-remesh$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+remesh$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 remesh$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 remesh$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 remesh$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -225,7 +225,7 @@ neigh$(objsuf): physics_vrtx.h /home/sampson8/msw/s/tree16/include/tree.h
 neigh$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 neigh$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 neigh$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-neigh$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+neigh$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 neigh$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 neigh$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 neigh$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h
@@ -238,7 +238,7 @@ fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/tree.h
 fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/timers.h
 fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/key.h
 fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/stk.h
-fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/Malloc.h
+fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/bigmalloc.h
 fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/error.h
 fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/gccextensions.h
 fixomegatot$(objsuf): /home/sampson8/msw/s/tree16/include/chn.h

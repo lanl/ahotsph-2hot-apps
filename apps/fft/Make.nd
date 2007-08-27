@@ -13,7 +13,7 @@ include $(treedir)/Make-common/Make.generic
 $(objdir)/ft3$(objsuf):
 $(objdir)/ft3$(objsuf):
 $(objdir)/ft3$(objsuf):
-$(objdir)/ft3$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/ft3$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/ft3$(objsuf): $(treedir)/include/error.h
 $(objdir)/ft3$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/ft3$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/timers.h

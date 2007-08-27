@@ -12,7 +12,7 @@
 #include "error.h"
 #include "ring.h"
 #include "randoms.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "pqsort.h"
 #include "Assert.h"
 #include "Msgs.h"

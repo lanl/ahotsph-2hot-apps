@@ -46,7 +46,7 @@ depends:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 $(objdir)/ft3p$(objsuf): ../tree14/include/collective.h
-$(objdir)/ft3p$(objsuf): ../tree14/include/Malloc.h ../tree14/include/error.h
+$(objdir)/ft3p$(objsuf): ../tree14/include/bigmalloc.h ../tree14/include/error.h
 $(objdir)/ft3p$(objsuf): ../tree14/include/gccextensions.h
 $(objdir)/ft3p$(objsuf): ../tree14/include/Msgs.h ../tree14/include/timers.h
 $(objdir)/ft3p$(objsuf): nr.h nrutil.h complex.h

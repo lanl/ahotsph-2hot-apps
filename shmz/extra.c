@@ -1,7 +1,7 @@
 #include "extra.h"
 #include "physics.h"
 #include "error.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "chn.h"
 
 #define N_PER_BLOCK 16

@@ -4,7 +4,7 @@
 #include "error.h"
 #include "mpmy.h"
 #include "randoms.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 
 #define MAXNPROC 16

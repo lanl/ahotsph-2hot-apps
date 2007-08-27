@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "Msgs.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "malloc.h"
 
 #define WARNSIZEINITIAL (1024*1024*128)

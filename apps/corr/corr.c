@@ -11,7 +11,7 @@
 #include "error.h"
 #include "ring.h"
 #include "randoms.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "macr.h"
 
 #ifndef M_PI

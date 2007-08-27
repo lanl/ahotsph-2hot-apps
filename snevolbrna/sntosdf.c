@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "macr.h"
 #include "error.h"
 

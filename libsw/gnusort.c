@@ -29,7 +29,7 @@ Cambridge, MA 02139, USA.  */
 #include <stdlib.h>
 #include <string.h>
 #ifndef ALLOCA_PREFERRED
-#include "Malloc.h"
+#include "bigmalloc.h"
 static char static_pivot[128];
 #endif
 #include "error.h"

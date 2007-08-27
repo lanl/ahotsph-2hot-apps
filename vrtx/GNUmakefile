@@ -53,7 +53,7 @@ $(objdir)/main_vrtx$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/main_vrtx$(objsuf): $(treedir)/include/timers.h
 $(objdir)/main_vrtx$(objsuf): $(treedir)/include/key.h
 $(objdir)/main_vrtx$(objsuf): $(treedir)/include/stk.h
-$(objdir)/main_vrtx$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/main_vrtx$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/main_vrtx$(objsuf): $(treedir)/include/error.h
 $(objdir)/main_vrtx$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/main_vrtx$(objsuf): $(treedir)/include/chn.h
@@ -79,7 +79,7 @@ $(objdir)/cofm_vrtx$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/timers.h
 $(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/key.h
 $(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/stk.h
-$(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/error.h
 $(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/cofm_vrtx$(objsuf): $(treedir)/include/chn.h
@@ -94,7 +94,7 @@ $(objdir)/mac$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/mac$(objsuf): $(treedir)/include/timers.h
 $(objdir)/mac$(objsuf): $(treedir)/include/key.h
 $(objdir)/mac$(objsuf): $(treedir)/include/stk.h
-$(objdir)/mac$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/mac$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/mac$(objsuf): $(treedir)/include/error.h
 $(objdir)/mac$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/mac$(objsuf): $(treedir)/include/chn.h
@@ -106,7 +106,7 @@ $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/tree.h
 $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/timers.h
 $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/key.h
 $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/stk.h
-$(objdir)/physics_vrtx$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/physics_vrtx$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/error.h
 $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/physics_vrtx$(objsuf): $(treedir)/include/chn.h
@@ -127,7 +127,7 @@ $(objdir)/relaxomega$(objsuf): $(treedir)/include/tree.h
 $(objdir)/relaxomega$(objsuf): $(treedir)/include/timers.h
 $(objdir)/relaxomega$(objsuf): $(treedir)/include/key.h
 $(objdir)/relaxomega$(objsuf): $(treedir)/include/stk.h
-$(objdir)/relaxomega$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/relaxomega$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/relaxomega$(objsuf): $(treedir)/include/error.h
 $(objdir)/relaxomega$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/relaxomega$(objsuf): $(treedir)/include/chn.h
@@ -142,7 +142,7 @@ $(objdir)/omegat$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/omegat$(objsuf): $(treedir)/include/timers.h
 $(objdir)/omegat$(objsuf): $(treedir)/include/key.h
 $(objdir)/omegat$(objsuf): $(treedir)/include/stk.h
-$(objdir)/omegat$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/omegat$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/omegat$(objsuf): $(treedir)/include/error.h
 $(objdir)/omegat$(objsuf): $(treedir)/include/chn.h
 $(objdir)/omegat$(objsuf): $(treedir)/include/pqsort.h structures.h
@@ -155,7 +155,7 @@ $(objdir)/mono_vrtx$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/mono_vrtx$(objsuf): $(treedir)/include/timers.h
 $(objdir)/mono_vrtx$(objsuf): $(treedir)/include/key.h
 $(objdir)/mono_vrtx$(objsuf): $(treedir)/include/stk.h
-$(objdir)/mono_vrtx$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/mono_vrtx$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/mono_vrtx$(objsuf): $(treedir)/include/error.h
 $(objdir)/mono_vrtx$(objsuf): $(treedir)/include/chn.h
 $(objdir)/mono_vrtx$(objsuf): $(treedir)/include/pqsort.h structures.h
@@ -167,7 +167,7 @@ $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/tree.h
 $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/timers.h
 $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/key.h
 $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/stk.h
-$(objdir)/quads_vrtx$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/quads_vrtx$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/error.h
 $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/quads_vrtx$(objsuf): $(treedir)/include/chn.h
@@ -183,7 +183,7 @@ $(objdir)/print$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/print$(objsuf): $(treedir)/include/timers.h
 $(objdir)/print$(objsuf): $(treedir)/include/key.h
 $(objdir)/print$(objsuf): $(treedir)/include/stk.h
-$(objdir)/print$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/print$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/print$(objsuf): $(treedir)/include/error.h
 $(objdir)/print$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/print$(objsuf): $(treedir)/include/chn.h
@@ -196,7 +196,7 @@ $(objdir)/diags$(objsuf): $(treedir)/include/timers.h physics_vrtx.h
 $(objdir)/diags$(objsuf): $(treedir)/include/tree.h
 $(objdir)/diags$(objsuf): $(treedir)/include/key.h
 $(objdir)/diags$(objsuf): $(treedir)/include/stk.h
-$(objdir)/diags$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/diags$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/diags$(objsuf): $(treedir)/include/error.h
 $(objdir)/diags$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/diags$(objsuf): $(treedir)/include/chn.h
@@ -210,7 +210,7 @@ $(objdir)/remesh$(objsuf): $(treedir)/include/tree.h
 $(objdir)/remesh$(objsuf): $(treedir)/include/timers.h
 $(objdir)/remesh$(objsuf): $(treedir)/include/key.h
 $(objdir)/remesh$(objsuf): $(treedir)/include/stk.h
-$(objdir)/remesh$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/remesh$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/remesh$(objsuf): $(treedir)/include/error.h
 $(objdir)/remesh$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/remesh$(objsuf): $(treedir)/include/chn.h
@@ -224,7 +224,7 @@ $(objdir)/neigh$(objsuf): physics_vrtx.h $(treedir)/include/tree.h
 $(objdir)/neigh$(objsuf): $(treedir)/include/timers.h
 $(objdir)/neigh$(objsuf): $(treedir)/include/key.h
 $(objdir)/neigh$(objsuf): $(treedir)/include/stk.h
-$(objdir)/neigh$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/neigh$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/neigh$(objsuf): $(treedir)/include/error.h
 $(objdir)/neigh$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/neigh$(objsuf): $(treedir)/include/chn.h
@@ -237,7 +237,7 @@ $(objdir)/fixomegatot$(objsuf): $(treedir)/include/tree.h
 $(objdir)/fixomegatot$(objsuf): $(treedir)/include/timers.h
 $(objdir)/fixomegatot$(objsuf): $(treedir)/include/key.h
 $(objdir)/fixomegatot$(objsuf): $(treedir)/include/stk.h
-$(objdir)/fixomegatot$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/fixomegatot$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/fixomegatot$(objsuf): $(treedir)/include/error.h
 $(objdir)/fixomegatot$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/fixomegatot$(objsuf): $(treedir)/include/chn.h

@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "protos.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "mpmy.h"
 
 int fexists(const char *name){

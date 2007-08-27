@@ -8,7 +8,7 @@
 #include "mpmy.h"
 #include "mpmy_abnormal.h"
 #include "mpmy_io.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 
 /* To control the contents of pario.c, abnormal.c, etc. */

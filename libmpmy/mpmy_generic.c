@@ -59,7 +59,7 @@ int MPMY_Shift(int proc, void *recvbuf, int recvcnt,
    from malloc failing to deliver.
  */
 #ifndef HAVE_MPMY_SHIFT_OVERLAP
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include <stdlib.h>
 
 int MPMY_Shift_overlap(int proc, void *recvbuf, int recvcnt,

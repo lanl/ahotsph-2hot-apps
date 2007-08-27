@@ -34,7 +34,7 @@ $(objdir)/main_sph$(objsuf): $(treedir)/include/SDF.h
 $(objdir)/main_sph$(objsuf): $(treedir)/include/protos.h
 $(objdir)/main_sph$(objsuf): $(treedir)/include/macr.h
 $(objdir)/main_sph$(objsuf): $(treedir)/include/malloc.h
-$(objdir)/main_sph$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/main_sph$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/main_sph$(objsuf): $(treedir)/include/SDFwrite.h
 $(objdir)/main_sph$(objsuf): $(treedir)/include/SDFread.h
 $(objdir)/main_sph$(objsuf): physics_sph.h $(treedir)/include/tree.h
@@ -60,7 +60,7 @@ $(objdir)/grav_nv$(objsuf): $(treedir)/include/key.h
 $(objdir)/grav_nv$(objsuf):
 $(objdir)/grav_nv$(objsuf): $(treedir)/include/stk.h
 $(objdir)/grav_nv$(objsuf):
-$(objdir)/grav_nv$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/grav_nv$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/grav_nv$(objsuf): $(treedir)/include/error.h
 $(objdir)/grav_nv$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/grav_nv$(objsuf): $(treedir)/include/chn.h
@@ -79,7 +79,7 @@ $(objdir)/cofm_sph$(objsuf): $(treedir)/include/key.h
 $(objdir)/cofm_sph$(objsuf):
 $(objdir)/cofm_sph$(objsuf): $(treedir)/include/stk.h
 $(objdir)/cofm_sph$(objsuf):
-$(objdir)/cofm_sph$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/cofm_sph$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/cofm_sph$(objsuf): $(treedir)/include/error.h
 $(objdir)/cofm_sph$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/cofm_sph$(objsuf): $(treedir)/include/chn.h
@@ -98,7 +98,7 @@ $(objdir)/print$(objsuf): $(treedir)/include/key.h
 $(objdir)/print$(objsuf):
 $(objdir)/print$(objsuf): $(treedir)/include/stk.h
 $(objdir)/print$(objsuf):
-$(objdir)/print$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/print$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/print$(objsuf): $(treedir)/include/error.h
 $(objdir)/print$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/print$(objsuf): $(treedir)/include/chn.h
@@ -116,7 +116,7 @@ $(objdir)/rdtest$(objsuf): $(treedir)/include/key.h
 $(objdir)/rdtest$(objsuf):
 $(objdir)/rdtest$(objsuf): $(treedir)/include/stk.h
 $(objdir)/rdtest$(objsuf):
-$(objdir)/rdtest$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/rdtest$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/rdtest$(objsuf): $(treedir)/include/error.h
 $(objdir)/rdtest$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/rdtest$(objsuf): $(treedir)/include/chn.h
@@ -130,7 +130,7 @@ $(objdir)/sph$(objsuf):
 $(objdir)/sph$(objsuf): $(treedir)/include/timers.h
 $(objdir)/sph$(objsuf): $(treedir)/include/key.h
 $(objdir)/sph$(objsuf): $(treedir)/include/stk.h
-$(objdir)/sph$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/sph$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/sph$(objsuf): $(treedir)/include/error.h
 $(objdir)/sph$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/sph$(objsuf): $(treedir)/include/chn.h
@@ -145,7 +145,7 @@ $(objdir)/integrate$(objsuf): $(treedir)/include/key.h
 $(objdir)/integrate$(objsuf):
 $(objdir)/integrate$(objsuf): $(treedir)/include/stk.h
 $(objdir)/integrate$(objsuf):
-$(objdir)/integrate$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/integrate$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/integrate$(objsuf): $(treedir)/include/error.h
 $(objdir)/integrate$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/integrate$(objsuf): $(treedir)/include/chn.h
@@ -159,7 +159,7 @@ $(objdir)/gravity$(objsuf): $(treedir)/include/key.h
 $(objdir)/gravity$(objsuf):
 $(objdir)/gravity$(objsuf): $(treedir)/include/stk.h
 $(objdir)/gravity$(objsuf):
-$(objdir)/gravity$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/gravity$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/gravity$(objsuf): $(treedir)/include/error.h
 $(objdir)/gravity$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/gravity$(objsuf): $(treedir)/include/chn.h
@@ -175,7 +175,7 @@ $(objdir)/physics_sph$(objsuf): $(treedir)/include/key.h
 $(objdir)/physics_sph$(objsuf):
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/stk.h
 $(objdir)/physics_sph$(objsuf):
-$(objdir)/physics_sph$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/physics_sph$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/error.h
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/chn.h
@@ -201,7 +201,7 @@ $(objdir)/boost$(objsuf): $(treedir)/include/key.h
 $(objdir)/boost$(objsuf):
 $(objdir)/boost$(objsuf): $(treedir)/include/stk.h
 $(objdir)/boost$(objsuf):
-$(objdir)/boost$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/boost$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/boost$(objsuf): $(treedir)/include/error.h
 $(objdir)/boost$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/boost$(objsuf): $(treedir)/include/chn.h

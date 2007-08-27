@@ -3,7 +3,7 @@
 #include "batch.h"
 #include "mpmy.h"
 #include "stk.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 
 void PollWait(MPMY_Comm_request req, int tag);

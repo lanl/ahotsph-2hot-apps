@@ -8,7 +8,7 @@
 #include "mpmy_io.h"
 #include "randoms.h"
 #include "Assert.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "SDF.h"
 #include "error.h"

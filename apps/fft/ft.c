@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "protos.h"
 #include "randoms.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #define NRANSI
 #include "nr.h"
 

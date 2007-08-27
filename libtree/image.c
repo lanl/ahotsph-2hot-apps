@@ -8,7 +8,7 @@
 #include "SDF.h"
 #include "protos.h"
 #include "malloc.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "SDFwrite.h"
 #include "SDFread.h"
 #include "pixel.h"

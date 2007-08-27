@@ -4,7 +4,7 @@
 #include "tree.h"
 #include "physics.h"
 #include "vop.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "key.h"
 #include "fmm.h"

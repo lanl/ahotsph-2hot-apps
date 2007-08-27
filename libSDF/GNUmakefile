@@ -37,7 +37,7 @@ $(objdir)/SDFfuncs$(objsuf):
 $(objdir)/SDFfuncs$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/gccextensions.h stdio.h
 $(objdir)/SDFfuncs$(objsuf): $(treedir)/include/mpmy_io.h SDF-private.h
 $(objdir)/SDFfuncs$(objsuf): $(treedir)/include/obstack.h $(treedir)/include/SDF.h
-$(objdir)/SDFfuncs$(objsuf): $(treedir)/include/byteswap.h $(treedir)/include/Malloc.h
+$(objdir)/SDFfuncs$(objsuf): $(treedir)/include/byteswap.h $(treedir)/include/bigmalloc.h
 $(objdir)/SDFfuncs$(objsuf): $(treedir)/include/error.h $(treedir)/include/protos.h
 $(objdir)/SDFget$(objsuf): stdio.h
 $(objdir)/SDFget$(objsuf): $(treedir)/include/mpmy_io.h $(treedir)/include/error.h

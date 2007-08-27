@@ -14,7 +14,7 @@
 #include "mpmy_time.h"
 #include "mpmy_abnormal.h"
 #include "Assert.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "chn.h"
 #include "error.h"
 #include "dll.h"

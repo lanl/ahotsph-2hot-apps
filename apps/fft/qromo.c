@@ -1,5 +1,5 @@
 #include <math.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "error.h"
 
 #define NR_END 1

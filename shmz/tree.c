@@ -45,7 +45,7 @@ ERROR: Assertion (Find(tp, key) == NULL) failed: file "tree.c", line 58
 #include "tree.h"
 #include "pqsort.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "gc.h"
 #include "mpmy.h"
 #include "Msgs.h"

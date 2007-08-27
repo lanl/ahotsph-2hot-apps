@@ -6,7 +6,7 @@
 #include <time.h>
 #include "mpmy_time.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 #ifndef CLOCKS_PER_SECOND
 /* We've got a non-standard time.h.  At least we have a time.h...*/

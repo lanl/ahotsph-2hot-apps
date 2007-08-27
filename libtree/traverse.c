@@ -2,7 +2,7 @@
 /* in various states of disrepair.  It might still be easier to repair */
 /* them than to start afresh.  Or maybe not. */
 #include "Assert.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "tree.h"
 #include "Msgs.h"
 #include "stk.h"

@@ -31,7 +31,7 @@ Oct 95: modified to fix all particle strengths by setting their global sum to
 #include "SDFread.h"
 #include "error.h"
 #include "getparam.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "malloc.h"
 #include "mpmy.h"
 #include "fastflpt.h"
@@ -570,7 +570,7 @@ SDF *startup(int argc, char **argv){
 			  sizeof(msg_turn_on), "");
     Msg_turnon(msg_turn_on);
 
-    if( Msg_test("Malloc.c") ){
+    if( Msg_test("bigmalloc.c") ){
 	malloc_debug(2);
 	Msg_do("Malloc_debug(2), expect slow mallocs\n");
     }else{

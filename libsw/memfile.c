@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "error.h"
 #include "protos.h"

@@ -17,7 +17,7 @@ typedef struct{float pos[NDIM];} cell;
 #include <float.h>
 #include "timers.h"
 #include "protos.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "mpmy.h"
 #include "vop.h"
 #include "Msgs.h"

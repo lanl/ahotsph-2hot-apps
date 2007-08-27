@@ -23,11 +23,11 @@ $(objdir)/init$(objsuf): $(treedir)/include/randoms.h
 $(objdir)/init$(objsuf): $(treedir)/include/Assert.h
 $(objdir)/init$(objsuf): $(treedir)/include/error.h
 $(objdir)/init$(objsuf): $(treedir)/include/gccextensions.h
-$(objdir)/init$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/init$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/init$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/SDF.h
 $(objdir)/init$(objsuf): $(treedir)/include/getparam.h
 $(objdir)/prft$(objsuf):
-$(objdir)/prft$(objsuf): $(treedir)/include/Malloc.h
+$(objdir)/prft$(objsuf): $(treedir)/include/bigmalloc.h
 $(objdir)/prft$(objsuf): $(treedir)/include/error.h
 $(objdir)/prft$(objsuf): $(treedir)/include/gccextensions.h
 $(objdir)/prft$(objsuf): $(treedir)/include/Msgs.h

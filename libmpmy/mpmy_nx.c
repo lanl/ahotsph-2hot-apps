@@ -13,7 +13,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "chn.h"
 #include "protos.h"
 #include "Msgs.h"

@@ -6,7 +6,9 @@
 #include <stddef.h>
 #include "Msgs.h"
 #ifndef __INSIGHT__
+#ifndef __POWERPC__
 int malloc_debug(int i){ return -1; }
+#endif
 int malloc_verify(void){return 0;}
 void malloc_print(void){Msg_do("Can't print malloc structures for system malloc\n");}
 #endif

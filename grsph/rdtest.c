@@ -1,7 +1,7 @@
 #include <math.h>
 #include "randoms.h"
 #include "physics_sph.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "vop.h"
 #include "fastflpt.h"
 #include "mpmy.h"

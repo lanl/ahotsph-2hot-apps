@@ -31,7 +31,7 @@ $(objdir)/rhofield$(objsuf) : $(incdir)/error.h
 $(objdir)/rhofield$(objsuf) : $(incdir)/gccextensions.h
 $(objdir)/rhofield$(objsuf) : $(incdir)/ring.h
 $(objdir)/rhofield$(objsuf) : $(incdir)/randoms.h
-$(objdir)/rhofield$(objsuf) : $(incdir)/Malloc.h
+$(objdir)/rhofield$(objsuf) : $(incdir)/bigmalloc.h
 $(objdir)/rhofield$(objsuf) : $(incdir)/pqsort.h
 $(objdir)/rhofield$(objsuf) : $(incdir)/key.h
 $(objdir)/rhofield$(objsuf) : $(incdir)/empty/limits.h

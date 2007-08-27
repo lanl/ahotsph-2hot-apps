@@ -37,7 +37,7 @@ $(objdir)/main_panel$(objsuf): $(treedir)/include/fastflpt.h physics_panel.h $(t
 $(objdir)/main_panel$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/main_panel$(objsuf):
 $(objdir)/main_panel$(objsuf):
-$(objdir)/main_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/main_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/main_panel$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/main_panel$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/main_panel$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/SDF.h
@@ -58,7 +58,7 @@ $(objdir)/cofm_panel$(objsuf): physics_panel.h $(treedir)/include/tree.h
 $(objdir)/cofm_panel$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/cofm_panel$(objsuf):
 $(objdir)/cofm_panel$(objsuf):
-$(objdir)/cofm_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/cofm_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/cofm_panel$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/cofm_panel$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/cofm_panel$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -70,7 +70,7 @@ $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/mac$(objsuf):
-$(objdir)/mac$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h
+$(objdir)/mac$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h
 $(objdir)/mac$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/mac$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/mac$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -81,7 +81,7 @@ $(objdir)/physics_panel$(objsuf):
 $(objdir)/physics_panel$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/physics_panel$(objsuf):
 $(objdir)/physics_panel$(objsuf):
-$(objdir)/physics_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h
+$(objdir)/physics_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h
 $(objdir)/physics_panel$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/physics_panel$(objsuf): $(treedir)/include/chn.h $(treedir)/include/Assert.h
 $(objdir)/physics_panel$(objsuf): $(treedir)/include/pqsort.h $(treedir)/include/physics_generic.h
@@ -108,7 +108,7 @@ $(objdir)/integrate_panel$(objsuf): $(treedir)/include/timers.h $(treedir)/inclu
 $(objdir)/integrate_panel$(objsuf):
 $(objdir)/integrate_panel$(objsuf):
 $(objdir)/integrate_panel$(objsuf): $(treedir)/include/stk.h
-$(objdir)/integrate_panel$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/integrate_panel$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/integrate_panel$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/integrate_panel$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/integrate_panel$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -124,7 +124,7 @@ $(objdir)/mono_panel$(objsuf): physics_panel.h $(treedir)/include/tree.h
 $(objdir)/mono_panel$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/mono_panel$(objsuf):
 $(objdir)/mono_panel$(objsuf):
-$(objdir)/mono_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/mono_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/mono_panel$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/mono_panel$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/mono_panel$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/Msgs.h
@@ -137,7 +137,7 @@ $(objdir)/quads_panel$(objsuf): $(treedir)/include/timers.h
 $(objdir)/quads_panel$(objsuf): $(treedir)/include/key.h
 $(objdir)/quads_panel$(objsuf):
 $(objdir)/quads_panel$(objsuf): $(treedir)/include/stk.h
-$(objdir)/quads_panel$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/quads_panel$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/quads_panel$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/quads_panel$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/quads_panel$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/vop.h
@@ -159,7 +159,7 @@ $(objdir)/prepare_panel$(objsuf): $(treedir)/include/tree.h
 $(objdir)/prepare_panel$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/prepare_panel$(objsuf):
 $(objdir)/prepare_panel$(objsuf):
-$(objdir)/prepare_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h
+$(objdir)/prepare_panel$(objsuf): $(treedir)/include/stk.h $(treedir)/include/bigmalloc.h
 $(objdir)/prepare_panel$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/prepare_panel$(objsuf): $(treedir)/include/chn.h $(treedir)/include/Assert.h
 $(objdir)/prepare_panel$(objsuf): $(treedir)/include/pqsort.h $(treedir)/include/physics_generic.h
@@ -172,7 +172,7 @@ $(objdir)/print$(objsuf):
 $(objdir)/print$(objsuf): $(treedir)/include/timers.h $(treedir)/include/key.h
 $(objdir)/print$(objsuf):
 $(objdir)/print$(objsuf): $(treedir)/include/stk.h
-$(objdir)/print$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
+$(objdir)/print$(objsuf): $(treedir)/include/bigmalloc.h $(treedir)/include/error.h
 $(objdir)/print$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/print$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/print$(objsuf): $(treedir)/include/physics_generic.h $(treedir)/include/protos.h

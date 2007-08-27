@@ -9,7 +9,7 @@
 #include "mpmy_io.h"
 #include "Msgs.h"
 #include "mpmy.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "gc.h"
 
 static unsigned long seekptr;		/* Is this a good idea? */

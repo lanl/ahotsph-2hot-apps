@@ -38,7 +38,7 @@ extern const float HeapInf;
 #endif
 #include <stddef.h>
 #include <float.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 #undef INLINE
 #if defined (__GNUC__) && !defined (HEAPdotC)

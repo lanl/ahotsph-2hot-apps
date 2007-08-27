@@ -7,7 +7,7 @@
 #endif
 #include <stddef.h>
 #include <float.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #define HEAPdotC
 #include "heap.h"
 

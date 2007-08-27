@@ -8,7 +8,7 @@
 #include "Assert.h"
 #include "Msgs.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "protos.h"
 #include "mpmy.h"
 #include "lsv.h"

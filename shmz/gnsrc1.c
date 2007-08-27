@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "SDF.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "macr.h"
 
 typedef struct {

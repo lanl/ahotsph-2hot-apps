@@ -2,7 +2,7 @@
 #include "pqsort.h"
 #include "Assert.h"
 #include "key.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "mpmy.h"
 #include "gc.h"
 #include "Msgs.h"

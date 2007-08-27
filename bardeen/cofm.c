@@ -4,7 +4,7 @@
 #include "physics.h"
 #include "vop.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "error.h"
 #include "Assert.h"

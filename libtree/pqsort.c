@@ -20,7 +20,7 @@
 #include "pqsort.h"
 #include "Assert.h"
 #include "key.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "malloc.h"
 #include "mpmy.h"
 #include "gc.h"

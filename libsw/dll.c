@@ -29,7 +29,7 @@
 
 #include "chn.h"
 #include "dll.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 /* Initializing is a two step process because we have to do some
  funny stuff to get a chain allocating chunks just slightly bigger than

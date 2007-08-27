@@ -13,7 +13,7 @@
 #include <unistd.h>		/* for close */
 #include "SDF.h"
 #include "SDFwrite.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "mpmy.h"
 #include "mpmy_io.h"
 #include "Msgs.h"

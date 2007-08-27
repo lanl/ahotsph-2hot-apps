@@ -13,7 +13,20 @@
 #include "Msgs.h"
 
 extern time_t time(time_t *tloc);
+#ifndef __POWERPC__
 extern char *cuserid(char *);
+#else
+char *cuserid(char *n) {
+    static char buf[16];
+
+    if (n == NULL) {
+        strcpy(buf, "Who am I?");
+        return buf;
+    } else {
+        return NULL;
+    }
+}
+#endif
 
 static void parse(int argc, char **argv);
 static void usage(void);

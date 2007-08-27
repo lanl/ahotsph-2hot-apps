@@ -2,7 +2,7 @@
 
 #include "mpmy.h"
 #include "Msgs.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "gc.h"			/* for ilog2 */
 #include "verify.h"
 

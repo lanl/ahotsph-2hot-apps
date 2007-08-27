@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <SDF.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "macr.h"
 #include "protos.h"
 

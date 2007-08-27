@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdio.h>		/* only for sscanf! */
 #include "mpmy.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "protos.h"
 

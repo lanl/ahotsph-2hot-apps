@@ -20,11 +20,11 @@ init$(objsuf): ../../../tree16/include/randoms.h
 init$(objsuf): ../../../tree16/include/Assert.h
 init$(objsuf): ../../../tree16/include/error.h
 init$(objsuf): ../../../tree16/include/gccextensions.h
-init$(objsuf): ../../../tree16/include/Malloc.h
+init$(objsuf): ../../../tree16/include/bigmalloc.h
 init$(objsuf): ../../../tree16/include/Msgs.h ../../../tree16/include/SDF.h
 init$(objsuf): ../../../tree16/include/getparam.h
 init$(objsuf): ../../../tree16/include/SDFwrite.h
-prft$(objsuf): ../../../tree16/include/Malloc.h
+prft$(objsuf): ../../../tree16/include/bigmalloc.h
 prft$(objsuf): ../../../tree16/include/error.h
 prft$(objsuf): ../../../tree16/include/gccextensions.h
 prft$(objsuf): ../../../tree16/include/Msgs.h
@@ -44,7 +44,7 @@ ebw_cdm$(objsuf): ../../../tree16/include/error.h
 ebw_cdm$(objsuf): ../../../tree16/include/gccextensions.h
 ft$(objsuf): ../../../tree16/include/protos.h
 ft$(objsuf): ../../../tree16/include/randoms.h
-ft$(objsuf): ../../../tree16/include/Malloc.h ../../../tree16/include/error.h
+ft$(objsuf): ../../../tree16/include/bigmalloc.h ../../../tree16/include/error.h
 ft$(objsuf): ../../../tree16/include/gccextensions.h nr.h
 powlaw$(objsuf): ../../../tree16/include/singlio.h
 powlaw$(objsuf): ../../../tree16/include/randoms.h

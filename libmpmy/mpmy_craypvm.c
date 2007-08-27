@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pvm3.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "chn.h"
 #include "protos.h"
 #include "Msgs.h"

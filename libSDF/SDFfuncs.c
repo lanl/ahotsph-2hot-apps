@@ -19,7 +19,7 @@
 #include "SDF-private.h"
 #include "obstack.h"
 #include "byteswap.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "protos.h"
 #include "mpmy.h"
 #include "mpmy_io.h"

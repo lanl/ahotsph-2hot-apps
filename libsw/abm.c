@@ -14,7 +14,7 @@
 #include "protos.h"
 #include "Assert.h"
 #include "mpmy.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "verify.h"
 #include "gc.h"

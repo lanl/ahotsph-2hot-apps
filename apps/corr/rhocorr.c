@@ -11,7 +11,7 @@
 #include "error.h"
 #include "ring.h"
 #include "randoms.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 void SDFwrite(const char *filename, int gnobj, int nobj, const void *btab,
 	    int bsize, const char *bodydesc, 

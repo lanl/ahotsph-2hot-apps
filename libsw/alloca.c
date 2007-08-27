@@ -65,7 +65,7 @@ extern pointer	xmalloc();
 /* Johns mods for swutils library. */
 #define xmalloc Malloc
 #define free Free
-#include "Malloc.h"
+#include "bigmalloc.h"
 #endif
 
 /*

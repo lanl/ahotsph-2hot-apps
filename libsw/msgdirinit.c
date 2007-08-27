@@ -7,7 +7,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "mpmy_abnormal.h"
 #include "protos.h"
 #include "error.h"

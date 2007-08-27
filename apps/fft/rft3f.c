@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "timers.h"
 #include "protos.h"

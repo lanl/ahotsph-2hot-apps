@@ -47,11 +47,11 @@ static void (*cellfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 
 
 
-/* #ifdef __GNUC__ */
-/* #define INLINE inline */
-/* #else */
-/* #define INLINE */
-/* #endif */
+#ifdef __GNUC__
+#define INLINE inline
+#else
+#define INLINE
+#endif
 
 INLINE float MAX(float a, float b)
 {

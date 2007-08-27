@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "mpmy.h"
 #include "singlio.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "timers.h"
 #include "Assert.h"
 #include "key.h"

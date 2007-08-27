@@ -15,7 +15,7 @@
 #include "protos.h"
 #include "macr.h"
 #include "malloc.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "SDFwrite.h"
 #include "SDFread.h"
 #include "physics_n.h"
@@ -991,7 +991,7 @@ static SDF *startup(int argc, char **argv){
 			  sizeof(msg_turn_on), "");
     Msg_turnon(msg_turn_on);
 
-    if( Msg_test("Malloc.c") ){
+    if( Msg_test("bigmalloc.c") ){
 	malloc_debug(2);
 	Msg_do("Malloc_debug(2), expect slow mallocs\n");
     }else{

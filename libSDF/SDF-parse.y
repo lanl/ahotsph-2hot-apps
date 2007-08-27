@@ -32,7 +32,7 @@
 #include "Msgs.h"
 #include "SDF-private.h"
 #include "obstack.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 
 #ifndef __DELTA__
 #define YYDEBUG 1
