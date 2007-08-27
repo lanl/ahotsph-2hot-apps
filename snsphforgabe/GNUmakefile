@@ -25,9 +25,11 @@ include $(treedir)/Make-common/Make.$(ARCH)
 
 include $(treedir)/Make-common/Make.generic
 
-#$(objdir)/sleos$(objsuf) : sleos.f
-#	$(FC) $(CFLAGS) -mp1 -c sleos.f
-#	mv sleos$(objsuf) $(objdir)
+ifeq ($(defaultCC),icc)
+$(objdir)/sleos$(objsuf) : sleos.f
+	$(FC) $(CFLAGS) -mp1 -c sleos.f
+	mv sleos$(objsuf) $(objdir)
+endif
 
 $(objdir)/grav$(objsuf) : grav.c
 	$(CC) $(CFLAGS) $(AGGRESSIVE_OPT) -c grav.c
