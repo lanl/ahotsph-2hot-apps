@@ -151,6 +151,8 @@ main(int argc, char *argv[])
     int first_step = 1;
     int stride = sizeof(body)/sizeof(float);
     int SPHstride = sizeof(SPHbody)/sizeof(float);
+    int SPHstride2 = sizeof(SPHbody)/sizeof(double);
+    int SPHstride3 = sizeof(SPHbody)/sizeof(unsigned int);
     int do_output;
     int output_freq;
     int timer_freq;
@@ -1114,11 +1116,20 @@ main(int argc, char *argv[])
 		  SPHnobj, dt, dt_last);
 	/* One must be careful with this integration scheme, since v */
 	/* is a derived variable.  To really adjust v, change pos_last */
+#ifdef POS_IS_DOUBLE
+	PUpdateVd(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride2, 
+		   SPHbtab[0].pos_last, SPHstride2, SPHbtab[0].acc, SPHstride, 
+		   SPHnobj, dt, dt_last);
+	/* v must be done before x, since pos_last is changed in PUpX */
+	PUpdateXd(SPHbtab[0].pos, SPHstride2, SPHbtab[0].pos_last, SPHstride2,
+		   SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+#else
 	PUpdateV(SPHbtab[0].vel, SPHstride, SPHbtab[0].pos, SPHstride, SPHbtab[0].pos_last, 
 		 SPHstride, SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
 	/* v must be done before x, since pos_last is changed in PUpX */
 	PUpdateX(SPHbtab[0].pos, SPHstride, SPHbtab[0].pos_last, SPHstride,
 		 SPHbtab[0].acc, SPHstride, SPHnobj, dt, dt_last);
+#endif
 	UpdateSX(&SPHbtab[0].h, SPHstride, &SPHbtab[0].hdot, SPHstride, SPHnobj, dt, dt_last);
 	UpdateSX(&rb, sizeof(float), &vb, sizeof(float), 1, dt, dt_last);
 

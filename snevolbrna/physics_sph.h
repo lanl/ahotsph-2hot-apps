@@ -8,10 +8,17 @@
 #include "ndim.h"
 
 #define SPH_SAVE_ACC
+#define POS_IS_DOUBLE
 
 typedef struct {
+#ifdef POS_IS_DOUBLE
+  /* double first for alignment */
+    double pos[NDIM];		/* position of body */
+    float mass;			/* mass of body */
+#else
     float mass;			/* mass of body */
     float pos[NDIM];		/* position of body */
+#endif
     float vel[NDIM];		/* velocity of body */
     float h;			/* smoothing length */
     float rho;			/* density */
@@ -42,7 +49,11 @@ typedef struct {
     float grav_nterms;
     float lvel[NDIM];
     float drho_dt;
+#ifdef POS_IS_DOUBLE
+    double pos_last[NDIM];
+#else
     float pos_last[NDIM];
+#endif
     float hdot;
     float udot;
     float udot_last;
@@ -97,8 +108,13 @@ typedef struct {		/* don't need all of this info */
 /* If you add anything to the outbody structure, make sure to add an */
 /* assignment to the Output routine */
 typedef struct {
+#ifdef POS_IS_DOUBLE
+    double pos[NDIM];		/* position of body */
+    float mass;			/* mass of body */
+#else
     float mass;			/* mass of body */
     float pos[NDIM];		/* position of body */
+#endif
     float vel[NDIM];		/* velocity of body */
     float u;
     float h;
@@ -133,6 +149,7 @@ typedef struct {
 #endif
     unsigned int nbrs;
     unsigned int ident;		/* unique? identifier */
+    unsigned int dummy;
 } SPHoutbody;
 
 /* This is the descriptor that goes into the SDF header. */
@@ -141,8 +158,8 @@ typedef struct {
 #ifdef SPH_SAVE_ACC
 #define SPHOUTBODYDESC \
 "struct {\n\
+    double x, y, z;			/* position of body */\n\
     float mass;			/* mass of body */\n\
-    float x, y, z;			/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
@@ -175,12 +192,13 @@ typedef struct {
     float idt;			/* timestep */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    unsigned int dummy;\n\
 }"
 #else
 #define SPHOUTBODYDESC \
 "struct {\n\
+    double x, y, z;		/* position of body */\n\
     float mass;			/* mass of body */\n\
-    float x, y, z;		/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
@@ -209,6 +227,7 @@ typedef struct {
     float vsound;		\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    unsigned int dummy;\n\
 }"
 #endif /* SPH_SAVE_ACC */
 #else  /* NDIM==2 */

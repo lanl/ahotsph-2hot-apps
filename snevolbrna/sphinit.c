@@ -123,9 +123,17 @@ DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 #endif
 	p->mass = 1.0 / gnobj;		 /*   set masses equal */
 	if (periodic)
+#ifdef POS_IS_DOUBLE
+	    Error("cube_rand doesn't support POS_IS_DOUBLE yet");
+#else
 	  rsq = cube_rand(&ranstate, NDIM, p->pos);
+#endif
 	else
+#ifdef POS_IS_DOUBLE
+	    Error("sphere_rand doesn't support POS_IS_DOUBLE yet");
+#else
 	  rsq = sphere_rand(&ranstate, NDIM, p->pos);
+#endif
 	VS(p->vel, = 0.0);
     }
     h = pow((float)8.5/SPHgnobj, .333333);
@@ -350,9 +358,17 @@ SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic)
 #endif
 	p->mass = 1.0 / gnobj;		 /*   set masses equal */
 	if (periodic) {
+#ifdef POS_IS_DOUBLE
+	    Error("cube_rand doesn't support POS_IS_DOUBLE yet");
+#else
 	    rsq = cube_rand(&ranstate, NDIM, p->pos);
+#endif
 	} else {
+#ifdef POS_IS_DOUBLE
+	    Error("sphere_rand doesn't support POS_IS_DOUBLE yet");
+#else
 	    rsq = sphere_rand(&ranstate, NDIM, p->pos);
+#endif
 	}
 	if (cencon == 1) {
 	    rsq = -1.0/sqrt(rsq);
