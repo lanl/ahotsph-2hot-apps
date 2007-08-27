@@ -87,7 +87,7 @@ static int dark_need_update(float dark_tacc, float dark_dt);
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, int windpartpershell, float dt, 
 		int iter, float tpos, int *added_particles);
-void AdjustBtab2(SPHbody **SPHbtabp, int *nobj);
+void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, float r_inner);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -118,6 +118,7 @@ static float frac_tol;
 static float Gamma;		/* lowercase is a math.h function */
 static int default_nterms;
 static float centmass;
+static float r_inner;
 static float bh_S;
 float masunit, lenunit, timunit;
 float bh_rplus;
@@ -165,7 +166,6 @@ main(int argc, char *argv[])
     int gnobj, nobj;
     int SPHgnobj, SPHnobj, SPHoldnobj;
     int windgnobj, windnobj, windpartpershell;
-    float r_inner;
     int PMgnobj, PMnobj;
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
@@ -335,6 +335,7 @@ main(int argc, char *argv[])
 		}
 		if (do_bardeen) {
 		    SDFgetfloatOrDie(csdfp, "centmass", &centmass);
+		    SDFgetfloatOrDie(sdfp, "r_inner", &r_inner);
 		    SDFgetfloatOrDie(csdfp, "bh_a", &bh_a);
 		    SDFgetfloatOrDie(csdfp, "clight", &cosmo.c);
 		    SDFgetfloatOrDie(sdfp, "MAS", &masunit);
@@ -503,6 +504,7 @@ main(int argc, char *argv[])
 	singlPrintf("float centmass = %g;\n", centmass);
 	bh_rplus = cosmo.GNewt * centmass / (cosmo.c * cosmo.c);
 	singlPrintf("float bh_rplus = %g;\n", bh_rplus);
+	singlPrintf("float r_inner = %g;\n", r_inner);
 	bh_S = (bh_a * cosmo.GNewt * cosmo.GNewt * centmass * centmass) 
 	    / (cosmo.c * cosmo.c * cosmo.c);
 	singlPrintf("float bh_a = %g;\n", bh_a);
@@ -613,7 +615,7 @@ main(int argc, char *argv[])
 
 	if (do_bardeen) {
 	    SPHoldnobj = SPHnobj;
-	    AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj);
+	    AdjustBtab2((SPHbody **)&SPHbtab, &SPHnobj, r_inner);
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", 
 		  iter, SPHnobj-SPHoldnobj));
@@ -1965,6 +1967,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "redshift", SDF_FLOAT, output_z,
 	     "gamma", SDF_FLOAT, Gamma,
 	     "centmass", SDF_FLOAT, centmass*masunit/1.9889e33, 
+	     "r_inner", SDF_FLOAT, r_inner,
 	     "eos_K", SDF_FLOAT, eos_K,
 	     "MAS", SDF_FLOAT, masunit,
 	     "LEN", SDF_FLOAT, lenunit,

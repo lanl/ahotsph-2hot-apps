@@ -11,8 +11,6 @@
 #include "vop.h"
 #include "singlio.h"
 
-extern float bh_rplus;
-
 void
 AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 	    int windnobj, int windpartpershell, float dt, 
@@ -117,17 +115,16 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 
 
 void
-AdjustBtab2 (SPHbody **SPHbtabp, int *nobj)
+AdjustBtab2 (SPHbody **SPHbtabp, int *nobj, float r_inner)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p, *q;
     Stk s;
-    float r2 = bh_rplus * bh_rplus;
+    float r2 = r_inner*r_inner;
 
     StkInitEz(&s);
 
     for (p = btab; p < btab+*nobj; p++) {
-	/* Keep all particles outside of bh_rplus */
 
 	if (Dot(p->pos, p->pos) > r2) {
 	    q = StkPush(&s, sizeof(SPHbody));
