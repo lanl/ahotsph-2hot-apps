@@ -2458,6 +2458,10 @@ Fix_dt(float *dt, float dt_max, float dt_min, int tlow_cut, float tmin, int tbad
     if (tmin > 2.0**dt) {
 	dtlongvote++;
     }
+/*     if (tmin <= 2.0**dt) { */
+/* 	dtlongvote--; */
+/*     } */
+
     if (tbad < tlow_cut/10) {
 	dtlongvote++;
     } else if (tbad > tlow_cut/2) {
@@ -2467,14 +2471,15 @@ Fix_dt(float *dt, float dt_max, float dt_min, int tlow_cut, float tmin, int tbad
 	dtlongvote = 0;
 	dtshortvote++;
     }
-    if (ubad > 10) {
-	dtlongvote = 0;
+    if (ubad > 0) {
+	dtlongvote -= ubad;
     }
-    if (ubad >= 10*tlow_cut) {
+    if (ubad >= 10) {
         dtlongvote = 0;
         dtshortvote++;
     }
 
+    singlPrintf("dtlongvote: %d dtshortvote: %d\n", dtlongvote, dtshortvote);
     if (dtshortvote > dtshort && 0.5**dt >= dt_min) {
 	singlPrintf(("Adjusting dt down by factor of 1/2\n"));
 	*dt *= (float)(1./2.);
