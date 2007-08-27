@@ -2126,8 +2126,11 @@ Fix_h(SPHbody *btab, int nobj, int nbrcut_max, int nbrcut_min,
 {
     SPHbody *p;
     int nn[6];
+/*     int nn[7]; */
+/*     float r2; */
     
     nn[0] = nn[1] = nn[2] = nn[3] = nn[4] = nn[5] = 0;
+/*     nn[0] = nn[1] = nn[2] = nn[3] = nn[4] = nn[5] = nn[6] = 0; */
     for (p = btab; p < btab+nobj; p++) {
 	if (!SPH_need_update(p)) continue;
 	if (p->nbrs > 8*nbrcut_max) {
@@ -2140,7 +2143,7 @@ Fix_h(SPHbody *btab, int nobj, int nbrcut_max, int nbrcut_min,
 	    p->h -= nbrcut_fac * p->h;
 	    nn[0]++;
 	}
-	
+	 	
 	if (p->nbrs < nbrcut_min) {
 	    p->h += nbrcut_fac * p->h;
 	    nn[1]++;
@@ -2154,11 +2157,23 @@ Fix_h(SPHbody *btab, int nobj, int nbrcut_max, int nbrcut_min,
 	    p->h = min_h;
 	    nn[5]++;
 	}
+
+/* 	r2 = (p->pos[0] - bndry.pos[0])*(p->pos[0] - bndry.pos[0]) +  */
+/* 	    (p->pos[1] - bndry.pos[1])*(p->pos[1] - bndry.pos[1]) +  */
+/* 	    (p->pos[2] - bndry.pos[2])*(p->pos[2] - bndry.pos[2]); */
+
+/* 	if (4.0*p->h*p->h > r2) { */
+/* 	    p->h = (sqrt(r2)/2.0); */
+/* 	    nn[6]++; */
+/* 	} */
     }
     MPMY_Combine(&nn, &nn, 6, MPMY_INT, MPMY_SUM);
+/*     MPMY_Combine(&nn, &nn, 7, MPMY_INT, MPMY_SUM); */
     singlPrintf("Nbr_cuts: over: %d under: %d 2x_over: %d 8x_over: %d\n",
 		nn[0]+nn[2]+nn[3], nn[1], nn[2]+nn[3], nn[2]);
     singlPrintf("Smoothing cuts: max: %d min: %d\n", nn[4], nn[5]);
+/*     singlPrintf("Smoothing cuts: max: %d min: %d overlap bndry: %d\n",  */
+/* 		nn[4], nn[5], nn[6]); */
 }
 
 static void
