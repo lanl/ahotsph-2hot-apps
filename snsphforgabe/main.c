@@ -571,9 +571,6 @@ main(int argc, char *argv[])
 	bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2.0*z2) ) ) 
 	    * cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
 
-	/* Move bndry.r to 10km if it's less */
-	bndry.r = (bndry.r < 1.0e-3) ? 1.0e-3 : bndry.r;
-
 	singlPrintf("float Gnewt = %g;\n", cosmo.GNewt);
 	singlPrintf("float clight = %g;\n", Konst->clight);
 	singlPrintf("double bndry.x = %g;\n", bndry.pos[0]);
@@ -1041,9 +1038,6 @@ main(int argc, char *argv[])
 	    z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
 	    bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2*z2) ) ) 
 		* cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
-
-	    /* Move bndry.r to 10km if it's less */
-	    bndry.r = (bndry.r < 1.0e-3) ? 1.0e-3 : bndry.r;
 	}
 
 	MPMY_Sync();
@@ -2446,8 +2440,10 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 		max_ye, min_ye, avg_ye, max_ynue);
     singlPrintf("max_nbrs: %d min_nbrs: %d avg_nbrs: %.0f\n", 
 		max_nbrs, min_nbrs, avg_nbrs);
-    singlPrintf("bndry.mass: %g bndry.r: %g bndry.a: %g bndry.j: (%g, %g, %g)\n", 
-		bndry.mass, bndry.r, bndry.a, bndry.j[0], bndry.j[1], bndry.j[2]);
+    singlPrintf("bndry.mass: %g bndry.r: %g%s bndry.a: %g\n",
+		bndry.mass, bndry.r, bndry.r < 1.0e-3 ? " (using 10 km)" : "", 
+		bndry.a);
+    singlPrintf("bndry.j: (%g, %g, %g)\n", bndry.j[0], bndry.j[1], bndry.j[2]);
     *etot += ke+pe+te;
     *tmin = min_dt;
     *tbad = tlow;
