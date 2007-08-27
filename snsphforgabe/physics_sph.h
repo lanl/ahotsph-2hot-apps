@@ -462,6 +462,15 @@ typedef struct{
     int ident;			/* not necessary, but useful for debugging */
 } SinkSPH;
 
+typedef struct {
+    float pos[NDIM];
+    float vel[NDIM];
+    float j[NDIM];
+    float mass;
+    float a;
+    float r;
+} bndry_t;
+
 /* External Fortran linkage */
 #define Fortran(x) x##_
 #define Fortran2(x) x##_
@@ -521,6 +530,7 @@ void UnSetSPHOffset(void);
 void SetSPHRotate(float angle);
 void UnSetSPHRotate(void);
 void update_point_SPHmass(SPHbody *btab, int nobj, void *p, float smooth2, float newt);
+void update_bardeen(SPHbody *btab, int nobj, float G, float c, bndry_t b);
 
 /* In sphinit.c */
 void *DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel);

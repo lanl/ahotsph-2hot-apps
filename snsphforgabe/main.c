@@ -81,6 +81,11 @@ static float IdtSPHGetCost(const SPHbody *ptr);
 static void AngularPeriodicSPH(tree_t *tp, float aleph);
 static void SPHWrapAngularPeriodic(SPHbody *bp, int n, float aleph);
 
+/* In shrink.c */
+void AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, float *newj,
+		float G, float tpos);
+
+
 static int maxmem(void);
 static int maxheap(void);
 
@@ -124,13 +129,15 @@ static int independent_dt;
 static int dark_independent_dt;
 static double Mtot;
 
+static bndry_t bndry;
+
 #define MAXCOEF 16
 
 int
 main(int argc, char *argv[])
 {
     int gnobj, nobj;
-    int SPHgnobj, SPHnobj;
+    int SPHgnobj, SPHnobj, SPHoldnobj;
     int PMgnobj, PMnobj;
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
@@ -203,6 +210,10 @@ main(int argc, char *argv[])
     int make_sink_tree;
     int has_grav_data;
     int do_point_mass;
+    int do_boundary;
+    float z1, z2;
+    float newmass, totnewmass;
+    float newj[NDIM];
     int kernel_ncoef1, kernel_ncoef2;
     double kernel_coef1[MAXCOEF], kernel_coef2[MAXCOEF];
     float aleph_degrees, aleph;		/* opening angle */
@@ -232,6 +243,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_sph", &do_sph, 0);
     SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
+    SDFgetintOrDefault(csdfp, "do_boundary", &do_boundary, 1);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
     SDFgetintOrDefault(csdfp, "do_reduction", &do_reduction, 0);
     SDFgetfloatOrDefault(csdfp, "reduction_bmax", &reduction_bmax, 0.0);
@@ -273,6 +285,18 @@ main(int argc, char *argv[])
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
+		}
+		if (do_boundary) {
+		    SDFgetfloatOrDie(sdfp, "bndry_x", &(bndry.pos[0]));
+		    SDFgetfloatOrDie(sdfp, "bndry_y", &(bndry.pos[1]));
+		    SDFgetfloatOrDie(sdfp, "bndry_z", &(bndry.pos[2]));
+		    SDFgetfloatOrDie(sdfp, "bndry_vx", &(bndry.vel[0]));
+		    SDFgetfloatOrDie(sdfp, "bndry_vy", &(bndry.vel[1]));
+		    SDFgetfloatOrDie(sdfp, "bndry_vz", &(bndry.vel[2]));
+		    SDFgetfloatOrDie(sdfp, "bndry_jx", &(bndry.j[0]));
+		    SDFgetfloatOrDie(sdfp, "bndry_jy", &(bndry.j[1]));
+		    SDFgetfloatOrDie(sdfp, "bndry_jz", &(bndry.j[2]));
+		    SDFgetfloatOrDie(sdfp, "bndry_mass", &(bndry.mass));
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -339,7 +363,7 @@ main(int argc, char *argv[])
     if (!do_restart) {
 	SDFgetfloatOrDefault(csdfp, "dt", &dt, dt);
 	SDFgetfloatOrDefault(csdfp, "dark_dt", &dark_dt, dt);
-   }
+    }
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
     SDFgetintOrDefault(csdfp, "log_time", &log_time, 0);
     SDFgetintOrDefault(csdfp, "comov_eps", &comov_eps, 0);
@@ -536,6 +560,32 @@ main(int argc, char *argv[])
     this_tol = tol;
 
     Fortran(eossetup)();
+    if (do_boundary) {
+	bndry.a = sqrt(bndry.j[0]*bndry.j[0] + 
+		       bndry.j[1]*bndry.j[1] + 
+		       bndry.j[2]*bndry.j[2]) 
+	    * Konst->clight / (cosmo.GNewt * bndry.mass * bndry.mass);
+	z1 = 1.0 + pow(1.0 - bndry.a * bndry.a, 1.0/3.0) 
+	    * ( pow(1.0 + bndry.a, 1.0/3.0) + pow(1.0 - bndry.a, 1.0/3.0) );
+	z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
+	bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2.0*z2) ) ) 
+	    * cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
+
+	singlPrintf("float Gnewt = %g;\n", cosmo.GNewt);
+	singlPrintf("float clight = %g;\n", Konst->clight);
+	singlPrintf("float bndry.x = %g;\n", bndry.pos[0]);
+	singlPrintf("float bndry.y = %g;\n", bndry.pos[1]);
+	singlPrintf("float bndry.z = %g;\n", bndry.pos[2]);
+	singlPrintf("float bndry.vx = %g;\n", bndry.vel[0]);
+	singlPrintf("float bndry.vy = %g;\n", bndry.vel[1]);
+	singlPrintf("float bndry.vz = %g;\n", bndry.vel[2]);
+	singlPrintf("float bndry.jx = %g;\n", bndry.j[0]);
+	singlPrintf("float bndry.jy = %g;\n", bndry.j[1]);
+	singlPrintf("float bndry.jz = %g;\n", bndry.j[2]);
+	singlPrintf("float bndry.mass = %g;\n", bndry.mass);
+	singlPrintf("float bndry.a = %g;\n", bndry.a);
+	singlPrintf("float bndry.r = %g;\n", bndry.r);
+    }
     if (Konst->gg/cosmo.GNewt > 1.01 || Konst->gg/cosmo.GNewt < 0.99) {
       Error("Gravitational constant mismatch %g %g\n", Konst->gg, cosmo.GNewt);
     }
@@ -550,6 +600,33 @@ main(int argc, char *argv[])
 	ClearEnabledCounters();
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
+
+	if (do_boundary) {
+	    /* Absorb particles, adjust bndry mass and angular momentum*/
+	    SPHoldnobj = SPHnobj;
+	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, bndry, &newmass, newj,
+		       cosmo.GNewt, tpos);
+
+	    totnewmass = 0.0;
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM);
+	    MPMY_Combine(newj, newj, 3, MPMY_FLOAT, MPMY_SUM);
+
+	    bndry.mass += totnewmass;
+	    VV(bndry.j, += newj);
+	    bndry.a = sqrt(bndry.j[0]*bndry.j[0] + 
+			   bndry.j[1]*bndry.j[1] + 
+			   bndry.j[2]*bndry.j[2]) 
+		* Konst->clight / (cosmo.GNewt * bndry.mass * bndry.mass);
+	    z1 = 1.0 + pow(1.0 - bndry.a * bndry.a, 1.0/3.0) 
+		* ( pow(1.0 + bndry.a, 1.0/3.0) + pow(1.0 - bndry.a, 1.0/3.0) );
+	    z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
+	    bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2*z2) ) ) 
+		* cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
+
+	    Msgf(("Iter %d: removed %d bodies from SPHbtab\nBndry mass = %g\n",
+		  iter, SPHoldnobj-SPHnobj, bndry.mass));
+	}
 
 	/* comoving smoothing */
 	/* Note: behavior changed Jan. 25, 1996. Beware of old ctl files */
@@ -957,6 +1034,9 @@ main(int argc, char *argv[])
 	      update_point_SPHmass(SPHbtab, SPHnobj, p, eps*eps, cosmo.GNewt);
 	    }
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
+	}
+	if (do_boundary) {
+	    update_bardeen(SPHbtab, SPHnobj, cosmo.GNewt, Konst->clight, bndry);  
 	}
 
 	MPMY_Sync();
@@ -1897,6 +1977,16 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "vb", SDF_DOUBLE, vb,
 	     "rbout", SDF_DOUBLE, rbout,
 	     "xmcore", SDF_FLOAT, xmcore,
+	     "bndry_x", SDF_FLOAT, bndry.pos[0],
+	     "bndry_y", SDF_FLOAT, bndry.pos[1],
+	     "bndry_z", SDF_FLOAT, bndry.pos[2],
+	     "bndry_vx", SDF_FLOAT, bndry.vel[0],
+	     "bndry_vy", SDF_FLOAT, bndry.vel[1],
+	     "bndry_vz", SDF_FLOAT, bndry.vel[2],
+	     "bndry_jx", SDF_FLOAT, bndry.j[0],
+	     "bndry_jy", SDF_FLOAT, bndry.j[1],
+	     "bndry_jz", SDF_FLOAT, bndry.j[2],
+	     "bndry_mass", SDF_FLOAT, bndry.mass,
 	     "R0", SDF_FLOAT, output_R0,
 	     "Omega0", SDF_FLOAT, cosmo.Omega0,
 	     "H0", SDF_FLOAT, cosmo.H0,
@@ -2334,6 +2424,8 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 		max_ye, min_ye, avg_ye, max_ynue);
     singlPrintf("max_nbrs: %d min_nbrs: %d avg_nbrs: %.0f\n", 
 		max_nbrs, min_nbrs, avg_nbrs);
+    singlPrintf("bndry.mass: %g bndry.r: %g bndry.a: %g bndry.j: (%g, %g, %g)\n", 
+		bndry.mass, bndry.r, bndry.a, bndry.j[0], bndry.j[1], bndry.j[2]);
     *etot += ke+pe+te;
     *tmin = min_dt;
     *tbad = tlow;

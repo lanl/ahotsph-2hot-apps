@@ -4,7 +4,7 @@ treedir_sed=\.\.
 
 ifndef prog
 src=cofm.c grav.c mac.c main.c physics.c print.c integrate.c \
-	sphcofm.c sph.c sphinit.c physics_sph.c sphprint.c sphplus.c \
+	sphcofm.c sph.c sphinit.c physics_sph.c shrink.c sphprint.c sphplus.c \
 	SDFreadf.c sn.c
 
 fsrc=eos3.f sleos.f nse4d.f ocean.f eosgen.f
