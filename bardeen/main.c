@@ -373,17 +373,16 @@ main(int argc, char *argv[])
     }
 
     SDFgetfloatOrDefault(csdfp, "epsilon", &eps, 0.0);
-    if (do_grav) {
-	SDFgetintOrDefault(csdfp, "do_DL", &do_DL, 0);
-	SDFgetintOrDefault(csdfp, "do_BH", &do_BH, 0);
-	SDFgetintOrDefault(csdfp, "do_Bmax", &do_Bmax, 0);
-	SDFgetintOrDefault(csdfp, "do_Arel", &do_Arel, 0);
-	if (do_BH || do_Bmax) 
-	  SDFgetfloatOrDie(csdfp, "theta", &tol);
-	else
-	  SDFgetfloatOrDie(csdfp, "errtol", &tol);
-	SDFgetfloatOrDefault(csdfp, "frac_tol", &frac_tol, 0.0);
-    }
+    SDFgetintOrDefault(csdfp, "do_DL", &do_DL, 0);
+    SDFgetintOrDefault(csdfp, "do_BH", &do_BH, 0);
+    SDFgetintOrDefault(csdfp, "do_Bmax", &do_Bmax, 0);
+    SDFgetintOrDefault(csdfp, "do_Arel", &do_Arel, 0);
+    if (do_BH || do_Bmax) 
+	SDFgetfloatOrDie(csdfp, "theta", &tol);
+    else
+	SDFgetfloatOrDie(csdfp, "errtol", &tol);
+    SDFgetfloatOrDefault(csdfp, "frac_tol", &frac_tol, 0.0);
+
     SDFgetfloatOrDefault(csdfp, "CWfac", &CWfac, 0.0);
     if (!do_restart) {
 	SDFgetfloatOrDie(csdfp, "dt", &dt);
@@ -1958,6 +1957,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "redshift", SDF_FLOAT, output_z,
 	     "gamma", SDF_FLOAT, Gamma,
 	     "centmass", SDF_FLOAT, centmass, 
+	     "eos_K", SDF_FLOAT, eos_K,
 	     "ke", SDF_DOUBLE, ke,
 	     "pe", SDF_DOUBLE, pe,
 	     "te", SDF_DOUBLE, te,

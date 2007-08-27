@@ -656,28 +656,30 @@ void
 update_point_mass_bardeen(SPHbody *btab, int nobj, float G, 
 			  float mass, float rplus, float S)
 {
-    /* From Nelson & Papaloizou (2000), eqs. 8 and 16 */
-    SPHbody *r;
-    float oneor, grav_const, dr2;
+    /* From Nelson & Papaloizou (2000), eqs. 8 and 14 */
+    SPHbody *p;
     Vxd(float r);
+    Vxd(float v);
     Vxd(float ppos);
+    Vxd(float pvel);
+    float dr2, oneor, A, B, C;
 
     VxS(ppos, = (float)0.0);  /* BH fixed at origin */
+    VxS(pvel, = (float)0.0);
 
-    for (r = btab; r < btab+nobj; r++) {
+    for (p = btab; p < btab+nobj; p++) {
 
-	VxVVx(r, = r->pos, - ppos);
-
+	VxVVx(v, = p->vel, - pvel);
+	VxVVx(r, = p->pos, - ppos);
 	dr2 = Dotx(r, r);
-
 	oneor = recipsqrtf(dr2);
 
-	grav_const = G*mass*oneor*oneor*oneor * (1.0 + 6.0*rplus*oneor) 
-	    - 2.0*S*sqrt(G*mass*pow(oneor, 7)) 
-	    + 13.5*S*r->pos[2]*r->pos[2]*sqrt(G*mass*pow(oneor, 11));
-	
-	VVx(r->acc, -= grav_const * r);
+	A = -G*mass*oneor*oneor*oneor*(1.0 + 6.0*rplus*oneor);
+	B = 2.0*S*oneor*oneor*oneor;
+	C = 6.0*S*r2*oneor*oneor*oneor*oneor*oneor;
+
+	p->acc[0] += A*r0 + B*v1 + C*(r1*v2 - r2*v1);
+	p->acc[1] += A*r1 - B*v0 + C*(r2*v0 - r0*v2);
+	p->acc[2] += A*r2 + C*(r0*v1 - r1*v0);
     }
 }
-
-
