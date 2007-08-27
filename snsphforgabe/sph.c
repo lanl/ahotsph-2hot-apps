@@ -976,13 +976,13 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low,
 	if (p->temp/p->temprev > (1.0+dttol)) {
 	    SeriousWarning("Tempdot limit (high)\n%s\n", 
 		PrintSPHBodyContents(p));
-	    p->temp = p->temprev * 1.0+dttol;
+/* 	    p->temp = p->temprev * 1.0+dttol; */
 	    *limit_high += 20;
 	}
 	if (p->temp/p->temprev < (1.0-dttol)) {
 	    SeriousWarning("Tempdot limit (low)\n%s\n", 
 		PrintSPHBodyContents(p));
-	    p->temp = p->temprev * 1.0-dttol;
+/* 	    p->temp = p->temprev * 1.0-dttol; */
 	    ++*limit_low;
 	}
 
