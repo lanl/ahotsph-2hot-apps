@@ -37,6 +37,8 @@ static void (*bodyfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 static void (*cellfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 
 extern int do_diffusion;
+extern int do_adiabatic;
+extern float eos_K;
 
 void
 SetSPHOffset(float *off, float *voff)
@@ -486,22 +488,24 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	    ++*limit_low;
 	}
 
-	p->udot += p->drho_dt * p->pr / (p->rho * p->rho) + 
-	    ( (do_diffusion) ? (p->du_r/p->rho) /* Diffusion */
-	      : 0.0 );
+	if (!do_adiabatic) {
+	    p->udot += p->drho_dt * p->pr / (p->rho * p->rho) + 
+		( (do_diffusion) ? (p->du_r/p->rho) /* Diffusion */
+		  : 0.0 );
 
-	if (!finite(p->udot)) 
-	    Error("Bad value for udot\n");
+	    if (!finite(p->udot)) 
+		Error("Bad value for udot\n");
 
-	/* Are these limits appropriate? */
-	/* Does this enforce the Courant limit correctly with diffusion? */
-	if ( (p->udot * dt > p->u) && !(p->ident & (1<<30)) ) {
-	    p->udot = p->u/dt;
-	    ++*limit_high;
-	}
-	if ( (p->udot * dt < -0.333*p->u) && !(p->ident & (1<<30)) ) {
-	    p->udot = -0.333*p->u/dt;
-	    ++*limit_low;
+	    /* Are these limits appropriate? */
+	    /* Does this enforce the Courant limit correctly with diffusion? */
+	    if ( (p->udot * dt > p->u) && !(p->ident & (1<<30)) ) {
+		p->udot = p->u/dt;
+		++*limit_high;
+	    }
+	    if ( (p->udot * dt < -0.333*p->u) && !(p->ident & (1<<30)) ) {
+		p->udot = -0.333*p->u/dt;
+		++*limit_low;
+	    }
 	}
     }
 }
@@ -521,7 +525,12 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
 	else p->rho_est = p->rho;
 	if (p->rho_est <= (float)0.0) 
 	  Error("Rho_est is 0\n%s\n", PrintSPHBodyContents(p));
-	p->pr = p->u * (Gamma - (float)1.0) * p->rho_est;
+
+	if (do_adiabatic) 
+	    p->pr = eos_K * pow(p->rho_est, Gamma);
+	else 
+	    p->pr = p->u * (Gamma - (float)1.0) * p->rho_est;
+
 	p->vsound = sqrtf_fast(Gamma * p->pr / p->rho_est);
 
 	if (do_diffusion) {
@@ -649,7 +658,7 @@ update_point_mass_bardeen(SPHbody *btab, int nobj, float G,
 {
     /* From Nelson & Papaloizou (2000), eqs. 8 and 16 */
     SPHbody *r;
-    float oneor, grav_const;
+    float oneor, grav_const, dr2;
     Vxd(float r);
     Vxd(float ppos);
 
@@ -659,9 +668,9 @@ update_point_mass_bardeen(SPHbody *btab, int nobj, float G,
 
 	VxVVx(r, = r->pos, - ppos);
 
-	r2 = Dotx(r, r);
+	dr2 = Dotx(r, r);
 
-	oneor = recipsqrtf(r2);
+	oneor = recipsqrtf(dr2);
 
 	grav_const = G*mass*oneor*oneor*oneor * (1.0 + 6.0*rplus*oneor) 
 	    - 2.0*S*sqrt(G*mass*pow(oneor, 7)) 

@@ -128,6 +128,8 @@ static int independent_dt;
 static int dark_independent_dt;
 
 int do_diffusion;  /* used in main and in sph.c */
+int do_adiabatic;
+float eos_K;
 
 #ifdef __PARAGON__
 void
@@ -336,6 +338,10 @@ main(int argc, char *argv[])
 		    SDFgetfloatOrDie(csdfp, "clight", &cosmo.c);
 		}
 
+		SDFgetintOrDefault(csdfp, "do_adiabatic", &do_adiabatic, 0);
+		if (do_adiabatic)
+		    SDFgetfloatOrDie(sdfp, "eos_K", &eos_K);
+
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
 	    } else {
@@ -496,6 +502,10 @@ main(int argc, char *argv[])
 	singlPrintf("float bh_S = %f;\n", bh_S);
 	
     }	
+    singlPrintf("int do_adiabatic = %d;\n", do_adiabatic);
+    if (do_adiabatic) {
+	singlPrintf("float eos_K = %g;\n", eos_K);
+    }
     if (do_diffusion) {
 	singlPrintf("int do_diffusion = %d;\n", do_diffusion);
     }
@@ -1044,9 +1054,11 @@ main(int argc, char *argv[])
 	PUpdateX(pmtab[0].pos, stride, pmtab[0].pos_last, stride,
 		 pmtab[0].acc, stride, PMnobj, dt, dt_last);
 
-	ABUpdateXs(&SPHbtab[0].u, SPHstride, &SPHbtab[0].udot, SPHstride, 
-		   &SPHbtab[0].udot_last, SPHstride, &SPHbtab[0].ident,
-		   SPHstride3, SPHnobj, dt, dt_last);
+	if (!do_adiabatic) {
+	    ABUpdateXs(&SPHbtab[0].u, SPHstride, &SPHbtab[0].udot, SPHstride, 
+		       &SPHbtab[0].udot_last, SPHstride, &SPHbtab[0].ident,
+		       SPHstride3, SPHnobj, dt, dt_last);
+	}
 	/* One must be careful with this integration scheme, since v */
 	/* is a derived variable.  To really adjust v, change pos_last */
 #ifdef POS_IS_DOUBLE
@@ -1827,6 +1839,7 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
 		"dt", SDF_FLOAT, dt,
 		"eps", SDF_FLOAT, this_eps,
 		"Gnewt", SDF_FLOAT, cosmo.GNewt,
+		 "eos_K", SDF_FLOAT, eos_K,
 		"tolerance", SDF_FLOAT, this_tol,
 		"frac_tolerance", SDF_FLOAT, frac_tol,
 		"ndim", SDF_INT, NDIM,
@@ -2213,8 +2226,10 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 	    dti = p->h/p->vsound;
 	    tx = p->rho/fabs(p->drho_dt);
 	    if (tx < dti) dti = tx;
-	    tx = p->u/fabs(p->udot);
-	    if (tx < dti) dti = tx;
+	    if (!do_adiabatic) {
+		tx = p->u/fabs(p->udot);
+		if (tx < dti) dti = tx;
+	    }
 	    dti *= courant_number;
 	    if (p->min_nbr_dt == 1e30) { 
 		/* This could happen if there are no nbrs. */
