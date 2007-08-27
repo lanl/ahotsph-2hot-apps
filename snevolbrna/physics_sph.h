@@ -493,11 +493,3 @@ extern konst_s *konst;
 extern output_s *output;
 extern units_s *units;
 extern unit2_s *unit2;
-
-
-
-
-
-
-
-

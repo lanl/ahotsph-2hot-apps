@@ -373,6 +373,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "icore", &icore, 1);
     SDFgetintOrDefault(csdfp, "iextf", &iextf, 1);
     SDFgetfloatOrDefault(csdfp, "xmcore", &xmcore, 0.0);
+    SDFgetfloatOrDefault(csdfp, "Gnewt", &cosmo.GNewt, cosmo.GNewt);
 #if NDIM==2
     xmtheo = sin(aleph);
 #else
@@ -424,6 +425,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "x_pixels", &x_pixels, 512);
     SDFgetintOrDefault(csdfp, "y_pixels", &y_pixels, 512);
     SDFgetintOrDefault(csdfp, "log_image", &log_image, 0);
+    konst = (void *)&Fortran(konst);
 
     if(csdfp) 
 	SDFclose(csdfp);
@@ -547,6 +549,9 @@ main(int argc, char *argv[])
 
     Fortran(eossetup)();
 
+    singlPrintf("float Gnewt = %g;\n", konst->gg);
+    singlPrintf("float xmcore = %g;\n", xmcore);
+
 #if 0
   singlPrintf("Bug fixing...\n");
     for (q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
@@ -569,7 +574,7 @@ main(int argc, char *argv[])
 	    /* Absorb particles, adjust bndry mass */
 	    SPHoldnobj = SPHnobj;
 	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, bndry, &newmass, &newr,
-		       cosmo.GNewt, tpos);
+		       konst->gg, tpos);
 
 	    /* Track accreted momentum too? */
 
@@ -643,7 +648,7 @@ main(int argc, char *argv[])
 	  /* create ghost particles for SPH boundary conditions */
 	  movebound(SPHbtab, SPHnobj, tpos, rb, &vb, &icore);
 	  pghost(SPHbtab, SPHnobj, &ghost_nobj, &ghosts, rb, vb, rbout,
-		 iextf, icore, cosmo.GNewt, xmcore, aleph);
+		 iextf, icore, konst->gg, xmcore, aleph);
 	  SPHbtab = Realloc(SPHbtab, (SPHnobj+ghost_nobj) * sizeof(SPHbody));
 	  memcpy(SPHbtab+SPHnobj, StkBase(&ghosts), 
 		 ghost_nobj * sizeof(SPHbody));
@@ -694,7 +699,7 @@ main(int argc, char *argv[])
 
 	if (do_grav && dark_need_update(dark_tacc, dark_dt)) {
 	    /* We aren't using the first two params */
-	    SetTol(0, 0, cosmo.GNewt, this_eps, gnobj+SPHgnobj);
+	    SetTol(0, 0, konst->gg, this_eps, gnobj+SPHgnobj);
 	    FixKeys(btab, nobj, GETKEY);
 	    
 	    if (MACtype == AREL_MAC) this_tol = tol*mtot/(sysradius*sysradius);
@@ -740,7 +745,7 @@ main(int argc, char *argv[])
 	    WalkTerminate();
 	    StopTimer(&WTermTm);
 	    if (cosmology) FixGlobalForce(btab, nobj);
-	    if (do_periodic) FixCube(btab, nobj, sysradius, cosmo.GNewt*mtot);
+	    if (do_periodic) FixCube(btab, nobj, sysradius, konst->gg*mtot);
 	    StopTimer(&FindForcesTm);
 	    singlPrintf("FindForces done %d (%d)\n", maxmem(), maxheap());
 
@@ -781,7 +786,7 @@ main(int argc, char *argv[])
 	if (do_grav) GravMinusSPH((void **)&btab, &nobj, &SPHatab, &SPHanobj);
 	
 	singlPrintf("Doing mean-field SN gravity\n");
-	sn_gravity(SPHbtab, SPHnobj, xmcore, xmtheo, 1, 3.355326e4,
+	sn_gravity(SPHbtab, SPHnobj, xmcore, xmtheo, konst->gg, konst->clight,
 		   icore, minr, maxr);
 
 	/* This should be the high-water mark for memory use */
@@ -1006,16 +1011,16 @@ main(int argc, char *argv[])
 	      p->phi = 0.0;
 	    }
 	    for (p = pmtab; p < pmtab+PMgnobj; p++) {
-	      update_point_mass(pmtab, PMnobj, p, eps*eps, cosmo.GNewt);
+	      update_point_mass(pmtab, PMnobj, p, eps*eps, konst->gg);
 	    }
 	    for (p = pmtab; p < pmtab+PMgnobj; p++) {
-	      update_point_SPHmass(SPHbtab, SPHnobj, p, eps*eps, cosmo.GNewt);
+	      update_point_SPHmass(SPHbtab, SPHnobj, p, eps*eps, konst->gg);
 	    }
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
 	}
 
 	if (do_absorbing_bndry)
-	    update_point_SPHmass_bndry(SPHbtab, SPHnobj, cosmo.GNewt, bndry);
+	    update_point_SPHmass_bndry(SPHbtab, SPHnobj, konst->gg, bndry);
 
 	MPMY_Sync();
 #if 0
@@ -1890,7 +1895,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "pe", SDF_DOUBLE, pe,
 	     "te", SDF_DOUBLE, te,
 	     "dt", SDF_FLOAT, dt,
-	     "Gnewt", SDF_FLOAT, cosmo.GNewt,
+	     "Gnewt", SDF_FLOAT, konst->gg,
 	     "frac_tolerance", SDF_FLOAT, frac_tol,
 	     "iter", SDF_INT, iter,
 	     "ndim", SDF_INT, NDIM,
@@ -1994,7 +1999,7 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
 	     "iter", SDF_INT, iter,
 	     "dt", SDF_FLOAT, dt,
 	     "eps", SDF_FLOAT, this_eps,
-	     "Gnewt", SDF_FLOAT, cosmo.GNewt,
+	     "Gnewt", SDF_FLOAT, konst->gg,
 	     "tolerance", SDF_FLOAT, this_tol,
 	     "frac_tolerance", SDF_FLOAT, frac_tol,
 	     "iter", SDF_INT, iter,
