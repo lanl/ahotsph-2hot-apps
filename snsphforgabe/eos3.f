@@ -538,7 +538,10 @@ c
           delrho=rhovar
       Endif
 c
-      Do 60 i=1,500
+c
+c--Changed "500" to "5000"
+c
+      Do 60 i=1,5000
           delrho=dsign(min(abs(rho-rholast),abs(delrho)),delrho)
           rhotmp=rholast + delrho
           call nsesolv(ider,t9,rhotmp,ye,yp,yn,kit,kmax,ubind,
