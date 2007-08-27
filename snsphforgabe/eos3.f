@@ -1068,7 +1068,7 @@ c      t9nse=21.d0
 c      tfreeze=t9nse-7.0d0
 c  These are the standard numbers
 c      rhoswe=2.0d1 -- changed 11/8/2004 --gmr
-      rhoswe=5.0d4
+      rhoswe=1.0d4
 c remember to change this in eosgen as well
 c      t9nse=800.d0 -- changed 11/8/2004 --gmr
       t9nse=8.0d0
