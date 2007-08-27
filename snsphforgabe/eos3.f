@@ -1016,6 +1016,16 @@ c
       call nupp(tempi,rhoi,etai,yei,ri,gshifti,pmassi,
      $     rmaxnue,rmaxnueb,rmaxnux)
 c
+c--moved from neutrino2 (thanks Rosie Telford!)
+c
+      call nuann(hi,rhoi,tempi,etai,ri,
+     $     ynuei,ynuebi,ynuxi,rmaxnue,rmaxnueb,rmaxnux)
+c
+      call nuconv(ri,hi,rhoi,tempi,gshifti,pmassi,
+     $     ynuei,ynuebi,ynuxi,rmaxnue,rmaxnueb,rmaxnux,
+     $     enue,enueb,enux,e2nue,e2nueb,e2nux,rlumnue,rlumnueb,
+     $     rlumnux)
+c
       call nusphere(steps,hi,ri,ynuei,ynuebi,ynuxi,
      $     unuei,unuebi,unuxi,gshifti,pmassi,
      $     rmaxnue,rmaxnueb,rmaxnux)
@@ -2142,14 +2152,6 @@ c
 c
       call nubeta(steps,vsoundi,hi,tempi,xmuhati,
      $     etai,rhoi,ynuei,ynuebi,unuei,unuebi)
-c
-      call nuann(hi,rhoi,tempi,etai,ri,
-     $     ynuei,ynuebi,ynuxi,rmaxnue,rmaxnueb,rmaxnux)
-
-      call nuconv(ri,hi,rhoi,tempi,gshifti,pmassi,
-     $     ynuei,ynuebi,ynuxi,rmaxnue,rmaxnueb,rmaxnux,
-     $     enue,enueb,enux,e2nue,e2nueb,e2nux,rlumnue,rlumnueb,
-     $     rlumnux)
 c
       return
       end
