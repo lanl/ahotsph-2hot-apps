@@ -1,0 +1,4 @@
+ifc     -o sph.p4icc-swampi Objfiles/p4icc/cofm.o Objfiles/p4icc/grav.o Objfiles/p4icc/mac.o Objfiles/p4icc/main.o Objfiles/p4icc/physics.o Objfiles/p4icc/print.o Objfiles/p4icc/integrate.o Objfiles/p4icc/sphcofm.o Objfiles/p4icc/sph.o Objfiles/p4icc/sphinit.o Objfiles/p4icc/physics_sph.o Objfiles/p4icc/sphprint.o Objfiles/p4icc/sphplus.o Objfiles/p4icc/SDFreadf.o Objfiles/p4icc/sn.o Objfiles/p4icc/eos3.o Objfiles/p4icc/sleos.o Objfiles/p4icc/nse4d.o Objfiles/p4icc/ocean.o Objfiles/p4icc/eosgen.o  ../Objfiles/p4icc/mpmy_swampi.o ../Objfiles/p4icc/libtree.a ../Objfiles/p4icc/libsw.a -lm 
+ld:Objfiles/p4icc/eos3.o: file format not recognized; treating as linker script
+ld:Objfiles/p4icc/eos3.o:1: parse error
+make: *** [sph.p4icc-swampi] Error 1
