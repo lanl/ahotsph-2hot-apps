@@ -13,12 +13,12 @@
 
 void
 AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, 
-	   float newt, float tpos)
+	   float *newr, float newt, float tpos)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p, *q;
     Stk s;
-    float r2, v2, b2;
+    float r2, v2, b2, minb2 = 1e30;
 
     StkInitEz(&s);
 
@@ -30,7 +30,13 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
 	
 	/* One option: adjust r2 based on particle velocities to
 	   simulate capture-radius behavior */
-	r2 = 4.0*newt*newt*b.mass*b.mass / (v2 * v2);
+	/* r2 = 4.0*newt*newt*b.mass*b.mass / (v2 * v2); */
+
+	/* Another option: start small and move r2 out after eating
+	   all particles to 10% of the radius of the next-nearest
+	   particle */
+
+	r2 = b.r*b.r;
 
 	b2 = (p->pos[0] - b.pos[0])*(p->pos[0] - b.pos[0]) + 
 	    (p->pos[1] - b.pos[1])*(p->pos[1] - b.pos[1]) + 
@@ -39,6 +45,7 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
 	if ( b2 >= r2 ) {  /* If distance to bndry > capture radius */
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
+	    if (b2 < minb2) minb2 = b2;
 	} else {
 	    *newmass += p->mass;
 
@@ -51,4 +58,9 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
     *nobj = StkSz(&s)/sizeof(SPHbody);
     btab = StkBase(&s);
     *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
+
+    *newr = 0.5*sqrt(minb2);  /* Candidate new boundary radius =
+				 innermost particle's
+				 distance-to-boundary * 25% */
+    if (*newr < b.r) *newr = b.r;  /* Never shrink boundary */
 }

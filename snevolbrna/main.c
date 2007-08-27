@@ -85,7 +85,7 @@ static int maxheap(void);
 
 /* In shrink.c */
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, 
-		float newt, float tpos);
+		float *newr, float newt, float tpos);
 
 float Znow(float time);
 float Hnow(float time);
@@ -208,6 +208,7 @@ main(int argc, char *argv[])
     int do_point_mass;
     int do_absorbing_bndry;
     float newmass = 0.0, totnewmass = 0.0;
+    float newr = 0.0;
     int kernel_ncoef1, kernel_ncoef2;
     double kernel_coef1[MAXCOEF], kernel_coef2[MAXCOEF];
     float aleph_degrees, aleph;		/* opening angle */
@@ -275,16 +276,21 @@ main(int argc, char *argv[])
 		}
 		if (do_absorbing_bndry) {
 		    SDFgetfloatOrDie(sdfp, "bndry_x", &(bndry.pos[0]));
+#if NDIM>=2
 		    SDFgetfloatOrDie(sdfp, "bndry_y", &(bndry.pos[1]));
-#if NDIM==3
+#if NDIM>=3
 		    SDFgetfloatOrDie(sdfp, "bndry_z", &(bndry.pos[2]));
 #endif
+#endif
 		    SDFgetfloatOrDie(sdfp, "bndry_vx", &(bndry.vel[0]));
+#if NDIM>=2
 		    SDFgetfloatOrDie(sdfp, "bndry_vy", &(bndry.vel[1]));
-#if NDIM==3
+#if NDIM>=3
 		    SDFgetfloatOrDie(sdfp, "bndry_vz", &(bndry.vel[2]));
 #endif
+#endif
 		    SDFgetfloatOrDie(sdfp, "bndry_mass", &(bndry.mass));
+		    SDFgetfloatOrDie(sdfp, "bndry_r", &(bndry.r));
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -471,16 +477,21 @@ main(int argc, char *argv[])
     singlPrintf("float vb = %.4f;\n", vb);
     if (do_absorbing_bndry) {
 	singlPrintf("float bndry_x = %g;\n", bndry.pos[0]);
+#if NDIM>=2
 	singlPrintf("float bndry_y = %g;\n", bndry.pos[1]);
-#if NDIM==3
+#if NDIM>=3
 	singlPrintf("float bndry_z = %g;\n", bndry.pos[2]);
 #endif
+#endif
 	singlPrintf("float bndry_vx = %g;\n", bndry.vel[0]);
+#if NDIM>=2
 	singlPrintf("float bndry_vy = %g;\n", bndry.vel[1]);
-#if NDIM==3
+#if NDIM>=3
 	singlPrintf("float bndry_vz = %g;\n", bndry.vel[2]);
 #endif
+#endif
 	singlPrintf("float bndry_mass = %g;\n", bndry.mass);
+	singlPrintf("float bndry_r = %g;\n", bndry.r);
     }
     if (log_time) Error("This code does not support log_time\n");
     if (cosmology) {
@@ -557,14 +568,17 @@ main(int argc, char *argv[])
 	if (do_absorbing_bndry) {
 	    /* Absorb particles, adjust bndry mass */
 	    SPHoldnobj = SPHnobj;
-	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, bndry, &newmass, 
+	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, bndry, &newmass, &newr,
 		       cosmo.GNewt, tpos);
 
 	    /* Track accreted momentum too? */
 
+	    totnewmass = 0.0;
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM);
+	    MPMY_Combine(&newr, &newr, 1, MPMY_FLOAT, MPMY_MIN);
 	    bndry.mass += totnewmass;
+	    bndry.r = newr;
 	    Msgf(("Iter %d: removed %d bodies from SPHbtab\nBndry mass = %g\n",
 		  iter, SPHoldnobj-SPHnobj, bndry.mass));
 	}
@@ -1149,7 +1163,8 @@ main(int argc, char *argv[])
 	MPMY_Combine(udot_limit, udot_limit, 2, MPMY_INT, MPMY_SUM);
 	singlPrintf("udot_limit high: %d low: %d\n", udot_limit[0], udot_limit[1]);
 	singlPrintf("Total Energy: %g\n", etot);
-	singlPrintf("Central mass: %g\n", bndry.mass);
+	singlPrintf("Central mass: %g; boundary radius: %g\n", bndry.mass,
+		    bndry.r);
 
 	StopTimer(&StepTot);
 	StopTimer(&StepTotWC);
@@ -1901,6 +1916,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "bndry_vy", SDF_FLOAT, bndry.vel[1],
 	     "bndry_vz", SDF_FLOAT, bndry.vel[2],
 	     "bndry_mass", SDF_FLOAT, bndry.mass,
+	     "bndry_r", SDF_FLOAT, bndry.r,
 	     NULL);
     Free(output_btab);
     singlPrintf("\nOutput done.\n");

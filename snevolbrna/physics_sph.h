@@ -339,6 +339,7 @@ typedef struct {
     float pos[NDIM];
     float vel[NDIM];
     float mass;
+    float r;
 } bndry_t;
 
 /* External Fortran linkage */
