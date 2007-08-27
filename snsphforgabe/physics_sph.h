@@ -462,13 +462,15 @@ typedef struct{
     int ident;			/* not necessary, but useful for debugging */
 } SinkSPH;
 
+/* bndry_t needs double-precision members to store the accumulating
+   sums of small quantities from accreted particles */
 typedef struct {
-    float pos[NDIM];
-    float vel[NDIM];
-    float j[NDIM];
-    float mass;
-    float a;
-    float r;
+    double pos[NDIM];
+    double vel[NDIM];
+    double j[NDIM];
+    double mass;
+    double a;
+    double r;
 } bndry_t;
 
 /* External Fortran linkage */

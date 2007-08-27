@@ -12,8 +12,8 @@
 #include "singlio.h"
 
 void
-AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, float *newj, 
-	   float G, float tpos)
+AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, 
+	   float *newj, float G, float tpos)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p, *q;
@@ -24,7 +24,7 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, float *newj
 
     r2 = b.r*b.r;
 
-    for (*newmass = 0.0, newj[0] = 0.0, newj[1] = 0.0, newj[2] = 0.0, p = btab; 
+    for (*newmass = 0.0, newj[0] = 0.0, newj[1] = 0.0, newj[2] = 0.0, p = btab;
 	 p < btab+*nobj; p++) {
 
 	b2 = (p->pos[0] - b.pos[0])*(p->pos[0] - b.pos[0]) + 

@@ -211,7 +211,7 @@ main(int argc, char *argv[])
     int has_grav_data;
     int do_point_mass;
     int do_boundary;
-    float z1, z2;
+    double z1, z2;
     float newmass, totnewmass;
     float newj[NDIM];
     int kernel_ncoef1, kernel_ncoef2;
@@ -287,16 +287,16 @@ main(int argc, char *argv[])
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
 		}
 		if (do_boundary) {
-		    SDFgetfloatOrDie(sdfp, "bndry_x", &(bndry.pos[0]));
-		    SDFgetfloatOrDie(sdfp, "bndry_y", &(bndry.pos[1]));
-		    SDFgetfloatOrDie(sdfp, "bndry_z", &(bndry.pos[2]));
-		    SDFgetfloatOrDie(sdfp, "bndry_vx", &(bndry.vel[0]));
-		    SDFgetfloatOrDie(sdfp, "bndry_vy", &(bndry.vel[1]));
-		    SDFgetfloatOrDie(sdfp, "bndry_vz", &(bndry.vel[2]));
-		    SDFgetfloatOrDie(sdfp, "bndry_jx", &(bndry.j[0]));
-		    SDFgetfloatOrDie(sdfp, "bndry_jy", &(bndry.j[1]));
-		    SDFgetfloatOrDie(sdfp, "bndry_jz", &(bndry.j[2]));
-		    SDFgetfloatOrDie(sdfp, "bndry_mass", &(bndry.mass));
+		    SDFgetdoubleOrDie(sdfp, "bndry_x", &(bndry.pos[0]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_y", &(bndry.pos[1]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_z", &(bndry.pos[2]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_vx", &(bndry.vel[0]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_vy", &(bndry.vel[1]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_vz", &(bndry.vel[2]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_jx", &(bndry.j[0]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_jy", &(bndry.j[1]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_jz", &(bndry.j[2]));
+		    SDFgetdoubleOrDie(sdfp, "bndry_mass", &(bndry.mass));
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -573,18 +573,18 @@ main(int argc, char *argv[])
 
 	singlPrintf("float Gnewt = %g;\n", cosmo.GNewt);
 	singlPrintf("float clight = %g;\n", Konst->clight);
-	singlPrintf("float bndry.x = %g;\n", bndry.pos[0]);
-	singlPrintf("float bndry.y = %g;\n", bndry.pos[1]);
-	singlPrintf("float bndry.z = %g;\n", bndry.pos[2]);
-	singlPrintf("float bndry.vx = %g;\n", bndry.vel[0]);
-	singlPrintf("float bndry.vy = %g;\n", bndry.vel[1]);
-	singlPrintf("float bndry.vz = %g;\n", bndry.vel[2]);
-	singlPrintf("float bndry.jx = %g;\n", bndry.j[0]);
-	singlPrintf("float bndry.jy = %g;\n", bndry.j[1]);
-	singlPrintf("float bndry.jz = %g;\n", bndry.j[2]);
-	singlPrintf("float bndry.mass = %g;\n", bndry.mass);
-	singlPrintf("float bndry.a = %g;\n", bndry.a);
-	singlPrintf("float bndry.r = %g;\n", bndry.r);
+	singlPrintf("double bndry.x = %g;\n", bndry.pos[0]);
+	singlPrintf("double bndry.y = %g;\n", bndry.pos[1]);
+	singlPrintf("double bndry.z = %g;\n", bndry.pos[2]);
+	singlPrintf("double bndry.vx = %g;\n", bndry.vel[0]);
+	singlPrintf("double bndry.vy = %g;\n", bndry.vel[1]);
+	singlPrintf("double bndry.vz = %g;\n", bndry.vel[2]);
+	singlPrintf("double bndry.jx = %g;\n", bndry.j[0]);
+	singlPrintf("double bndry.jy = %g;\n", bndry.j[1]);
+	singlPrintf("double bndry.jz = %g;\n", bndry.j[2]);
+	singlPrintf("double bndry.mass = %g;\n", bndry.mass);
+	singlPrintf("double bndry.a = %g;\n", bndry.a);
+	singlPrintf("double bndry.r = %g;\n", bndry.r);
     }
     if (Konst->gg/cosmo.GNewt > 1.01 || Konst->gg/cosmo.GNewt < 0.99) {
       Error("Gravitational constant mismatch %g %g\n", Konst->gg, cosmo.GNewt);
@@ -611,18 +611,6 @@ main(int argc, char *argv[])
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM);
 	    MPMY_Combine(newj, newj, 3, MPMY_FLOAT, MPMY_SUM);
-
-	    bndry.mass += totnewmass;
-	    VV(bndry.j, += newj);
-	    bndry.a = sqrt(bndry.j[0]*bndry.j[0] + 
-			   bndry.j[1]*bndry.j[1] + 
-			   bndry.j[2]*bndry.j[2]) 
-		* Konst->clight / (cosmo.GNewt * bndry.mass * bndry.mass);
-	    z1 = 1.0 + pow(1.0 - bndry.a * bndry.a, 1.0/3.0) 
-		* ( pow(1.0 + bndry.a, 1.0/3.0) + pow(1.0 - bndry.a, 1.0/3.0) );
-	    z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
-	    bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2*z2) ) ) 
-		* cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
 
 	    Msgf(("Iter %d: removed %d bodies from SPHbtab\nBndry mass = %g\n",
 		  iter, SPHoldnobj-SPHnobj, bndry.mass));
@@ -1036,7 +1024,20 @@ main(int argc, char *argv[])
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
 	}
 	if (do_boundary) {
-	    update_bardeen(SPHbtab, SPHnobj, cosmo.GNewt, Konst->clight, bndry);  
+	    update_bardeen(SPHbtab,SPHnobj, cosmo.GNewt, Konst->clight, bndry);
+
+	    /* Add accreted mass and ang mom to boundary */
+	    bndry.mass += totnewmass;
+	    VV(bndry.j, += newj);
+	    bndry.a = sqrt(bndry.j[0]*bndry.j[0] + 
+			   bndry.j[1]*bndry.j[1] + 
+			   bndry.j[2]*bndry.j[2]) 
+		* Konst->clight / (cosmo.GNewt * bndry.mass * bndry.mass);
+	    z1 = 1.0 + pow(1.0 - bndry.a * bndry.a, 1.0/3.0) 
+		* ( pow(1.0 + bndry.a, 1.0/3.0) + pow(1.0 -bndry.a, 1.0/3.0) );
+	    z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
+	    bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2*z2) ) ) 
+		* cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
 	}
 
 	MPMY_Sync();
@@ -1977,16 +1978,16 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "vb", SDF_DOUBLE, vb,
 	     "rbout", SDF_DOUBLE, rbout,
 	     "xmcore", SDF_FLOAT, xmcore,
-	     "bndry_x", SDF_FLOAT, bndry.pos[0],
-	     "bndry_y", SDF_FLOAT, bndry.pos[1],
-	     "bndry_z", SDF_FLOAT, bndry.pos[2],
-	     "bndry_vx", SDF_FLOAT, bndry.vel[0],
-	     "bndry_vy", SDF_FLOAT, bndry.vel[1],
-	     "bndry_vz", SDF_FLOAT, bndry.vel[2],
-	     "bndry_jx", SDF_FLOAT, bndry.j[0],
-	     "bndry_jy", SDF_FLOAT, bndry.j[1],
-	     "bndry_jz", SDF_FLOAT, bndry.j[2],
-	     "bndry_mass", SDF_FLOAT, bndry.mass,
+	     "bndry_x", SDF_DOUBLE, bndry.pos[0],
+	     "bndry_y", SDF_DOUBLE, bndry.pos[1],
+	     "bndry_z", SDF_DOUBLE, bndry.pos[2],
+	     "bndry_vx", SDF_DOUBLE, bndry.vel[0],
+	     "bndry_vy", SDF_DOUBLE, bndry.vel[1],
+	     "bndry_vz", SDF_DOUBLE, bndry.vel[2],
+	     "bndry_jx", SDF_DOUBLE, bndry.j[0],
+	     "bndry_jy", SDF_DOUBLE, bndry.j[1],
+	     "bndry_jz", SDF_DOUBLE, bndry.j[2],
+	     "bndry_mass", SDF_DOUBLE, bndry.mass,
 	     "R0", SDF_FLOAT, output_R0,
 	     "Omega0", SDF_FLOAT, cosmo.Omega0,
 	     "H0", SDF_FLOAT, cosmo.H0,
