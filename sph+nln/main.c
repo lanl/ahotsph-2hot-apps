@@ -443,6 +443,7 @@ main(int argc, char *argv[])
     singlPrintf("int exact_rho = %d;\n", exact_rho);
     singlPrintf("float courant_number = %g;\n", courant_number);
     singlPrintf("float gamma = %f;\n", Gamma);
+    singlPrintf("float Gnewt = %g;\n", cosmo.GNewt);
     singlPrintf("float visc_alpha = %g;\n", visc_alpha);
     singlPrintf("float visc_beta = %g;\n", visc_beta);
     singlPrintf("float visc_epsilon = %g;\n", visc_epsilon);
