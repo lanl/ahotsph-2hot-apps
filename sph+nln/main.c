@@ -92,6 +92,7 @@ void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, float r_limit, float dt, int iter, float tpos,
 		int *added_particles, float *newmass);
+void AdjustBtab3(SPHbody **SPHbtabp, int *nobj, int gnobj, float r_limit);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -219,6 +220,7 @@ main(int argc, char *argv[])
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
     int do_point_mass, do_point_mass2;
+    int do_boundary;
     int do_drag;
     float drag_coeff;
 /*     float newmass = 0.0, totnewmass = 0.0; */
@@ -273,6 +275,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_winds", &do_winds, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
+    SDFgetintOrDefault(csdfp, "do_boundary", &do_boundary, 0);
     SDFgetintOrDefault(csdfp, "do_drag", &do_drag, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
     if (do_sph || do_grav) {
@@ -320,6 +323,11 @@ main(int argc, char *argv[])
 		} else {
 		    PMgnobj = PMnobj = 0;
 		    pmtab = Malloc(sizeof(body)); /* realloced later */
+		}
+
+		if (do_boundary) {
+		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
+		    SDFgetfloatOrDie(csdfp, "centmass", &centmass);
 		}
 
 		if (do_winds) {
@@ -493,6 +501,11 @@ main(int argc, char *argv[])
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
 	singlPrintf("float centmass = %e;\n", centmass);
     }
+    if (do_boundary) {
+        singlPrintf("float r_inner = %f;\n", r_inner);
+	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
+	singlPrintf("float centmass = %e;\n", centmass);
+    }
     if (do_drag) {
 	singlPrintf("int do_drag = %d;\n", do_drag);
 	singlPrintf("float drag_coeff = %g;\n", drag_coeff);
@@ -600,6 +613,13 @@ main(int argc, char *argv[])
 	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\nBH mass = %f\n", iter, 
 		SPHnobj-SPHoldnobj, centmass));
 	  /* SPHFixId(SPHbtab, SPHnobj, SPHgnobj); */
+	}
+
+	if (do_boundary) {
+	    SPHoldnobj = SPHnobj;
+	    AdjustBtab3((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, r_inner);
+	    Msgf(("Iter: %d: Removed %d bodies from SPHbtab\n", iter, 
+		  SPHnobj-SPHoldnobj));
 	}
 
 	/* comoving smoothing */
@@ -926,7 +946,7 @@ main(int argc, char *argv[])
 	    singlPrintf("Updated %d point-mass accs\n", PMgnobj);
 	}
 
-	if (do_point_mass2) {
+	if (do_point_mass2 || do_boundary) {
 	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
 				  centmass);
 	}
@@ -1882,7 +1902,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	output_btab[i].u = btab[i].u;
 	output_btab[i].h = btab[i].h;
 	output_btab[i].rho = btab[i].rho;
-/*  	output_btab[i].drho_dt = btab[i].drho_dt; */
+  	output_btab[i].drho_dt = btab[i].drho_dt;
 	output_btab[i].udot = btab[i].udot;
 #ifdef SPH_SAVE_ACC
 	VV(output_btab[i].acc, = btab[i].acc);

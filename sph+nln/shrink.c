@@ -216,3 +216,31 @@ AdjustBtab2 (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
     btab = StkBase(&s);
     *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
 }
+
+
+void
+AdjustBtab3(SPHbody **SPHbtabp, int *nobj, int gnobj, float r_limit)
+{
+    SPHbody *btab = *SPHbtabp;
+    SPHbody *p;
+    Stk s;
+    SPHbody *q;
+    float r2 = r_limit*r_limit;
+
+    StkInitEz(&s);
+
+    for (p = btab; p < btab+*nobj; p++) {
+	/* Keep all particles outside of BH at origin */
+
+	if (Dot(p->pos, p->pos) >= r2) {
+	    q = StkPush(&s, sizeof(SPHbody));
+	    *q = *p;
+	}
+    }
+
+    Free(btab);
+    StkCrunch(&s);
+    *nobj = StkSz(&s)/sizeof(SPHbody);
+    btab = StkBase(&s);
+    *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
+}
