@@ -40,6 +40,8 @@
 #include "memfile.h"
 #include "integrate.h"
 
+#define MAXCOEF 16
+
 /* Hide the cosmological parameters in here.
    Keep them self-consistent... */
 struct cosmo_s{
@@ -238,6 +240,8 @@ main(int argc, char *argv[])
     int SPHnupdate;
     int make_sink_tree;
     int has_grav_data;
+    int kernel_ncoef1, kernel_ncoef2;
+    double kernel_coef1[MAXCOEF], kernel_coef2[MAXCOEF];
 
     MPMY_Init(&argc, &argv);
     singlPrintf("Welcome to the variable O() integrator running on %d procs\n",
@@ -421,6 +425,25 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "x_pixels", &x_pixels, 512);
     SDFgetintOrDefault(csdfp, "y_pixels", &y_pixels, 512);
     SDFgetintOrDefault(csdfp, "log_image", &log_image, 0);
+    if (SDFhasname("kernel_ncoef1", csdfp)) {
+      SDFgetintOrDie(csdfp, "kernel_ncoef1", &kernel_ncoef1);
+      if (kernel_ncoef1 >= MAXCOEF) Error("Increase MAXCOEF\n");
+      SDFgetintOrDie(csdfp, "kernel_ncoef2", &kernel_ncoef2);
+      if (kernel_ncoef2 >= MAXCOEF) Error("Increase MAXCOEF\n");
+      if (SDFseekrdvecs(csdfp, "kernel_coef1", 0, kernel_ncoef1, 
+			kernel_coef1, 0, NULL))
+	  Error("SDFread kernel_coef1 failed\n");
+      if (SDFseekrdvecs(csdfp, "kernel_coef2", 0, kernel_ncoef2, 
+			kernel_coef2, 0, NULL))
+	  Error("SDFread kernel_coef2 failed\n");
+    } else {
+      /* Monaghan spline kernel is default */
+      kernel_ncoef1 = kernel_ncoef2 = 4;
+      kernel_coef1[0] = 1.0;		kernel_coef2[0] = 2.0;
+      kernel_coef1[1] = 0.0;		kernel_coef2[1] = -3.0;
+      kernel_coef1[2] = -3.0/2.0;	kernel_coef2[2] = 3.0/2.0;
+      kernel_coef1[3] = 3.0/4.0;	kernel_coef2[3] = -1.0/4.0;
+    }
 
     if(csdfp) 
 	SDFclose(csdfp);
@@ -474,6 +497,13 @@ main(int argc, char *argv[])
     singlPrintf("int timer_freq = %d;\n", timer_freq);
     singlPrintf("float sort_tol = %.4f;\n", sort_tol);
     singlPrintf("int do_periodic = %d;\n", do_periodic);
+    singlPrintf("kernel coefficients:\n\t");
+    for (i = 0; i < kernel_ncoef1; i++)
+      singlPrintf("%12.9f ", kernel_coef1[i]);
+    singlPrintf("\n\t");
+    for (i = 0; i < kernel_ncoef2; i++)
+      singlPrintf("%12.9f ", kernel_coef2[i]);
+    singlPrintf("\n");
     if (log_time) Error("This code does not support log_time\n");
     if (cosmology) {
 	singlPrintf("int cosmology = %d;\n", cosmology);
@@ -508,7 +538,7 @@ main(int argc, char *argv[])
     }
 
     dt_last = dt;
-    SPH_setup(NDIM);
+    SPH_setup(NDIM, kernel_ncoef1, kernel_coef1, kernel_ncoef2, kernel_coef2);
     inherit = (inherit_t)InheritSinkNlogN;
 
     if (do_DL)

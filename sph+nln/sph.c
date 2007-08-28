@@ -9,7 +9,7 @@
 #ifndef M_1_PI
 #define	M_1_PI 0.31830988618379067154
 #endif
-#define NKERNEL_TABLE 40000
+#define NKERNEL_TABLE 80000
 #define MAX_INDEX (NKERNEL_TABLE+2)
 
 #define NO_UPDATE 2
@@ -203,7 +203,7 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	dxx = v2 - index * dvtable;
 	dwdx = (wij[index+1] - wij[index]) * invdvtable;
 	wtij = (wij[index] + dwdx * dxx ) * hmean21 * hmean11;
-	if (wtij < (float)0.0) Error("Negative wtij (macRho) = %g\n", wtij);
+	/* if (wtij < (float)0.0) Error("Negative wtij (macRho) = %g\n", wtij); */
 	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
 	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
 
@@ -310,7 +310,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	dxx = vv2 - index * dvtable;
 	dwdx = (wij[index+1] - wij[index]) * invdvtable;
 	wtij = (wij[index] + dwdx * dxx) * hmean21 * hmean11;
-	if (wtij < (float)0.0) Error("Negative wtij (macSPH) = %g\n", wtij);
+	/* if (wtij < (float)0.0) Error("Negative wtij (macSPH) = %g\n", wtij); */
 	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
 	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
 
@@ -381,63 +381,68 @@ SetSPH(float visc_alpha, float visc_beta, float visc_epsilon, float heat_f1,
 }
 
 void
-SPH_setup(int dim)
+SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
 {
-    float v2max;
-    float v, v2, v3;
-    float dif2;
+    double v2max;
+    double v, v2, v3;
+    double w, dw;
+    double dif2;
     double sum;   /* sum needs to be double */
-    int i, i1;
+    double ddvtable;
+    int i, i1, j;
 
     ndim = dim;
 
     /* maximum interaction length and step size */
-    v2max = (float)4.0;
-    dvtable = v2max / NKERNEL_TABLE;
-    i1 = (float)1.0 / dvtable;
-    invdvtable = i1;
+    v2max = 4.0;
+    ddvtable = v2max / NKERNEL_TABLE;
+    invdvtable = 1.0 / ddvtable;
+    dvtable = ddvtable;
 
-    /* normalisation constant */
-    if (ndim == 3)
-      cnormk = (float)M_1_PI;
+    /* normalization constant */
+    if (ndim == 3) 
+      cnormk = M_1_PI;
     else if (ndim == 2)
-      cnormk = (float)(M_1_PI*10.0/7.0);
+      cnormk = M_1_PI*10.0/7.0;
     else if (ndim == 1)
-      cnormk = (float)(2.0/3.0);
+      cnormk = 2.0/3.0;
     else
       Error("Bad ndim in sph_ktable\n");
 
     /* build tables */
     /* a) v less than 1 */
 
-    for (i = 0; i < i1; i++) {
-	v2 = i * dvtable;
-	v = sqrtf_fast(v2);
-	v3 = v * v2;
-	sum = 1.0 - 1.5 * v2 + 0.75 * v3;
-	wij[i] = cnormk * sum;
-	sum = -3.0 * v + 2.25 * v2;
-	grwij[i] = cnormk * sum;
-	fmass[i] = (4.0/3.0)*v3 - 1.2*v2*v3 + 0.5*v3*v3;
-	fpoten[i] = (2.0/3.0)*v2 - 0.3*v2*v2 + 0.1*v2*v3 - 1.4;
+    wij[0] = cnormk*wcoef1[0];
+    grwij[0] = 0.0;		/* Is this right? */
+    i1 = 1.0 / ddvtable;
+    for (i = 1; i <= i1; i++) {
+	v2 = i * ddvtable;
+	v = sqrt(v2);
+	w = wcoef1[ncoef1-1];
+	for (j = ncoef1-1; j >= 1 ; j--)
+	  w = w * v + wcoef1[j-1];
+	dw = (ncoef1 - 1.0) * wcoef1[ncoef1-1];
+	for (j = ncoef1-2; j >= 1; j--)
+          dw = dw * v + j * wcoef1[j];
+	wij[i] = cnormk * w;
+	grwij[i] = cnormk * dw / v;
     }
 
     /*  b) v greater than 1 */
-    for (i = i1; i <= NKERNEL_TABLE; i++) {
-	v2 = i * dvtable;
-	v = sqrtf_fast(v2);
-	v3 = v * v2;
-	dif2 = (float)2.0 - v;
-	sum = 0.25 * dif2 * dif2 * dif2;
-	wij[i] = cnormk * sum;
-	sum = -0.75 * v2 + 3.0 * v - 3.0;
-	grwij[i] = cnormk * sum;
-	fmass[i] = (-1.0/6.0)*v3*v3 + 1.2*v2*v3 - 3.0*v2*v2 + (8.0/3.0)*v3
-	  - (1.0/15.0);
-	fpoten[i] = (-1.0/30.0)*v2*v3 + 0.3*v2*v2 - v3 + (4.0/3.0)*v2 - 1.6;
+    for (i = i1+1; i <= NKERNEL_TABLE; i++) {
+	v2 = i * ddvtable;
+	v = sqrt(v2);
+	w = wcoef2[ncoef2-1];
+	for (j = ncoef2-1; j >= 1 ; j--)
+	  w = w * v + wcoef2[j-1];
+	dw = (ncoef2 - 1.0) * wcoef2[ncoef2-1];
+	for (j = ncoef2-2; j >= 1; j--)
+          dw = dw * v + j * wcoef2[j];
+	wij[i] = cnormk * w;
+	grwij[i] = cnormk * dw / v;
     }
     /* For interpolation of last table entry */
-    wij[NKERNEL_TABLE+1] = grwij[NKERNEL_TABLE+1] = (float) 0.0;
+    wij[NKERNEL_TABLE+1] = grwij[NKERNEL_TABLE+1] = 0.0;
 }
 
 void

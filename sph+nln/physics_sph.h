@@ -291,7 +291,8 @@ void macSPH(SinkSPH *sink, hcell **source, int *result, int n);
 void InheritSPH(const SinkSPH *from, SinkSPH *to, hcell *pp);
 void update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low);
 void update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit);
-void SPH_setup(int dim);
+void SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2);
+/* void SPH_setup(int dim); */
 void SetSPHOffset(float *off, float *voff);
 void UnSetSPHOffset(void);
 void update_point_SPHmass(SPHbody *btab, int nobj, void *p, float smooth2, float newt);
