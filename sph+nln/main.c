@@ -219,6 +219,8 @@ main(int argc, char *argv[])
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
     int do_point_mass, do_point_mass2;
+    int do_drag;
+    float drag_coeff;
     float newmass = 0.0, totnewmass = 0.0;
     int exact_rho;
     float visc_alpha, visc_beta, visc_epsilon, heat_f1;
@@ -271,6 +273,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_winds", &do_winds, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
+    SDFgetintOrDefault(csdfp, "do_drag", &do_drag, 0);
     SDFgetintOrDefault(csdfp, "has_grav_data", &has_grav_data, do_grav);
     if (do_sph || do_grav) {
 	if (!((strncmp(name, "test", 4) == 0))) {
@@ -444,6 +447,9 @@ main(int argc, char *argv[])
       kernel_coef1[2] = -3.0/2.0;	kernel_coef2[2] = 3.0/2.0;
       kernel_coef1[3] = 3.0/4.0;	kernel_coef2[3] = -1.0/4.0;
     }
+    if (do_drag) {
+	SDFgetfloatOrDie(csdfp, "drag_coeff", &drag_coeff);
+    }
 
     if(csdfp) 
 	SDFclose(csdfp);
@@ -486,6 +492,10 @@ main(int argc, char *argv[])
         singlPrintf("float r_inner = %f;\n", r_inner);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
 	singlPrintf("float centmass = %e;\n", centmass);
+    }
+    if (do_drag) {
+	singlPrintf("int do_drag = %d;\n", do_drag);
+	singlPrintf("float drag_coeff = %g;\n", drag_coeff);
     }
     if( do_output ){
 	if (short_output) singlPrintf("Short ");
@@ -919,6 +929,13 @@ main(int argc, char *argv[])
 	if (do_point_mass2) {
 	    update_point_SPHmass2(SPHbtab, SPHnobj, eps*eps, cosmo.GNewt, 
 				  centmass);
+	}
+
+	if (do_drag) {
+	    for (q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
+		/* Just throws energy away */
+		VV(q->acc, -= drag_coeff*q->vel);
+	    }
 	}
 
 	MPMY_Sync();
