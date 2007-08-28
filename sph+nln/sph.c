@@ -34,6 +34,8 @@ static float voffset[NDIM];
 static void (*bodyfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 static void (*cellfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 
+extern int do_cooling;
+
 void
 SetSPHOffset(float *off, float *voff)
 {
@@ -445,6 +447,13 @@ void
 update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 {
     SPHbody *p;
+    double u, n, lcool, temp;
+    double mh = 1.67372267e-24; /* g */
+    double kboltz = 1.38065e-16; /* g cm^2 s^-2 K^-1 */
+    double m = 1.988900e+33;  /* 1 solar mass */
+    double l = 3.085678e+18;  /* 1 parsec */
+    double t = 3.153600e+07;  /* 1 year */
+
 
     for (p = btab; p < btab+nobj; p++) {
 	if (!SPH_need_update(p)) continue;
@@ -463,6 +472,27 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 	    ++*limit_low;
 	}
 	p->udot += p->drho_dt * p->pr / (p->rho * p->rho);
+
+	if (do_cooling) {
+	    /* Check units, calculate temp = u / (2.5*n*k) (where n =
+	       rho/(2.0*mh)), calculate lcool, update udot */
+	    n = p->rho * m/(l*l*l) / (2.0*mh);
+	    u = p->u * l/t * l/t;
+	    temp = u / (2.5 * n * kboltz);
+
+	    /* From Chris's email; fit to Dalgarno and McCray (ARA&A
+	       1972, 10, 375) and Sutherland and Dopita (ApJS, 88,
+	       253) */
+	    if (temp < 1.0e4)
+		lcool = 1.0e-27 * exp(-1.0e2/temp) * sqrtf_fast(temp);
+	    else if (temp < 3.0e5)
+		lcool=1.0e-21;
+	    else
+		lcool=1.0e-21/(3.0*(log10(temp)-5.5)+1.0);
+
+	    /* lcool has units of erg cm^3/s, need erg/g/s */
+	    p->udot -= lcool*n/p->mass * t*t*t/(l*l);
+	}
 
 	if (!finite(p->udot)) 
 	    Error("Bad value for udot\n");
