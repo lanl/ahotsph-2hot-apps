@@ -21,9 +21,7 @@ static float invdvtable; /* == 10000.0 ... */
 static float cnormk;
 static float wij[MAX_INDEX];
 static float grwij[MAX_INDEX];
-static float fmass[MAX_INDEX];
-static float fpoten[MAX_INDEX];
-static float Gamma = (float)(5.0/3.0);  /* Yikes; remember this */
+static float Gamma = (float)(5.0/3.0);
 static float alpha = (float)1.0;
 static float beta = (float)2.5;
 static float epsil = (float)1e-2;

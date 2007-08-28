@@ -90,7 +90,7 @@ AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
     unsigned int id;
     float r2 = r_limit*r_limit;
     float r_wind = 5.0; /* Decoupled from inner boundary size */
-    float wr, wr2;
+    float wr;
     double wpos[NDIM];
 
     float d = r_wind * 

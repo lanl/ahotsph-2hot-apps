@@ -221,7 +221,7 @@ main(int argc, char *argv[])
     int do_point_mass, do_point_mass2;
     int do_drag;
     float drag_coeff;
-    float newmass = 0.0, totnewmass = 0.0;
+/*     float newmass = 0.0, totnewmass = 0.0; */
     int exact_rho;
     float visc_alpha, visc_beta, visc_epsilon, heat_f1;
     int nbrcut_max, nbrcut_min;
@@ -1777,7 +1777,6 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
 static void ShortWindOutput(SPHbody *btab, int nobj, windbody *windbtab, 
 			    int windnobj, const char *outnamebase, int iter)
 {
-    SPHbody *p;
     int i;
     sortresult_t outputsort;
     SPHshortoutbody *output_btab;
