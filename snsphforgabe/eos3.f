@@ -50,6 +50,8 @@ c
 c
 c--assume chemical freeze-out
 c
+      if (yei.gt.0.55) yei=0.55
+      if (yeprev.gt.0.55) yeprev=0.55
       call eosfl(rhoi,pri,
      $     ui,u2i,yei,tempi,ifleosi,abari,
      $     xpi,xni,xpfi,p2i,p3i,p4i,ufreezi,
@@ -980,7 +982,7 @@ c
 c
       double precision xheavyk,xalphak,yehk
       real ftrape,ftrapb,ftrapx,jtrape,jtrapb,jtrapx
-      real rmaxnue,rmaxnueb,rmaxnux
+      real rmaxnue,rmaxnueb,rmaxnux,xi,yi,zi
       integer ebetaeqi, pbetaeqi
       common /beta/ ebetaeqi, pbetaeqi
       common /neutout/ dyei,dynuei,dynuebi,dynuxi,
@@ -988,6 +990,7 @@ c
      $     dnuei,dnuebi,dnuxi,dunuei,dunuebi,dunuxi,dunui,
      $     etanuei,etanuebi,etanuxi,prnui
       common /nulums/ rlumnue, rlumnueb, rlumnux,
+     $     dlumnu,
      $     enue, enueb, enux, e2nue, e2nueb, e2nux,
      $     enues, enuebs, enuxs, dee, deeb, dex
       common /nuout/ rmxnue,rmxnueb,rmxnux
@@ -1029,7 +1032,8 @@ c
      $     enue,enueb,enux,e2nue,e2nueb,e2nux,rlumnue,rlumnueb,
      $     rlumnux)
 c
-      call nusphere(steps,hi,ri,ynuei,ynuebi,ynuxi,
+      call nusphere(steps,hi,ri,xi,yi,zi,
+     $     ynuei,ynuebi,ynuxi,
      $     unuei,unuebi,unuxi,gshifti,pmassi,
      $     rmaxnue,rmaxnueb,rmaxnux)
 c
@@ -1226,6 +1230,7 @@ c
      $     dnuei,dnuebi,dnuxi,dunuei,dunuebi,dunuxi,dunui,
      $     etanuei,etanuebi,etanuxi,prnui
       common /nulums/ rlumnue, rlumnueb, rlumnux,
+     $     dlumnu, 
      $     enue, enueb, enux, e2nue, e2nueb, e2nux,
      $     enues, enuebs, enuxs, dee, deeb, dex
       common /units/ umass, udist, udens, utime, uergg, uergcc
@@ -1489,6 +1494,7 @@ c
      $     dnuei,dnuebi,dnuxi,dunuei,dunuebi,dunuxi,dunui,
      $     etanuei,etanuebi,etanuxi,prnui
       common /nulums/ rlumnue, rlumnueb, rlumnux,
+     $     dlumnu, 
      $     enue, enueb, enux, e2nue, e2nueb, e2nux,
      $     enues, enuebs, enuxs, dee, deeb, dex
       common /units/ umass, udist, udens, utime, uergg, uergcc
@@ -1623,6 +1629,7 @@ c
      $     dnuei,dnuebi,dnuxi,dunuei,dunuebi,dunuxi,dunui,
      $     etanuei,etanuebi,etanuxi,prnui
       common /nulums/ rlumnue, rlumnueb, rlumnux,
+     $     dlumnu, 
      $     enue, enueb, enux, e2nue, e2nueb, e2nux,
      $     enues, enuebs, enuxs, dee, deeb, dex
       common /units/ umass, udist, udens, utime, uergg, uergcc
@@ -1694,7 +1701,8 @@ c
       return 
       end
 c
-      subroutine nusphere(steps,hi,ri,ynuei,ynuebi,ynuxi,
+      subroutine nusphere(steps,hi,ri,xi,yi,zi,
+     $     ynuei,ynuebi,ynuxi,
      $     unuei,unuebi,unuxi,gshifti,
      $     pmassi,rmaxnue,rmaxnueb,rmaxnux)
 c************************************************************
@@ -1720,6 +1728,7 @@ c
      $     dnuei,dnuebi,dnuxi,dunuei,dunuebi,dunuxi,dunui,
      $     etanuei,etanuebi,etanuxi,prnui
       common /nulums/ rlumnue, rlumnueb, rlumnux,
+     $     dlumnu,
      $     enue, enueb, enux, e2nue, e2nueb, e2nux,
      $     enues, enuebs, enuxs, dee, deeb, dex
       common /konst/ gg, clight, arad, bigr, xsecnn, xsecne
@@ -1727,6 +1736,7 @@ c
       dee=0.0
       deeb=0.0
       dex=0.0
+      dlumnu=0.0
 c-- minimum time scale of emission =3 time steps
       t3step=3.*steps
 c
@@ -1754,6 +1764,7 @@ c    3d only!!!
          facee=facue*pmassi*gshifti
          rlumnue=rlumnue+facee
          dee=dee+facee
+         dlumnu=dlumnu+0.5*facee
          enues=enues+facee*enueti*gshifti
          e2nues=e2nues+facee*enueti*enueti*gshifti*gshifti
       endif
@@ -1769,6 +1780,7 @@ c    3d only!!!
          faceeb=facueb*pmassi*gshifti
          rlumnueb=rlumnueb+faceeb
          deeb=deeb+faceeb
+         dlumnu=dlumnu+0.5*faceeb
          enuebs=enuebs+faceeb*enuebti*gshifti
          e2nuebs=e2nuebs+faceeb*enuebti*enuebti*gshifti*gshifti
       endif
@@ -1784,6 +1796,7 @@ c    3d only!!!
          facex=facux*pmassi*gshifti
          rlumnux=rlumnux+facex
          dex=dex+facex
+         dlumnu=dlumnu+0.5*facex
          enuxs=enuxs+facex*enuxti*gshifti
          e2nuxs=e2nuxs+facex*enuxti*enuxti*gshifti*gshifti
       endif
@@ -2134,7 +2147,8 @@ c
 c
       subroutine neutrino2(steps,rhoi,xpi,xni,etai,tempi,
      $     ri,pmassi,vsoundi,xmuhati,ynuei,ynuebi,ynuxi,
-     $     unuei,unuebi,rlumnue,rlumnueb,rlumnux,enue,enueb,enux,
+     $     unuei,unuebi,rlumnue,rlumnueb,rlumnux,
+     $     enue,enueb,enux,
      $     e2nue,e2nueb,e2nux,gshifti,
      $     rmaxnue, rmaxnueb, rmaxnux, hi)
 c

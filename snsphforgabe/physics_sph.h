@@ -690,6 +690,7 @@ typedef struct {
   float rlumnue;
   float rlumnueb;
   float rlumnux;
+  float dlumnu;
   float enue;
   float enueb;
   float enux;

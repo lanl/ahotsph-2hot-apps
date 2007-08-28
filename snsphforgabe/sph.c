@@ -1116,6 +1116,10 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     float enuef, enuebf, enuxf, e2nuef, e2nuebf, e2nuxf;
     float enues, enuebs, enuxs, dee, deeb, dex;
     float rlumnuef,rlumnuebf,rlumnuxf;
+    float dlumnu;
+    float xlumnu,ylumnu,zlumnu;
+    float hgw1,hgw2,hgw3,hgw4,hgw5,hgw6;
+    float ixx, iyy, izz, ixy, ixz, iyz;
     float dtrapnue, dtrapnueb;
     MPMY_Comm_request req;
     float rmaxnuet_tab[NUMRMAXTAB];
@@ -1133,6 +1137,10 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     Nubeta = (void *)&Fortran(beta);
     Nutrap = (void *)&Fortran(nutrap);
     rlumnuef = rlumnuebf = rlumnuxf = 0.0;
+    dlumnu = 0.0;
+    xlumnu = ylumnu = zlumnu = 0.0;
+    hgw1 = hgw2 = hgw3 = hgw4 = hgw5 = hgw6 = 0.0;
+    ixx = iyy = izz = ixy = ixz = iyz = 0.0;
     enuef = enuebf = enuxf = e2nuef = e2nuebf = e2nuxf = 0.0;
     enues = enuebs = enuxs = dee = deeb = dex = 0.0;
     xmtheo = 1;
@@ -1290,6 +1298,70 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
 	rlumnuef += Nu_lums->rlumnue;
 	rlumnuebf += Nu_lums->rlumnueb;
 	rlumnuxf += Nu_lums->rlumnux;
+	xlumnu += Nu_lums->dlumnu*p->pos[0]/p->r;
+	ylumnu += Nu_lums->dlumnu*p->pos[1]/p->r;
+	zlumnu += Nu_lums->dlumnu*p->pos[2]/p->r;
+	hgw1 += Nu_lums->dlumnu*(1.0+p->pos[2]/p->r)*(2.0*p->pos[0]*p->pos[0]
+						 /p->r/p->r - 1.0);
+	hgw2 += Nu_lums->dlumnu*(1.0-p->pos[2]/p->r)*(2.0*p->pos[0]*p->pos[0]
+						 /p->r/p->r - 1.0);
+	hgw3 += Nu_lums->dlumnu*(1.0+
+		 sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*p->pos[0]/p->r)*
+				 (p->pos[2]/p->r*p->pos[2]/p->r - 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[0]*p->pos[0]/p->r/p->r))/
+				 (p->pos[2]/p->r*p->pos[2]/p->r + 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[0]*p->pos[0]/p->r/p->r));
+	hgw4 += Nu_lums->dlumnu*(1.0-
+		 sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*p->pos[0]/p->r)*
+				 (p->pos[2]/p->r*p->pos[2]/p->r - 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[0]*p->pos[0]/p->r/p->r))/
+				 (p->pos[2]/p->r*p->pos[2]/p->r + 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[0]*p->pos[0]/p->r/p->r));
+	hgw5 += Nu_lums->dlumnu*(1.0+
+		 sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*p->pos[1]/p->r)*
+				 (p->pos[2]/p->r*p->pos[2]/p->r - 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[1]*p->pos[1]/p->r/p->r))/
+				 (p->pos[2]/p->r*p->pos[2]/p->r + 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[1]*p->pos[1]/p->r/p->r));
+	hgw6 += Nu_lums->dlumnu*(1.0-
+		 sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*p->pos[1]/p->r)*
+				 (p->pos[2]/p->r*p->pos[2]/p->r - 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[1]*p->pos[1]/p->r/p->r))/
+				 (p->pos[2]/p->r*p->pos[2]/p->r + 
+				  sqrtf_fast(1.0-p->pos[2]/p->r*p->pos[2]/p->r)*
+				  (1.0-p->pos[1]*p->pos[1]/p->r/p->r));
+	/* From Centrella & McMillan (1993) via Fryer, Holz & Hughes (2004) */
+	ixx += 2.0/3.0*p->mass*(2.0*p->pos[0]*p->acc[0] - p->pos[1]*p->acc[1] - 
+			p->pos[2]*p->acc[2] + 2.0*p->vel[0]*p->vel[0] - 
+			p->vel[1]*p->vel[1] - p->vel[2]*p->vel[2]);
+
+	iyy += 2.0/3.0*p->mass*(2.0*p->pos[1]*p->acc[1] - p->pos[2]*p->acc[2] - 
+			p->pos[0]*p->acc[0] + 2.0*p->vel[1]*p->vel[1] - 
+			p->vel[2]*p->vel[2] - p->vel[0]*p->vel[0]);
+
+	izz += 2.0/3.0*p->mass*(2.0*p->pos[2]*p->acc[2] - p->pos[0]*p->acc[0] - 
+			p->pos[1]*p->acc[1] + 2.0*p->vel[2]*p->vel[2] - 
+			p->vel[0]*p->vel[0] - p->vel[1]*p->vel[1]);
+
+	ixy += p->mass*(p->pos[0]*p->acc[0] + p->pos[1]*p->acc[1] + 
+			2.0*p->vel[0]*p->vel[1]);
+
+	ixz += p->mass*(p->pos[0]*p->acc[0] + p->pos[2]*p->acc[2] + 
+			2.0*p->vel[0]*p->vel[2]);
+
+	iyz += p->mass*(p->pos[1]*p->acc[1] + p->pos[2]*p->acc[2] + 
+			2.0*p->vel[1]*p->vel[2]);
+
+	p->acc[0] -= Nu_lums->dlumnu*p->pos[0]/p->r/Konst->clight/mass;
+	p->acc[1] -= Nu_lums->dlumnu*p->pos[1]/p->r/Konst->clight/mass;
+	p->acc[2] -= Nu_lums->dlumnu*p->pos[2]/p->r/Konst->clight/mass;
 	enuef += Nu_lums->enue;
 	enuebf += Nu_lums->enueb;
 	enuxf += Nu_lums->enux;
@@ -1312,6 +1384,21 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     MPMY_ICombine(&rlumnuef, &rlumnuef, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&rlumnuebf, &rlumnuebf, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&rlumnuxf, &rlumnuxf, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&xlumnu, &xlumnu, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&ylumnu, &ylumnu, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&zlumnu, &zlumnu, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw1, &hgw1, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw2, &hgw2, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw3, &hgw3, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw4, &hgw4, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw5, &hgw5, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&hgw6, &hgw6, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&ixx, &ixx, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&iyy, &iyy, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&izz, &izz, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&ixy, &ixy, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&ixz, &ixz, 1, MPMY_FLOAT, MPMY_SUM, req);
+    MPMY_ICombine(&iyz, &iyz, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&enuef, &enuef, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&enuebf, &enuebf, 1, MPMY_FLOAT, MPMY_SUM, req);
     MPMY_ICombine(&enuxf, &enuxf, 1, MPMY_FLOAT, MPMY_SUM, req);
@@ -1357,6 +1444,21 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     rlumnuef = rlumnuef/xmtheo;
     rlumnuebf = rlumnuebf/xmtheo;
     rlumnuxf = rlumnuxf/xmtheo;
+    xlumnu = xlumnu/xmtheo;
+    ylumnu = ylumnu/xmtheo;
+    zlumnu = zlumnu/xmtheo;
+    hgw1 = hgw1/xmtheo;
+    hgw2 = hgw2/xmtheo;
+    hgw3 = hgw3/xmtheo;
+    hgw4 = hgw4/xmtheo;
+    hgw5 = hgw5/xmtheo;
+    hgw6 = hgw6/xmtheo;
+    ixx = ixx/xmtheo;
+    iyy = iyy/xmtheo;
+    izz = izz/xmtheo;
+    ixy = ixy/xmtheo;
+    ixz = ixz/xmtheo;
+    iyz = iyz/xmtheo;
 
     {
       float f = Unit2->ufoe/Units->utime;
@@ -1369,6 +1471,13 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
       singlPrintf("nusphere nue  losses: %12g foes/s at %g\n", dee*f, enues);
       singlPrintf("nusphere nueb losses: %12g foes/s at %g\n", deeb*f, enuebs);
       singlPrintf("nusphere nux  losses: %12g foes/s at %g\n", dex*f, enuxs);
+      singlPrintf("x-dir losses: %12g\n", xlumnu*f);
+      singlPrintf("y-dir losses: %12g\n", ylumnu*f);
+      singlPrintf("z-dir losses: %12g\n", zlumnu*f);
+      singlPrintf("gw emission: %12g,%12g,%12g,%12g,%12g,%12g\n",hgw1*f,hgw2*f,
+             hgw3*f, hgw4*f,hgw5*f,hgw6*f);
+      singlPrintf("mass motion: %12g,%12g,%12g,%12g,%12g,%12g\n", ixx, iyy,
+             izz, ixy, ixz, iyz);
     }
 
     StartTimer(&sphEOS);
