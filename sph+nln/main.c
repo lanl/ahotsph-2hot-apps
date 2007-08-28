@@ -97,11 +97,11 @@ void AdjustBtab3(SPHbody **SPHbtabp, int *nobj, int gnobj, float r_limit,
 void AddWinds(SPHbody **SPHbtabp, int *nobj, template_t *tempbtab, 
 	      int windpartpershell, float r_wind, float v_wind, 
 	      float mdot_wind, float u_wind, float *t_wind, float tpos, 
-	      float dt, float *dt_next);
+	      float dt, float *dt_next, float openangle_wind);
 void AddNonconstWinds(SPHbody **SPHbtabp, int *nobj, template_t *temptab, 
 		      int windpartpershell, winddata_t *wdata, int wnobj, 
 		      float r_wind, float r_outer, float *t_wind, float tpos, 
-		      float dt, float *dt_next);
+		      float dt, float *dt_next, float openangle_wind);
 void ReadTemplate(char *filename, template_t **temptab, int *tempnobj);
 void ReadWindData(char *filename, winddata_t **wdata, int *wnobj);
 
@@ -234,7 +234,7 @@ main(int argc, char *argv[])
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
     int old_winds, const_winds, nonconst_winds;
-    float r_wind, r_outer, v_wind, mdot_wind, u_wind;
+    float r_wind, r_outer, v_wind, mdot_wind, u_wind, openangle_wind;
     char template_name[256];
     char winddata_name[256];
     template_t *tempbtab;
@@ -371,6 +371,8 @@ main(int argc, char *argv[])
 		    if (const_winds || nonconst_winds) {
 			SDFgetfloatOrDie(csdfp, "r_wind", &r_wind);
 			SDFgetfloatOrDefault(sdfp, "t_wind", &t_wind, 0.0);
+			SDFgetfloatOrDefault(csdfp, "openangle_wind", 
+					     &openangle_wind, 180.0);
 			SDFgetstring(csdfp, "template_name", template_name,
 				     sizeof(template_name));
 			if (MPMY_Procnum() == 0) {
@@ -571,6 +573,7 @@ main(int argc, char *argv[])
 	if (const_winds || nonconst_winds) {
 	    singlPrintf("float r_wind = %g;\n", r_wind);
 	    singlPrintf("float t_wind = %g;\n", t_wind);
+	    singlPrintf("float openangle_wind = %g;\n", openangle_wind);
 	    singlPrintf("char template_name[] = \"%s\"\n", template_name);
 	    srand48(192837465);
 	}
@@ -708,7 +711,8 @@ main(int argc, char *argv[])
 	    if (MPMY_Procnum() == 0) {
 		AddWinds((SPHbody **)&SPHbtab, &SPHnobj, tempbtab, 
 			 windpartpershell, r_wind, v_wind, mdot_wind, 
-			 u_wind, &t_wind, tpos, dt_last, &dt_wind);
+			 u_wind, &t_wind, tpos, dt_last, &dt_wind, 
+			 openangle_wind);
 	    }
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&dt_wind, &dt_wind, 1, MPMY_FLOAT, MPMY_MIN);
@@ -722,7 +726,8 @@ main(int argc, char *argv[])
 	    dt_wind = 1e30;
 	    AddNonconstWinds((SPHbody **)&SPHbtab, &SPHnobj, tempbtab, 
 			     windpartpershell, wdata, wnobj, r_wind, 
-			     r_outer, &t_wind, tpos, dt_last, &dt_wind);
+			     r_outer, &t_wind, tpos, dt_last, &dt_wind,
+			     openangle_wind);
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&dt_wind, &dt_wind, 1, MPMY_FLOAT, MPMY_MIN);
 	    Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter,

@@ -257,7 +257,8 @@ AdjustBtab3(SPHbody **SPHbtabp, int *nobj, int gnobj, float r_limit,
 void 
 AddWinds(SPHbody **SPHbtabp, int *nobj, template_t *temptab, 
 	 int windpartpershell, float r_wind, float v_wind, float mdot_wind, 
-	 float u_wind, float *t_wind, float tpos, float dt, float *dt_next)
+	 float u_wind, float *t_wind, float tpos, float dt, float *dt_next,
+	 float openangle_wind)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p;
@@ -310,6 +311,12 @@ AddWinds(SPHbody **SPHbtabp, int *nobj, template_t *temptab,
 
 	    q->pos[0] = x;
 	    q->pos[1] = y;
+
+	    if ( cos(openangle_wind/180.0*M_PI) > 
+		 fabs(q->pos[2])/sqrtf_fast(Dot(q->pos, q->pos)) ) {
+		StkPop(&s, sizeof(SPHbody));
+		continue;
+	    }
 
 	    VS(q->pos, *= r_wind);
 
@@ -430,7 +437,7 @@ void ReadWindData(char *filename, winddata_t **wdata, int *wnobj)
 void AddNonconstWinds(SPHbody **SPHbtabp, int *nobj, template_t *temptab, 
 		      int windpartpershell, winddata_t *wdata, int wnobj, 
 		      float r_wind, float r_outer, float *t_wind, float tpos, 
-		      float dt, float *dt_next)
+		      float dt, float *dt_next, float openangle_wind)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *p;
@@ -488,6 +495,12 @@ void AddNonconstWinds(SPHbody **SPHbtabp, int *nobj, template_t *temptab,
 		y = sin(phi)*q->pos[0] + cos(phi)*q->pos[1];
 		q->pos[0] = x;
 		q->pos[1] = y;
+
+		if ( cos(openangle_wind/180.0*M_PI) > 
+		     fabs(q->pos[2])/sqrtf_fast(Dot(q->pos, q->pos)) ) {
+		    StkPop(&s, sizeof(SPHbody));
+		    continue;
+		}
 
 		VS(q->pos, *= r_wind);
 
