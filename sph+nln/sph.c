@@ -382,10 +382,8 @@ void
 SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
 {
     double v2max;
-    double v, v2, v3;
+    double v, v2;
     double w, dw;
-    double dif2;
-    double sum;   /* sum needs to be double */
     double ddvtable;
     int i, i1, j;
 
