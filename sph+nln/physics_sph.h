@@ -250,6 +250,17 @@ typedef struct{
     float min_nbr_dt;
 } SinkSPH;
 
+typedef struct {
+    double pos[3];
+} template_t;
+
+typedef struct {
+    double t;
+    double mdot;
+    double v_inf;
+    double u;
+} winddata_t;
+
 /* In main.c */
 int SPH_need_update(const SPHbody *p);
 

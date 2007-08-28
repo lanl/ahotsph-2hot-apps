@@ -92,7 +92,18 @@ void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab,
 void AdjustBtab2(SPHbody **SPHbtabp, int *nobj, int gnobj, windbody *windbtab, 
 		int windnobj, float r_limit, float dt, int iter, float tpos,
 		int *added_particles, float *newmass);
-void AdjustBtab3(SPHbody **SPHbtabp, int *nobj, int gnobj, float r_limit);
+void AdjustBtab3(SPHbody **SPHbtabp, int *nobj, int gnobj, float r_limit,
+		 float r_outer);
+void AddWinds(SPHbody **SPHbtabp, int *nobj, template_t *tempbtab, 
+	      int windpartpershell, float r_wind, float v_wind, 
+	      float mdot_wind, float u_wind, float *t_wind, float tpos, 
+	      float dt, float *dt_next);
+void AddNonconstWinds(SPHbody **SPHbtabp, int *nobj, template_t *temptab, 
+		      int windpartpershell, winddata_t *wdata, int wnobj, 
+		      float r_wind, float r_outer, float *t_wind, float tpos, 
+		      float dt, float *dt_next);
+void ReadTemplate(char *filename, template_t **temptab, int *tempnobj);
+void ReadWindData(char *filename, winddata_t **wdata, int *wnobj);
 
 static int maxmem(void);
 static int maxheap(void);
@@ -116,6 +127,8 @@ static float dt;
 static float dt_max;
 static float sysradius;
 static float tpos, tvel;
+static float t_wind;
+static float dt_wind;
 static int cosmology;
 static float R0;
 static float this_tol, this_eps;
@@ -125,6 +138,7 @@ static int default_nterms;
 static float centmass;
 
 static double gnterms;
+/* static double ggravnterms; */
 static float courant_number;
 static int adaptive_dt;
 static int independent_dt;
@@ -219,6 +233,14 @@ main(int argc, char *argv[])
     float dt_last;
     float new_h, new_u;
     int do_sph, do_grav, do_winds;
+    int old_winds, const_winds, nonconst_winds;
+    float r_wind, r_outer, v_wind, mdot_wind, u_wind;
+    char template_name[256];
+    char winddata_name[256];
+    template_t *tempbtab;
+    winddata_t *wdata;
+    int tempnobj;
+    int wnobj;
     int do_point_mass, do_point_mass2;
     int do_boundary;
     int do_drag;
@@ -327,15 +349,51 @@ main(int argc, char *argv[])
 
 		if (do_boundary) {
 		    SDFgetfloatOrDie(csdfp, "r_inner", &r_inner);
+		    SDFgetfloatOrDie(csdfp, "r_outer", &r_outer);
 		    SDFgetfloatOrDie(csdfp, "centmass", &centmass);
 		}
 
 		if (do_winds) {
-		    sdfp = WindRead(iname, csdfp, &windbtab, &windgnobj, 
-				    &windnobj);
 		    SDFgetintOrDie(csdfp, "windpart_per_shell", 
 				   &windpartpershell);
-		} else windgnobj = windnobj = 0;
+		    SDFgetintOrDefault(csdfp, "old_winds", &old_winds, 1);
+		    SDFgetintOrDefault(csdfp, "const_winds", &const_winds, 0);
+		    SDFgetintOrDefault(csdfp, "nonconst_winds",
+				       &nonconst_winds, 0);
+		    if (const_winds && nonconst_winds)
+			Error("const_winds && nonconst_winds; pick one\n");
+
+		    if (old_winds) {
+			sdfp = WindRead(iname, csdfp, &windbtab, &windgnobj, 
+					&windnobj);
+		    } else windgnobj = windnobj = 0;
+
+		    if (const_winds || nonconst_winds) {
+			SDFgetfloatOrDie(csdfp, "r_wind", &r_wind);
+			SDFgetfloatOrDefault(sdfp, "t_wind", &t_wind, 0.0);
+			SDFgetstring(csdfp, "template_name", template_name,
+				     sizeof(template_name));
+			if (MPMY_Procnum() == 0) {
+			    ReadTemplate(template_name, 
+					 (template_t **)&tempbtab, &tempnobj);
+			    if (tempnobj != windpartpershell) 
+				Error("tempnobj != windpartpershell");
+			}
+		    }
+		    if (const_winds) {
+			SDFgetfloatOrDie(csdfp, "v_wind", &v_wind);
+			SDFgetfloatOrDie(csdfp, "mdot_wind", &mdot_wind);
+			SDFgetfloatOrDie(csdfp, "u_wind", &u_wind);
+		    }
+		    if (nonconst_winds) {
+			SDFgetstring(csdfp, "winddata_name", winddata_name,
+				     sizeof(winddata_name));
+			SDFgetfloatOrDefault(csdfp, "r_outer", &r_outer, 1e30);
+			if (MPMY_Procnum() == 0)
+			    ReadWindData(winddata_name,
+					 (winddata_t **)&wdata, &wnobj);
+		    }
+		} 
 
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -496,6 +554,31 @@ main(int argc, char *argv[])
 	singlPrintf("int dt_short = %d;\n", dt_short);
 	singlPrintf("float dt_max = %g;\n", dt_max);
     }
+    if (do_winds) {
+	singlPrintf("int do_winds = %d;\n", do_winds);
+	singlPrintf("int windpartpershell = %d;\n", windpartpershell);
+	singlPrintf("int old_winds = %d;\n", old_winds);
+	if (old_winds) {
+	    singlPrintf("int windgnobj = %d;\n", windgnobj);
+	}
+	singlPrintf("int const_winds = %d;\n", const_winds);
+	singlPrintf("int nonconst_winds = %d;\n", nonconst_winds);
+	if (const_winds) {
+	    singlPrintf("float v_wind = %g;\n", v_wind);
+	    singlPrintf("float mdot_wind = %g;\n", mdot_wind);
+	    singlPrintf("float u_wind = %g;\n", u_wind);
+	}
+	if (const_winds || nonconst_winds) {
+	    singlPrintf("float r_wind = %g;\n", r_wind);
+	    singlPrintf("float t_wind = %g;\n", t_wind);
+	    singlPrintf("char template_name[] = \"%s\"\n", template_name);
+	    srand48(192837465);
+	}
+	if (nonconst_winds) {
+	    singlPrintf("char winddata_name[] = \"%s\"\n", winddata_name);
+	    singlPrintf("float r_outer = %g;\n", r_outer);
+	}
+    }
     if (do_point_mass || do_point_mass2) {
         singlPrintf("float r_inner = %f;\n", r_inner);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
@@ -503,6 +586,7 @@ main(int argc, char *argv[])
     }
     if (do_boundary) {
         singlPrintf("float r_inner = %f;\n", r_inner);
+        singlPrintf("float r_outer = %f;\n", r_outer);
 	singlPrintf("float GNewt = %e;\n", cosmo.GNewt);
 	singlPrintf("float centmass = %e;\n", centmass);
     }
@@ -607,7 +691,7 @@ main(int argc, char *argv[])
 /* 		      windnobj, r_inner, dt_last, iter, tpos,  */
 /* 		      &added_particles, &newmass); */
 
-	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_FLOAT, MPMY_SUM);
+	  MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 /* 	  MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM); */
 /* 	  centmass += totnewmass; */
 	  Msgf(("Iter: %d: Added %d bodies to SPHbtab\nBH mass = %f\n", iter, 
@@ -615,11 +699,43 @@ main(int argc, char *argv[])
 	  /* SPHFixId(SPHbtab, SPHnobj, SPHgnobj); */
 	}
 
+	if (do_winds && const_winds) {
+	    SPHoldnobj = SPHnobj;
+	    /* Only proc 0 adds wind particles; would be better to add
+	       particles only to node that included particles close to
+	       wind in the first place */
+	    dt_wind = 1e30;
+	    if (MPMY_Procnum() == 0) {
+		AddWinds((SPHbody **)&SPHbtab, &SPHnobj, tempbtab, 
+			 windpartpershell, r_wind, v_wind, mdot_wind, 
+			 u_wind, &t_wind, tpos, dt_last, &dt_wind);
+	    }
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+	    MPMY_Combine(&dt_wind, &dt_wind, 1, MPMY_FLOAT, MPMY_MIN);
+	    Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter,
+		  SPHnobj-SPHoldnobj));
+	} else if (do_winds && nonconst_winds) {
+	    SPHoldnobj = SPHnobj;
+	    /* Only proc 0 adds wind particles; would be better to add
+	       particles only to node that included particles close to
+	       wind in the first place */
+	    dt_wind = 1e30;
+	    AddNonconstWinds((SPHbody **)&SPHbtab, &SPHnobj, tempbtab, 
+			     windpartpershell, wdata, wnobj, r_wind, 
+			     r_outer, &t_wind, tpos, dt_last, &dt_wind);
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+	    MPMY_Combine(&dt_wind, &dt_wind, 1, MPMY_FLOAT, MPMY_MIN);
+	    Msgf(("Iter: %d: Added %d bodies to SPHbtab\n", iter,
+		  SPHnobj-SPHoldnobj));
+	} else dt_wind = 1e30;
+
 	if (do_boundary) {
 	    SPHoldnobj = SPHnobj;
-	    AdjustBtab3((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, r_inner);
+	    AdjustBtab3((SPHbody **)&SPHbtab, &SPHnobj, SPHgnobj, r_inner, 
+			r_outer);
+	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    Msgf(("Iter: %d: Removed %d bodies from SPHbtab\n", iter, 
-		  SPHnobj-SPHoldnobj));
+		  SPHoldnobj-SPHnobj));
 	}
 
 	/* comoving smoothing */
@@ -966,12 +1082,16 @@ main(int argc, char *argv[])
 	    || (save_first && first_step)) {
 	    if (do_sph) {
 		if (do_winds) { 
-		    if (short_output) 
-			ShortWindOutput(SPHbtab, SPHnobj, windbtab, 
-					windnobj, outnamebase, iter);
+		    if (old_winds) {
+			if (short_output) 
+			    ShortWindOutput(SPHbtab, SPHnobj, windbtab, 
+					    windnobj, outnamebase, iter);
+			else
+			    WindOutput(SPHbtab, SPHnobj, windbtab, 
+				       windnobj, outnamebase, iter);
+		    } 
 		    else
-			WindOutput(SPHbtab, SPHnobj, windbtab, 
-				   windnobj, outnamebase, iter);
+			SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
 		}
 		else
 		    SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
@@ -1115,7 +1235,10 @@ main(int argc, char *argv[])
 
 	MPMY_Combine(udot_limit, udot_limit, 2, MPMY_INT, MPMY_SUM);
 
-	if (adaptive_dt) Fix_dt(&dt, (dark_dt < dt_max) ? dark_dt : dt_max, 
+	/* Fear my nested ternary operators! */
+	if (adaptive_dt) Fix_dt(&dt, 
+				(((dark_dt<dt_max) ? dark_dt:dt_max) < dt_wind)
+				? ((dark_dt<dt_max) ? dark_dt:dt_max):dt_wind,
 				tlow_cut, tmin, tbad, dt_short, dt_long,
 				udot_limit[0], udot_limit[1]);
 
@@ -1196,6 +1319,15 @@ main(int argc, char *argv[])
 	    gnterms *= SPHCWfac;
 	    for (q = SPHbtab; q < SPHbtab + SPHnobj; ++q)
 		q->nterms += gnterms;
+
+/* 	    if (do_grav) { */
+/* 		ggravnterms /= SPHgnobj; */
+/* 		singlPrintf("Avg grav_nterms = %.0f, SPHCWfac is %.2f\n", ggravnterms, */
+/* 			    SPHCWfac); */
+/* 		ggravnterms *= SPHCWfac; */
+/* 		for (q = SPHbtab; q < SPHbtab + SPHnobj; ++q) */
+/* 		    q->grav_nterms += ggravnterms; */
+/* 	    } */
 	}
 	    
 	first_step = 0;
@@ -1881,6 +2013,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     int output_nobj = nobj;
     float tpos_out = tpos;
     float tvel_out = tvel; /* changed in Integrate() */
+    float twind_out = t_wind;
     double ke, pe, te;
     MPMY_Comm_request req;
     int output_gnobj;
@@ -1950,6 +2083,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "ndim", SDF_INT, NDIM,
 	     "tpos", SDF_FLOAT, tpos_out,
 	     "tvel", SDF_FLOAT, tvel_out,
+	     "t_wind", SDF_FLOAT, twind_out,
 	     "R0", SDF_FLOAT, output_R0,
 	     "Omega0", SDF_FLOAT, cosmo.Omega0,
 	     "H0", SDF_FLOAT, cosmo.H0,
@@ -2210,6 +2344,7 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
     acc2 = 0.0;
     mtot = 0.0;
     gnterms = 0.0;
+/*     ggravnterms = 0.0; */
     avg_nbrs = 0.0;
     tlow = 0;
     for (p = btab; p < btab+nobj; p++) {
@@ -2222,6 +2357,7 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
 	    acc2 += sacc2;
 	    mtot += p->mass;
 	    gnterms += p->nterms;
+/* 	    ggravnterms += p->grav_nterms; */
 	    if (p->nterms <= 0) SeriousWarning("nterms is %f\n", p->nterms);
 	    if (p->h > max_h) max_h = p->h;
 	    if (p->h < min_h) min_h = p->h;
@@ -2281,6 +2417,7 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
     MPMY_ICombine(&te, &te, 1, MPMY_DOUBLE, MPMY_SUM, req);
     MPMY_ICombine(&mtot, &mtot, 1, MPMY_DOUBLE, MPMY_SUM, req);
     MPMY_ICombine(&gnterms, &gnterms, 1, MPMY_DOUBLE, MPMY_SUM, req);
+/*     MPMY_ICombine(&ggravnterms, &ggravnterms, 1, MPMY_DOUBLE, MPMY_SUM, req); */
     MPMY_ICombine(&avg_nbrs, &avg_nbrs, 1, MPMY_DOUBLE, MPMY_SUM, req);
     MPMY_ICombine(&max_vsound, &max_vsound, 1, MPMY_FLOAT, MPMY_MAX, req);
     MPMY_ICombine(&max_h, &max_h, 1, MPMY_FLOAT, MPMY_MAX, req);
@@ -2351,7 +2488,7 @@ Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad,
 	singlPrintf(("Adjusting dt down by factor of 1/2\n"));
 	*dt *= (float)(1./2.);
 	dtshortvote = dtlongvote = 0;
-    } else if (dtlongvote > dtlong && (4./3.)**dt <= dt_max) {
+    } else if (dtlongvote > dtlong && (2.0)**dt <= dt_max) {
 	singlPrintf(("Adjusting dt up by factor of 2\n"));
 	*dt *= (float)(2./1.);
 	dtshortvote = dtlongvote = 0;
