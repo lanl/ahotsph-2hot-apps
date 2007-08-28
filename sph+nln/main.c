@@ -268,8 +268,8 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "cosmology", &cosmology, 0);
     SDFgetintOrDefault(csdfp, "set_id", &set_id, 0);
     SDFgetintOrDefault(csdfp, "setpvel", &setpvel, 0);
-    SDFgetintOrDefault(csdfp, "do_sph", &do_sph, 0);
-    SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 1);
+    SDFgetintOrDefault(csdfp, "do_sph", &do_sph, 1);
+    SDFgetintOrDefault(csdfp, "do_grav", &do_grav, 0);
     SDFgetintOrDefault(csdfp, "do_winds", &do_winds, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass", &do_point_mass, 0);
     SDFgetintOrDefault(csdfp, "do_point_mass2", &do_point_mass2, 0);
