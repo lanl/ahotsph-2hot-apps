@@ -12,19 +12,27 @@
 #include "singlio.h"
 
 void
-AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, 
-	   float *newj, float G, float tpos)
+AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, int *accnobj,
+	   bndry_t b, float *newmass, float *newj, float G, float tpos, 
+	   int iter)
 {
     SPHbody *btab = *SPHbtabp;
+    SPHbody *atab = *accbtabp;
     SPHbody *p, *q;
-    Stk s;
+    Stk s, a;
     float r2, b2;
     float j[NDIM], jhat[NDIM];
     float jm, jmax;
 
     StkInitEz(&s);
+    StkInitEz(&a);
 
     r2 = b.r*b.r;
+
+    for(p = atab; p < atab+*accnobj; p++) {
+	q = StkPush(&a, sizeof(SPHbody));
+	*q = *p;
+    }
 
     for (*newmass = 0.0, newj[0] = 0.0, newj[1] = 0.0, newj[2] = 0.0, p = btab;
 	 p < btab+*nobj; p++) {
@@ -38,6 +46,12 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
 	} else {
+	    q = StkPush(&a, sizeof(SPHbody));
+	    *q = *p;
+
+	    q->taccreted = tpos;
+	    q->iteraccreted = iter;
+
 	    *newmass += p->mass;
 
 	    j[0] = p->mass * (p->pos[1]*p->vel[2] - p->pos[2]*p->vel[1]);
@@ -49,7 +63,9 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
 	    jhat[1] = j[1]/jm;
 	    jhat[2] = j[2]/jm;
 
-	    jmax = sqrt(G*b.mass*b.r) * p->mass;  /* jmax^2/m^2 = G*M_bh*r_isco */
+	    jmax = sqrt(G*b.mass*b.r) * p->mass;  /* jmax^2/m^2 =
+						     G*M_bh*r_isco */
+
 	    jm = ( jm < jmax ? jm : jmax );  /* jm = min(jm, jmax) */
 
 	    j[0] = jm*jhat[0];
@@ -69,4 +85,10 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass,
     *nobj = StkSz(&s)/sizeof(SPHbody);
     btab = StkBase(&s);
     *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
+
+    Free(atab);
+    StkCrunch(&a);
+    *accnobj = StkSz(&a)/sizeof(SPHbody);
+    atab = StkBase(&a);
+    *accbtabp = Realloc(atab, *accnobj * sizeof(SPHbody));
 }

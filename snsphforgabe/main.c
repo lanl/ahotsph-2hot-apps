@@ -62,6 +62,7 @@ static void SPHSanityCheck(SPHbody *btab, int nobj, int gnobj, double *mtotp);
 static void set_vels(body *p, int n, float real_time);
 static void Output(body *btab, int nobj, const char *outname, int iter);
 static void SPHOutput(SPHbody *btab, int nobj, const char *outname, int iter);
+static void accOutput(SPHbody *btab, int nobj, const char *outname, int iter);
 static SDF *startup(int argc, char **argv);
 static void Periodic(tree_t *tp, float size);
 static void PeriodicSPH(tree_t *tp, float size, float vsize);
@@ -82,8 +83,9 @@ static void AngularPeriodicSPH(tree_t *tp, float aleph);
 static void SPHWrapAngularPeriodic(SPHbody *bp, int n, float aleph);
 
 /* In shrink.c */
-void AdjustBtab(SPHbody **SPHbtabp, int *nobj, bndry_t b, float *newmass, float *newj,
-		float G, float tpos);
+void AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, 
+		int *accnobj, bndry_t b, float *newmass, float *newj,
+		float G, float tpos, int iter);
 
 
 static int maxmem(void);
@@ -131,6 +133,8 @@ static double Mtot;
 
 static bndry_t bndry;
 
+static int accgnobj;
+
 #define MAXCOEF 16
 
 int
@@ -138,11 +142,13 @@ main(int argc, char *argv[])
 {
     int gnobj, nobj;
     int SPHgnobj, SPHnobj, SPHoldnobj;
+    int accnobj;
     int PMgnobj, PMnobj;
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
     body *pmtab;
     SPHbody *SPHbtab, *SPHsinkbtab = NULL, *q;
+    SPHbody *accbtab;
     float eps;			/* Plummer smoothing length */
     float tol;			/* MAC tolerance */
 		/* for big MAC, this is multiplied by M/(rsize*rsize) */
@@ -297,6 +303,13 @@ main(int argc, char *argv[])
 		    SDFgetdoubleOrDie(sdfp, "bndry_jy", &(bndry.j[1]));
 		    SDFgetdoubleOrDie(sdfp, "bndry_jz", &(bndry.j[2]));
 		    SDFgetdoubleOrDie(sdfp, "bndry_mass", &(bndry.mass));
+		    SDFgetintOrDie(sdfp, "accnpart", &(accgnobj));
+		    if (accgnobj > 0) {
+			sprintf(iname, "%s_acc.restart", name);
+			SPHRead(iname, csdfp, &accbtab, &accgnobj, &accnobj,
+				0, 0, 0, 0);
+			/* accRead(iname, csdfp, &accbtab, &accgnobj, &accnobj); */
+		    } else accnobj = 0;
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -604,11 +617,13 @@ main(int argc, char *argv[])
 	if (do_boundary) {
 	    /* Absorb particles, adjust bndry mass and angular momentum*/
 	    SPHoldnobj = SPHnobj;
-	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, bndry, &newmass, newj,
-		       cosmo.GNewt, tpos);
+	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, (SPHbody **)&accbtab, 
+		       &accnobj, bndry, &newmass, newj, cosmo.GNewt, tpos,
+		       iter);
 
 	    totnewmass = 0.0;
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
+	    MPMY_Combine(&accnobj, &accgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM);
 	    MPMY_Combine(newj, newj, 3, MPMY_FLOAT, MPMY_SUM);
 
@@ -1052,6 +1067,7 @@ main(int argc, char *argv[])
 		&& ((iter+output_freq) % output_freq == 0))
 	    || (save_first && first_step)) {
 	    if (do_sph) SPHOutput(SPHbtab, SPHnobj, outnamebase, iter);
+	    if (do_boundary) accOutput(accbtab, accnobj, outnamebase, iter);
 	    if (has_grav_data) Output(btab, nobj, outnamebase, iter);
 	    if (do_point_mass) Output(pmtab, PMnobj, outnamebase, iter);
 	}
@@ -1203,6 +1219,7 @@ main(int argc, char *argv[])
 	if (do_point_mass) Diags(pmtab, PMnobj, dark_ke, dark_pe, &etot, dt_last, iter, PMgnobj);
 	if (do_sph) SPHDiags(SPHbtab, SPHnobj, ke, pe, te, &etot, dt_last, iter, SPHgnobj, 
 	      &tmin, &tbad);
+	if (do_boundary) singlPrintf("accgnobj = %d\n", accgnobj);
 	MPMY_Combine(udot_limit, udot_limit, 2, MPMY_INT, MPMY_SUM);
 	singlPrintf("udot_limit high: %d low: %d\n", udot_limit[0], udot_limit[1]);
 	singlPrintf("Total Energy: %g\n", etot);
@@ -1958,6 +1975,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     output_nobj, output_btab, sizeof(SPHoutbody),
 	     SPHOUTBODYDESC,
 	     "npart", SDF_INT, output_gnobj,
+	     "accnpart", SDF_INT, accgnobj,
 	     "iter", SDF_INT, iter,
 	     "max_nbrs", SDF_INT, max_nbrs,
 	     "min_nbrs", SDF_INT, min_nbrs,
@@ -2020,6 +2038,157 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     if (MPMY_Procnum() == 0) {
 	char name[256];
 	sprintf(name, "%s_sph.restart", outnamebase);
+	if (unlink(name))
+	  Shout("unlink of %s failed, errno=%d\n", name, errno);
+	if (symlink(outname, name))
+	  Shout("symlink of %s failed, errno=%d\n", outname, errno);
+    }
+#endif
+}
+
+static void accOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter)
+{
+    SPHbody *p;
+    int i;
+    sortresult_t outputsort;
+    SPHoutbody *output_btab;
+    int output_nobj = nobj;
+    double tpos_out = tpos;
+    double tvel_out = tvel; /* changed in Integrate() */
+    MPMY_Comm_request req;
+    int output_gnobj;
+    float output_z, output_h, output_R0;
+    char outname[256];
+
+    sprintf(outname, "%s_acc.%04d", outnamebase, iter);
+    output_btab = Malloc(output_nobj * sizeof(SPHoutbody));
+    for(i=0; i<output_nobj; i++){
+	output_btab[i].mass = btab[i].mass;
+	VV(output_btab[i].pos, = btab[i].pos);
+	VV(output_btab[i].vel, = btab[i].vel);
+	output_btab[i].u = btab[i].u;
+	output_btab[i].h = btab[i].h;
+	output_btab[i].rho = btab[i].rho;
+	output_btab[i].drho_dt = btab[i].drho_dt;
+	output_btab[i].udot = btab[i].udot;
+	output_btab[i].pr = btab[i].pr;
+	output_btab[i].prnu = btab[i].prnu;
+	output_btab[i].vsound = btab[i].vsound;
+	output_btab[i].temp = btab[i].temp;
+	output_btab[i].ye = btab[i].ye;
+	output_btab[i].xp = btab[i].xp;
+	output_btab[i].xn = btab[i].xn;
+	output_btab[i].u2 = btab[i].u2;
+	output_btab[i].abar = btab[i].abar;
+	output_btab[i].ynue = btab[i].ynue;
+	output_btab[i].ynueb = btab[i].ynueb;
+	output_btab[i].ynux = btab[i].ynux;
+	output_btab[i].unue = btab[i].unue;
+	output_btab[i].unueb = btab[i].unueb;
+	output_btab[i].unux = btab[i].unux;
+	output_btab[i].ufreez = btab[i].ufreez;
+	output_btab[i].dnue = btab[i].dnue;
+	output_btab[i].dnueb = btab[i].dnueb;
+	output_btab[i].dnux = btab[i].dnux;
+	output_btab[i].enuet = btab[i].enuet;
+	output_btab[i].enuebt = btab[i].enuebt;
+	output_btab[i].enuxt = btab[i].enuxt;
+	output_btab[i].dye = btab[i].dye;
+	output_btab[i].dunu = btab[i].dunu;
+	output_btab[i].dynue = btab[i].dynue;
+	output_btab[i].dunue = btab[i].dunue;
+	output_btab[i].eta = btab[i].eta;
+	output_btab[i].tempnue = btab[i].tempnue;
+	output_btab[i].etanue = btab[i].etanue;
+	output_btab[i].xpf = btab[i].xpf;
+	output_btab[i].p2 = btab[i].p2;
+	output_btab[i].p3 = btab[i].p3;
+	output_btab[i].p4 = btab[i].p4;
+	output_btab[i].ifleos = btab[i].ifleos;
+#ifdef SPH_SAVE_ACC
+	VV(output_btab[i].acc, = btab[i].acc);
+	VV(output_btab[i].grav_acc, = btab[i].grav_acc);
+	output_btab[i].phi = btab[i].phi;
+	output_btab[i].dt = btab[i].dt;
+#endif
+	output_btab[i].taccreted = btab[i].taccreted;
+	output_btab[i].iteraccreted = btab[i].iteraccreted;
+	output_btab[i].nbrs = btab[i].nbrs;
+	output_btab[i].ident = btab[i].ident;
+    }
+    Msg("output", ("Doing output of %d bodies\n", output_nobj));
+    singlPrintf("Trying to sort output\n");
+    pqsortsetup_order(&outputsort, output_btab, output_nobj,
+		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
+    output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
+    output_nobj = outputsort.nobj;
+    Msg("output", ("After pqsort, %d outbodies\n", output_nobj));
+    MPMY_ICombine_Init(&req);
+    MPMY_ICombine(&output_nobj, &output_gnobj, 1, MPMY_INT, MPMY_SUM, req);
+    MPMY_ICombine_Wait(req);
+    if (cosmology) {
+	output_z = Znow(tpos_out);
+	output_h = Hnow(tpos_out);
+	output_R0 = R0;
+    } else {
+	output_z = 0.0;
+	output_h = 0.0;
+	output_R0 = sysradius;
+    }
+    SDFwrite(outname, output_gnobj, 
+	     output_nobj, output_btab, sizeof(SPHoutbody),
+	     SPHOUTBODYDESC,
+	     "npart", SDF_INT, output_gnobj,
+	     "iter", SDF_INT, iter,
+	     "max_nbrs", SDF_INT, max_nbrs,
+	     "min_nbrs", SDF_INT, min_nbrs,
+	     "mtot", SDF_DOUBLE, Mtot,
+	     "dt", SDF_FLOAT, dt,
+	     "Gnewt", SDF_FLOAT, cosmo.GNewt,
+	     "clight", SDF_FLOAT, Konst->clight,
+             "eps", SDF_FLOAT, this_eps,
+             "frac_tolerance", SDF_FLOAT, frac_tol,
+	     "iter", SDF_INT, iter,
+	     "ndim", SDF_INT, NDIM,
+	     "tpos", SDF_DOUBLE, tpos_out,
+	     "tvel", SDF_DOUBLE, tvel_out,
+	     "rb", SDF_DOUBLE, rb,
+	     "vb", SDF_DOUBLE, vb,
+	     "rbout", SDF_DOUBLE, rbout,
+	     "xmcore", SDF_FLOAT, xmcore,
+	     "bndry_x", SDF_DOUBLE, bndry.pos[0],
+	     "bndry_y", SDF_DOUBLE, bndry.pos[1],
+	     "bndry_z", SDF_DOUBLE, bndry.pos[2],
+	     "bndry_vx", SDF_DOUBLE, bndry.vel[0],
+	     "bndry_vy", SDF_DOUBLE, bndry.vel[1],
+	     "bndry_vz", SDF_DOUBLE, bndry.vel[2],
+	     "bndry_jx", SDF_DOUBLE, bndry.j[0],
+	     "bndry_jy", SDF_DOUBLE, bndry.j[1],
+	     "bndry_jz", SDF_DOUBLE, bndry.j[2],
+	     "bndry_mass", SDF_DOUBLE, bndry.mass,
+	     "R0", SDF_FLOAT, output_R0,
+	     "Omega0", SDF_FLOAT, cosmo.Omega0,
+	     "H0", SDF_FLOAT, cosmo.H0,
+	     "Lambda_prime", SDF_FLOAT, cosmo.Lambda,
+	     "hubble", SDF_FLOAT, output_h,
+	     "redshift", SDF_FLOAT, output_z,
+	     "gamma", SDF_FLOAT, Gamma,
+	     "max_rho", SDF_FLOAT, max_rho,
+	     "min_rho", SDF_FLOAT, min_rho,
+	     "hmax", SDF_FLOAT, hmax,
+	     "hmin", SDF_FLOAT, hmin,
+	     "max_u", SDF_FLOAT, max_u,
+	     "min_u", SDF_FLOAT, min_u,
+	     "ftrape", SDF_FLOAT, ftrape,
+	     "ftrapb", SDF_FLOAT, ftrapb,
+	     "ftrapx", SDF_FLOAT, ftrapx,
+	     NULL);
+    Free(output_btab);
+    singlPrintf("\nOutput done.\n");
+#ifndef __DELTA__
+    if (MPMY_Procnum() == 0) {
+	char name[256];
+	sprintf(name, "%s_acc.restart", outnamebase);
 	if (unlink(name))
 	  Shout("unlink of %s failed, errno=%d\n", name, errno);
 	if (symlink(outname, name))

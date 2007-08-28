@@ -90,6 +90,8 @@ typedef struct {
     float xmue;
     float dunu;
     float prg;
+    float taccreted;
+    int iteraccreted;
     int bghost;
     void *ireal;
     short ebeta, pbeta;
@@ -158,6 +160,8 @@ typedef struct {
     float phi;
     float dt;
 #endif
+    float taccreted;
+    int iteraccreted;
     unsigned int nbrs;
     unsigned int ident;		/* unique? identifier */
 } SPHoutbody;
@@ -214,6 +218,8 @@ typedef struct {
     float gax, gay, gaz;	/* acceleration due to gravity */\n\
     float phi;			/* potential */\n\
     float idt;			/* timestep */\n\
+    float taccreted;            /* time of accretion */\n\
+    int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
 }"
@@ -262,6 +268,8 @@ typedef struct {
     float p3;			\n\
     float p4;			\n\
     int  ifleos;		\n\
+    float taccreted;            /* time of accretion */\n\
+    int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
 }"
@@ -316,6 +324,8 @@ typedef struct {
     float gax, gay;		/* acceleration due to gravity */\n\
     float phi;			/* potential */\n\
     float idt;			/* timestep */\n\
+    float taccreted;            /* time of accretion */\n\
+    int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
 }"
@@ -364,6 +374,8 @@ typedef struct {
     float p3;			\n\
     float p4;			\n\
     int  ifleos;		\n\
+    float taccreted;            /* time of accretion */\n\
+    int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
 }"

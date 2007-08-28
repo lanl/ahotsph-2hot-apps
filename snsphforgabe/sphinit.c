@@ -171,6 +171,7 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     int unueconf, unuebconf, unuxconf;
     int ufreezconf;
     int etanueconf, xpfconf, p2conf, p3conf, p4conf;
+    int taccconf, iteraccconf;
     SPHbody *btab, *p; 
     SPHoutbody *obtab;
     int nobj, gnobj;
@@ -212,6 +213,8 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
 		      "p2", offsetof(SPHoutbody, p2), &p2conf,
 		      "p3", offsetof(SPHoutbody, p3), &p3conf,
 		      "p4", offsetof(SPHoutbody, p4), &p4conf,
+		    "taccreted", offsetof(SPHoutbody, taccreted), &taccconf,
+		    "iteraccreted", offsetof(SPHoutbody, iteraccreted), &iteraccconf,
 		    NULL);
     nobj = *nobjp;
     gnobj = *gnobjp;
@@ -305,6 +308,14 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     }
     if (p4conf == 0) {
       for (p = btab; p < btab+nobj; p++) p->p4 = -10.0;
+    }
+    if (taccconf == 0) {
+	Msgf(("No \"taccreted\" in file, setting to zero\n"));
+	for (p = btab; p < btab+nobj; p++) p->taccreted = 0.0;
+    }
+    if (iteraccconf == 0) {
+	Msgf(("No \"iteraccreted\" in file, setting to zero\n"));
+	for (p = btab; p < btab+nobj; p++) p->iteraccreted = 0;
     }
     return sdfp;
 }
