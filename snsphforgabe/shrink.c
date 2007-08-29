@@ -14,13 +14,13 @@
 void
 AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, int *accnobj,
 	   bndry_t b, float *newmass, float *newj, float G, float tpos, 
-	   int iter)
+	   int iter, float *newr)
 {
     SPHbody *btab = *SPHbtabp;
     SPHbody *atab = *accbtabp;
     SPHbody *p, *q;
     Stk s, a;
-    float r2, b2;
+    float r2, b2, minb2 = 1e30;
     float j[NDIM], jhat[NDIM];
     float jm, jmax;
 
@@ -48,6 +48,7 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, int *accnobj,
 							   max(r2, 1.0e-6)? */
 	    q = StkPush(&s, sizeof(SPHbody));
 	    *q = *p;
+	    if (b2 < minb2) minb2 = b2;
 	} else {
 	    q = StkPush(&a, sizeof(SPHbody));
 	    *q = *p;
@@ -94,4 +95,7 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, int *accnobj,
     *accnobj = StkSz(&a)/sizeof(SPHbody);
     atab = StkBase(&a);
     *accbtabp = Realloc(atab, *accnobj * sizeof(SPHbody));
+
+    *newr = 0.5*sqrt(minb2);
+    if (*newr < b.r) *newr = b.r;  /* Never shrink boundary */
 }

@@ -85,7 +85,7 @@ static void SPHWrapAngularPeriodic(SPHbody *bp, int n, float aleph);
 /* In shrink.c */
 void AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, 
 		int *accnobj, bndry_t b, float *newmass, float *newj,
-		float G, float tpos, int iter);
+		float G, float tpos, int iter, float *newr);
 
 
 static int maxmem(void);
@@ -219,7 +219,9 @@ main(int argc, char *argv[])
     int do_boundary;
     double z1, z2;
     float newmass, totnewmass;
+    float newr = 0.0;
     float newj[NDIM];
+    int expand_bndry;
     int kernel_ncoef1, kernel_ncoef2;
     double kernel_coef1[MAXCOEF], kernel_coef2[MAXCOEF];
     float aleph_degrees, aleph;		/* opening angle */
@@ -312,6 +314,8 @@ main(int argc, char *argv[])
 		    } else accnobj = 0;
 		    SDFgetdoubleOrDefault(sdfp, "bndry_force_r", 
 					  &(bndry.force_r), 0.0);
+		    SDFgetintOrDefault(csdfp, "expand_bndry", &expand_bndry, 
+				       0);
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -602,6 +606,7 @@ main(int argc, char *argv[])
 	singlPrintf("double bndry.r = %g;\n", bndry.r);
 	if (bndry.force_r) singlPrintf("double bndry.force_r = %g;\n", 
 				       bndry.force_r);
+	singlPrintf("int expand_bndry = %d;\n", expand_bndry);
     }
     if (Konst->gg/cosmo.GNewt > 1.01 || Konst->gg/cosmo.GNewt < 0.99) {
       Error("Gravitational constant mismatch %g %g\n", Konst->gg, cosmo.GNewt);
@@ -623,12 +628,13 @@ main(int argc, char *argv[])
 	    SPHoldnobj = SPHnobj;
 	    AdjustBtab((SPHbody **)&SPHbtab, &SPHnobj, (SPHbody **)&accbtab, 
 		       &accnobj, bndry, &newmass, newj, cosmo.GNewt, tpos,
-		       iter);
+		       iter, &newr);
 
 	    totnewmass = 0.0;
 	    MPMY_Combine(&SPHnobj, &SPHgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&accnobj, &accgnobj, 1, MPMY_INT, MPMY_SUM);
 	    MPMY_Combine(&newmass, &totnewmass, 1, MPMY_FLOAT, MPMY_SUM);
+	    MPMY_Combine(&newr, &newr, 1, MPMY_FLOAT, MPMY_MIN);
 	    MPMY_Combine(newj, newj, 3, MPMY_FLOAT, MPMY_SUM);
 
 	    Msgf(("Iter %d: removed %d bodies from SPHbtab\nBndry mass = %g\n",
@@ -1057,6 +1063,9 @@ main(int argc, char *argv[])
 	    z2 = sqrt(3.0*bndry.a*bndry.a + z1*z1);
 	    bndry.r = ( 3.0 + z2 - sqrt( (3.0-z1) * (3.0 + z1 + 2*z2) ) ) 
 		* cosmo.GNewt * bndry.mass / (Konst->clight * Konst->clight);
+
+	    if (expand_bndry && bndry.force_r && newr > bndry.force_r)
+		bndry.force_r = newr;
 	}
 
 	MPMY_Sync();
