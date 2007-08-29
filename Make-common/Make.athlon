@@ -1,9 +1,9 @@
-defaultCC:=/usr/bin/gcc
-defaultFC:=/usr/bin/g77
+defaultCC:=gcc
+defaultFC:=g77
 
 CC_SPECIFIC:=-g -Wall
 OPTIMIZE:=-O2
-ARCH_SPECIFIC:=-D__iX86__=686 -march=athlon64
+ARCH_SPECIFIC:=-D__iX86__=686 -march=athlon64 -DUSE_SYSTEM_MALLOC
 AGGRESSIVE_OPT=-O3
 LEX:=flex
 YACC:=bison -y

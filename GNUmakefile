@@ -19,8 +19,7 @@ all: All
 # spell them a little differently in this file...
 include Make-common/Make.generic
 
-subdirs:= libsw libSDF libtree libmpmy sph+nln cluster bardeen	\
-snsphforgabe snevolbrna
+subdirs:= libsw libSDF libtree libmpmy sph+nln snsphforgabe swampi
 
 All:
 	for dir in $(subdirs); do (cd $$dir; $(MAKE) all); done

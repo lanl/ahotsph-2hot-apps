@@ -1,12 +1,12 @@
 # INTEL_LICENSE_FILE:=/opt/Intel/fortran/8.1/licenses/license.dat:/opt/Intel/c/8.1/licenses/license.dat
-defaultCC:=/opt/Intel/c/8.1/bin/icc
-defaultFC:=/opt/Intel/fortran/8.1/bin/ifort -nofor_main
+#defaultCC:=/opt/Intel/c/8.1/bin/icc
+#defaultFC:=/opt/Intel/fortran/8.1/bin/ifort -nofor_main
 
-# defaultCC:=/opt/Intel/7.1IA32/compiler70/ia32/bin/icc
-# defaultFC:=/opt/Intel/7.1IA32/compiler70/ia32/bin/ifc
+defaultCC:=/opt/Intel/7.1IA32/compiler70/ia32/bin/icc
+defaultFC:=/opt/Intel/7.1IA32/compiler70/ia32/bin/ifc
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
-FC_SPECIFIC:=
+CC_SPECIFIC:=-g -DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4
+FC_SPECIFIC:=-cm -w95 -80
 ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -align -Zp8 -DUSE_SYSTEM_MALLOC
 
 # ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
@@ -22,7 +22,7 @@ include $(treedir)/Make-common/Make.default
 swsrc:=lsv.c swampi.c
 
 ifeq ($(PAROS),mpi)
-MPIHOME:=/usr/lampi-1.5.11/gm
+# MPIHOME:=/usr/lampi-1.5.12/gm
 LOADLIBES:=-L$(MPIHOME)/lib -lmpi -lsvml
 PAROSCFLAGS:=-I$(MPIHOME)/include
 endif
