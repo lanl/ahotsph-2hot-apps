@@ -95,6 +95,7 @@ typedef struct {
     int bghost;
     void *ireal;
     short ebeta, pbeta;
+    float dq;                   /* viscous heating */
 } SPHbody;
 
 typedef struct {		/* don't need all of this info */
@@ -164,6 +165,7 @@ typedef struct {
     int iteraccreted;
     unsigned int nbrs;
     unsigned int ident;		/* unique? identifier */
+    float dq;
 } SPHoutbody;
 
 /* This is the descriptor that goes into the SDF header. */
@@ -222,6 +224,7 @@ typedef struct {
     int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    float dq;                   /* viscous heating */\n\
 }"
 #else
 #define SPHOUTBODYDESC \
@@ -272,6 +275,7 @@ typedef struct {
     int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    float dq;                   /* viscous heating */\n\
 }"
 #endif /* SPH_SAVE_ACC */
 #else  /* NDIM==2 */
@@ -328,6 +332,7 @@ typedef struct {
     int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    float dq;                   /* viscous heating */\n\
 }"
 #else
 #define SPHOUTBODYDESC \
@@ -378,6 +383,7 @@ typedef struct {
     int iteraccreted;           /* iteration of accretion */\n\
     unsigned int nbrs;		/* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
+    float dq;                   /* viscous heating */\n\
 }"
 #endif
 #endif /* NDIM==2 */
