@@ -367,6 +367,7 @@ void ReadTemplate(char *filename, template_t **temptab, int *tempnobj)
 {
     FILE *fp;
     int i;
+    double r;
 
     if ( (fp = fopen(filename, "r")) == NULL )
 	Error("Can't open %s: %s\n", filename, strerror(errno));
@@ -379,6 +380,10 @@ void ReadTemplate(char *filename, template_t **temptab, int *tempnobj)
 	if (fscanf(fp, "%lg %lg %lg", &((*temptab)[i].pos[0]),
 		   &((*temptab)[i].pos[1]), &((*temptab)[i].pos[2])) != 3)
 	    Error("Error reading positions from %s\n", filename);
+	r = sqrt(Dot((*temptab)[i].pos, (*temptab)[i].pos));
+	(*temptab)[i].pos[0] /= r;
+	(*temptab)[i].pos[1] /= r;
+	(*temptab)[i].pos[2] /= r;
     }
 
     fclose(fp);
