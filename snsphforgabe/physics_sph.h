@@ -9,6 +9,7 @@
 
 #define SPH_SAVE_ACC
 #define POS_IS_DOUBLE
+#define SPH_GRAV
 
 typedef struct {
 #ifdef POS_IS_DOUBLE

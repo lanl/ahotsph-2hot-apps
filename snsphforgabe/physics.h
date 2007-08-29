@@ -21,10 +21,15 @@
 #include "ndim.h"
 #define SAVE_ACC
 
+#define SPH_GRAV
+
 typedef struct {
     float mass;			/* mass of body */
     float pos[NDIM];		/* position of body */
     float vel[NDIM];		/* velocity of body */
+#ifdef SPH_GRAV
+    float h;
+#endif
     float acc[NDIM];
     float phi;
     Key_t key;
@@ -122,6 +127,9 @@ typedef struct{
 typedef struct{
     float bmax;
     float pos[NDIM];
+#ifdef SPH_GRAV
+    float h;
+#endif
     float M0;
     float M1[NDIM];
     int isbody;
@@ -174,6 +182,7 @@ extern Counter_t TranslateCnt;
 
 void SetTol(float tol, float frac_tol, float newton_const, float eps, int gnobj);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
+void SPHDLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
 void DLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, int *result, int n);
 void SetGravOffset(float *off);

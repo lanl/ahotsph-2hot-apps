@@ -22,6 +22,9 @@ GravPlusSPH(void **btabp, int *nobj, SPHbody *SPHbtab, int SPHnobj)
 	q = SPHbtab+i;
 	p = btab + grav_nobj + i;
 	p->mass = q->mass;
+#ifdef SPH_GRAV
+	p->h = q->h;
+#endif
 	VV(p->pos, = q->pos);
 	if (q->ident & SPH_FLAG) Error("SPH flag already set\n");
 	p->nterms = q->grav_nterms;
