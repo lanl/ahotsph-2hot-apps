@@ -1621,6 +1621,8 @@ update_bardeen(SPHbody *btab, int nobj, float G, float c, bndry_t b)
  	p->acc[1] += A*r1;
  	p->acc[2] += A*r2;
 
+	p->phi -= G*b.mass*oneor;
+
 /*  	A = -G*b.mass*oneor*oneor*oneor*(1.0 + 6.0*rplus*oneor); */
 /*  	B = 2.0*oneor*oneor*oneor; */
 /*  	C = 6.0*Dotx(S, r)*oneor*oneor*oneor*oneor*oneor; */
