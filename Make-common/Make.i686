@@ -13,8 +13,8 @@ include $(treedir)/Make-common/Make.default
 swsrc:=lsv.c swampi.c
 
 ifeq ($(PAROS),mpi)
-LOADLIBES:=-L/usr/local/mpich/lib/LINUX/ch_p4 -lmpi
-PAROSCFLAGS:=-I/usr/local/mpich/include
+LOADLIBES:= -llammpio -lpmpi -lmpi -llam -lm
+PAROSCFLAGS:=-DUSE_MPIIO
 endif
 
 ifeq ($(PAROS),lam)

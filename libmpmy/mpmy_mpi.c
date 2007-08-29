@@ -199,7 +199,11 @@ int MPMY_Finalize(void){
 #if defined(__CM5__) || defined(__INTEL_SSD__)
 #include "mpmy_pario.c"
 #else
+#if defined(USE_MPIIO)
+#include "mpmy_mpiio.c"
+#else
 #include "mpmy_io.c"
+#endif
 #endif
 #include "mpmy_abnormal.c"
 #include "mpmy_generic.c"
