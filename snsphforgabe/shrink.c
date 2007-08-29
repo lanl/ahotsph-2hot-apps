@@ -27,7 +27,10 @@ AdjustBtab(SPHbody **SPHbtabp, int *nobj, SPHbody **accbtabp, int *accnobj,
     StkInitEz(&s);
     StkInitEz(&a);
 
-    r2 = b.r*b.r;
+    if (b.force_r)
+	r2 = b.force_r*b.force_r;
+    else
+	r2 = b.r*b.r;
 
     for(p = atab; p < atab+*accnobj; p++) {
 	q = StkPush(&a, sizeof(SPHbody));

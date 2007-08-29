@@ -483,6 +483,7 @@ typedef struct {
     double mass;
     double a;
     double r;
+    double force_r;
 } bndry_t;
 
 /* External Fortran linkage */

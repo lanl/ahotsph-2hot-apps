@@ -310,6 +310,8 @@ main(int argc, char *argv[])
 				0, 0, 0, 0);
 			/* accRead(iname, csdfp, &accbtab, &accgnobj, &accnobj); */
 		    } else accnobj = 0;
+		    SDFgetdoubleOrDefault(sdfp, "bndry_force_r", 
+					  &(bndry.force_r), 0.0);
 		}
 		SDFgetfloatOrDefault(sdfp, "dt", &dt, 0.0);
 		SDFgetfloatOrDefault(sdfp, "dark_dt", &dark_dt, dt);
@@ -598,6 +600,8 @@ main(int argc, char *argv[])
 	singlPrintf("double bndry.mass = %g;\n", bndry.mass);
 	singlPrintf("double bndry.a = %g;\n", bndry.a);
 	singlPrintf("double bndry.r = %g;\n", bndry.r);
+	if (bndry.force_r) singlPrintf("double bndry.force_r = %g;\n", 
+				       bndry.force_r);
     }
     if (Konst->gg/cosmo.GNewt > 1.01 || Konst->gg/cosmo.GNewt < 0.99) {
       Error("Gravitational constant mismatch %g %g\n", Konst->gg, cosmo.GNewt);
@@ -2006,6 +2010,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "bndry_jy", SDF_DOUBLE, bndry.j[1],
 	     "bndry_jz", SDF_DOUBLE, bndry.j[2],
 	     "bndry_mass", SDF_DOUBLE, bndry.mass,
+	     "bndry_force_r", SDF_DOUBLE, bndry.force_r,
 	     "R0", SDF_FLOAT, output_R0,
 	     "Omega0", SDF_FLOAT, cosmo.Omega0,
 	     "H0", SDF_FLOAT, cosmo.H0,
@@ -2166,6 +2171,7 @@ static void accOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	     "bndry_jy", SDF_DOUBLE, bndry.j[1],
 	     "bndry_jz", SDF_DOUBLE, bndry.j[2],
 	     "bndry_mass", SDF_DOUBLE, bndry.mass,
+	     "bndry_force_r", SDF_DOUBLE, bndry.force_r,
 	     "R0", SDF_FLOAT, output_R0,
 	     "Omega0", SDF_FLOAT, cosmo.Omega0,
 	     "H0", SDF_FLOAT, cosmo.H0,
@@ -2610,7 +2616,9 @@ SPHDiags(SPHbody *btab, int nobj, double ke, double pe, double te, double *etot,
     singlPrintf("max_nbrs: %d min_nbrs: %d avg_nbrs: %.0f\n", 
 		max_nbrs, min_nbrs, avg_nbrs);
     singlPrintf("bndry.mass: %g bndry.r: %g%s bndry.a: %g\n",
-		bndry.mass, bndry.r, bndry.r < 1.0e-3 ? " (using 10 km)" : "", 
+		bndry.mass, bndry.force_r ? bndry.force_r : bndry.r, 
+		bndry.force_r ? " (using force_r)" : 
+		(bndry.r < 1.0e-3 ? " (using 10 km)" : ""), 
 		bndry.a);
     singlPrintf("bndry.j: (%g, %g, %g)\n", bndry.j[0], bndry.j[1], bndry.j[2]);
     *etot += ke+pe+te;
