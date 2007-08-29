@@ -8,7 +8,7 @@
 #include "ndim.h"
 
 #define SPH_SAVE_ACC
-#define POS_IS_DOUBLE
+/* #define POS_IS_DOUBLE */
 
 typedef struct {
 #ifdef POS_IS_DOUBLE
@@ -158,8 +158,8 @@ typedef struct {
 #ifdef SPH_SAVE_ACC
 #define SPHOUTBODYDESC \
 "struct {\n\
-    double x, y, z;			/* position of body */\n\
     float mass;			/* mass of body */\n\
+    float x, y, z;			/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
@@ -197,8 +197,8 @@ typedef struct {
 #else
 #define SPHOUTBODYDESC \
 "struct {\n\
-    double x, y, z;		/* position of body */\n\
     float mass;			/* mass of body */\n\
+    float x, y, z;		/* position of body */\n\
     float vx, vy, vz;		/* velocity of body */\n\
     float u;			/* internal energy */\n\
     float h;			/* smoothing length */\n\
