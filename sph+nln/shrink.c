@@ -571,3 +571,110 @@ void hunt(winddata_t *w, int wnobj, float t, float *v, float *mdot, float *u)
     s = (w[i+1].u - w[i].u) / (w[i+1].t - w[i].t);
     *u = w[i].u + s * (t - w[i].t);
 }
+
+
+void 
+AddAccreting(SPHbody **SPHbtabp, int *nobj, template_t *temptab, 
+	     int windpartpershell, float r_wind, float v_r, 
+	     float mdot_wind, float u_wind, float *t_wind, float tpos, 
+	     float dt, float *dt_next, float omega)
+{
+    SPHbody *btab = *SPHbtabp;
+    SPHbody *p;
+    Stk s;
+    SPHbody *q;
+    template_t *t;
+    float theta, phi;
+    double x, y, z;
+    float d = r_wind * 
+	sqrt( 4.0-1.0 / (pow( sin( M_PI*(windpartpershell)/
+				   (6.0*((windpartpershell)-2)) ), 2.0 )) );
+
+    StkInitEz(&s);
+
+    /* Push all existing particles onto stack */
+    for (p = btab; p < btab + *nobj; ++p) {
+	q = StkPush(&s, sizeof(SPHbody));
+	*q = *p;
+    }
+
+    /* If enough time has passed since last addition, add another
+       shell of wind particles */
+    if (tpos - *t_wind >= 0.9*d/fabs(v_r)) {  
+
+	/* Pick random theta, phi */
+	theta = acos(1.0 - 2.0*drand48());  /* so that p(y) = sin(y) */
+	phi = 2.0*M_PI*drand48();
+
+	/* Loop over shell template, add particles */
+	for (t = temptab; t < temptab + windpartpershell; ++t) {
+	    q = StkPush(&s, sizeof(SPHbody));
+	
+	    q->mass = mdot_wind/windpartpershell * (tpos - *t_wind);
+
+	    /* Rotate by (theta, phi) */	    
+/* 	    q->pos[0] = t->pos[0]*sin(theta)*cos(phi); */
+/* 	    q->pos[1] = t->pos[1]*sin(theta)*sin(phi); */
+/* 	    q->pos[2] = t->pos[2]*cos(theta); */
+
+	    VV(q->pos, = t->pos);
+
+	    x = cos(theta)*q->pos[0] - sin(theta)*q->pos[2];
+	    z = sin(theta)*q->pos[0] + cos(theta)*q->pos[2];
+
+	    q->pos[0] = x;
+	    q->pos[2] = z;
+
+	    x = cos(phi)*q->pos[0] - sin(phi)*q->pos[1];
+	    y = sin(phi)*q->pos[0] + cos(phi)*q->pos[1];
+
+	    q->pos[0] = x;
+	    q->pos[1] = y;
+
+	    VS(q->pos, *= r_wind);
+
+	    VV(q->vel, = v_r/r_wind*q->pos);  /* Radial velocity */
+
+	    /* Add v_phi = sqrt(x*x+y*y)*omega */
+	    q->vel[0] -= q->pos[1]*omega;
+	    q->vel[1] += q->pos[0]*omega;
+	    
+	    VVV(q->pos_last, = q->pos, - dt*q->vel);
+	    
+	    q->h = 1.7*d;  /* Match calculation in writewind.c */
+	    
+	    q->u = u_wind;
+	    q->udot = 0.0;
+	    q->udot_last = 0.0;  /* Just in case */
+	    q->pr = 0.0;  /* Fixed in update_intermediate */
+	    
+	    VS(q->acc, = 0.0);
+	    VS(q->acc_last, = 0.0);
+	    VS(q->grav_acc, = 0.0);
+	    
+	    q->nterms = 1;  /* Equivalent to SPHFixNterms */
+	    
+	    q->tacc = -1e30;
+	    
+	    /* Lots of possibly-unnecessary initializations */
+	    /* Without diffusion, these should all stay 0 */
+	    q->dt = q->dt_next = dt;  /* CORRECT?? */
+	    q->min_nbr_dt = 1e30;  /* Just testing */
+	    q->du = 0.0;
+	    q->du_r = 0.0;
+	    q->u_r = 0.0;
+	    q->phi = 0.0;  /* Set this correctly? */
+	    
+	    q->ident = (*nobj)++;
+	}
+	
+	*t_wind = tpos;
+	*dt_next = 0.9*d/v_r;
+    }
+
+    Free(btab);
+    StkCrunch(&s);
+    *nobj = StkSz(&s)/sizeof(SPHbody);
+    btab = StkBase(&s);
+    *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
+}
