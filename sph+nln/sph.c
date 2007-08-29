@@ -449,7 +449,8 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
     for (p = btab; p < btab+nobj; p++) {
 	if (!SPH_need_update(p)) continue;
 	VV(p->acc, += p->grav_acc);
-	p->rho += cnormk * p->mass / (p->h * p->h * p->h);
+	/* Changed cnormk to wij[0] to allow for non-standard kernels; thanks Steven */
+	p->rho += wij[0] * p->mass / (p->h * p->h * p->h);
 	p->hdot = (float)(-1.0/3.0) * p->h * p->drho_dt / p->rho;
 	if (p->hdot * dt > p->h) {
 	    SeriousWarning("Hdot limit (high)\n%s\n", PrintSPHBodyContents(p));
@@ -468,7 +469,7 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low)
 
 	if ( (p->udot * dt > p->u) && !(p->ident & (1<<30)) ) {
 	    p->udot = p->u/dt;
-	    ++*limit_high;
+ 	    ++*limit_high;
 	}
 	if ( (p->udot * dt < -0.333*p->u) && !(p->ident & (1<<30)) ) {
 	    p->udot = -0.333*p->u/dt;
