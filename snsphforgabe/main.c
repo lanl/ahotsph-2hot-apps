@@ -1959,6 +1959,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 	output_btab[i].phi = btab[i].phi;
 	output_btab[i].dt = btab[i].dt;
 #endif
+	output_btab[i].dq = btab[i].dq;
 	output_btab[i].nbrs = btab[i].nbrs;
 	output_btab[i].ident = btab[i].ident;
     }
