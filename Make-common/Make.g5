@@ -1,7 +1,7 @@
 defaultCC:=gcc
 defaultFC:=g77
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -fast
+CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fast
 FC_SPECIFIC:=
 ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 

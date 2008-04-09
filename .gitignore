@@ -4,4 +4,5 @@ sph*.p4icc-pink-mpi
 swampi.p4icc-pink-mpi
 sph*.x86_64-mpi
 swampi.x86_64-mpi
+sph*.g5
 neuttest
