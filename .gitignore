@@ -1,5 +1,7 @@
 Objfiles
 *~
-sph6.p4icc-pink-mpi
-sph.p4icc-pink-mpi
+sph*.p4icc-pink-mpi
 swampi.p4icc-pink-mpi
+sph*.x86_64-mpi
+swampi.x86_64-mpi
+neuttest
