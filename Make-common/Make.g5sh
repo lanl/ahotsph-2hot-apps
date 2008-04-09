@@ -1,7 +1,7 @@
-defaultCC:=gcc
+defaultCC:=gcc -arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
 defaultFC:=g77
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -fast -fPIC
+CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fast -fPIC
 FC_SPECIFIC:=
 ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC -fno-common
 
