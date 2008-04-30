@@ -149,7 +149,7 @@ MPMY_Fread(void *ptr, int size, int nitems, MPMYFile *Fp)
     struct _File *fp = (struct _File *)Fp;
     MPI_Status status;
     int cnt;
-    int nread;
+    int nread, ngot = 0;
     int left = size*nitems;
     const char *p = ptr;
 
@@ -157,7 +157,7 @@ MPMY_Fread(void *ptr, int size, int nitems, MPMYFile *Fp)
 	errno = EINVAL;
 	return -1;
     }
-    while (left > 0) {
+    do {
 	nread = (left < MAXIOSIZE) ? left : MAXIOSIZE;
 	if (fp->iomode == MPMY_SINGL) {
 	    MPI_File_read_all(fp->fd, (void *)p, nread, MPI_CHAR, &status);
@@ -167,10 +167,10 @@ MPMY_Fread(void *ptr, int size, int nitems, MPMYFile *Fp)
 	left -= nread;
 	p += nread;
 	MPI_Get_count(&status, MPI_BYTE, &cnt);
-	if (cnt != nread) Error("MPMY_Fread has a problem\n");
+	ngot += cnt;
 	Msgf(("MPI_File_read from %p returns %d\n", fp->fd, cnt));
-    }
-    return nitems;
+    } while (left > 0);
+    return ngot;
 }
 
 int
@@ -187,7 +187,7 @@ MPMY_Fwrite(const void *ptr, int size, int nitems, MPMYFile *Fp)
 	errno = EINVAL;
 	return -1;
     }
-    while (left > 0) {
+    do {
 	nwrite = (left < MAXIOSIZE) ? left : MAXIOSIZE;
 	if (fp->iomode == MPMY_SINGL) {
 	    MPI_File_write_all(fp->fd, (void *)p, nwrite, MPI_CHAR, &status);
@@ -199,7 +199,7 @@ MPMY_Fwrite(const void *ptr, int size, int nitems, MPMYFile *Fp)
 	MPI_Get_count(&status, MPI_BYTE, &cnt);
 	if (cnt != nwrite) Error("MPMY_Fread has a problem\n");
 	Msgf(("MPI_File_write from %p returns %d\n", fp->fd, cnt));
-    }
+    } while (left > 0);
     return nitems;
 }
 
