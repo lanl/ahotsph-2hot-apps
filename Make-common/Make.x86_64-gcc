@@ -1,0 +1,21 @@
+defaultCC:=gcc
+defaultFC:=g77
+
+CC_SPECIFIC:=-g -DLONG_LONG_KEYS
+FC_SPECIFIC:=
+ARCH_SPECIFIC:=-D__iX86__=686 -DUSE_SYSTEM_MALLOC -fPIC
+OPTIMIZE:=-O2
+AGGRESSIVE_OPT=-O2
+LEX:=flex
+YACC:=bison -y
+RANLIB:=ranlib
+LOADLIBES:=-lm
+
+include $(treedir)/Make-common/Make.default
+
+swsrc:=lsv.c swampi.c
+
+ifeq ($(PAROS),mpi)
+LOADLIBES:=-L$(MPIHOME)/lib64 -lmpi -lm
+PAROSCFLAGS:=-I$(MPIHOME)/include -DUSE_MPIIO
+endif
