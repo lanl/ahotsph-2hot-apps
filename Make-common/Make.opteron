@@ -1,0 +1,30 @@
+defaultCC:=gcc
+defaultFC:=g77
+
+CC_SPECIFIC:=-g -Wall -DLONG_LONG_KEYS
+OPTIMIZE:=-O2
+ARCH_SPECIFIC:=-D__iX86__=686 -march=opteron -DUSE_SYSTEM_MALLOC -DYY_SKIP_YYWRAP -fPIC
+AGGRESSIVE_OPT=-O3
+LEX:=flex
+YACC:=bison -y
+RANLIB:=ranlib
+LOADLIBES:=-lm
+
+include $(treedir)/Make-common/Make.default
+
+swsrc:=lsv.c swampi.c
+
+ifeq ($(PAROS),mpi)
+LOADLIBES:=-L/usr/lib64/openmpi/1.2.4-gcc -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
+PAROSCFLAGS:=-I/usr/include/openmpi/1.2.4-gcc -m64 -pthread -DUSE_MPIIO
+endif
+
+ifeq ($(PAROS),lam)
+LOADLIBES:=-L/usr/local/lam/lib -lmpi -ltstdio -ltrillium -largs -lt
+PAROSCFLAGS:=-I/usr/local/lam/h
+endif
+
+ifeq ($(PAROS),pvm)
+LOADLIBES:=-L/usr/local/pvm3/lib/LINUX -lpvm3
+PAROSCFLAGS:=-I/usr/local/pvm3/include
+endif
