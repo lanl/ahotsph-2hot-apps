@@ -173,8 +173,10 @@ int MPMY_Sync(void) {
 
 int MPMY_Init(int *argcp, char ***argvp) {
     ChnInit(&commchn, sizeof(struct comm_s), NCOMM, Realloc_f);
-    if (MPI_Init(argcp, argvp) != MPI_SUCCESS)
-	Error("MPMY_Init MPI_Init failed\n");
+    MPI_Initialized(&_MPMY_initialized_);
+    if (_MPMY_initialized_ == 0)
+	if (MPI_Init(argcp, argvp) != MPI_SUCCESS)
+	    Error("MPMY_Init MPI_Init failed\n");
     if (MPI_Comm_size(MPI_COMM_WORLD, &_MPMY_nproc_) != MPI_SUCCESS)
 	Error("MPMY_Init MPI_Comm_size failed\n");
     if (MPI_Comm_rank(MPI_COMM_WORLD, &_MPMY_procnum_) != MPI_SUCCESS)
