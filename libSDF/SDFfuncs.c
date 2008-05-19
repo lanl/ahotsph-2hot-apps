@@ -58,7 +58,7 @@ int SDFissdf(const char *name){
     }
     /* Assume we do the 'right' thing with "-" */
     /* but what IS the right thing?? (see below) */
-    fp = MPMY_Fopen(name, MPMY_RDONLY | MPMY_SINGL | MPMY_IOZERO);
+    fp = MPMY_Fopen(name, MPMY_RDONLY | MPMY_SINGL);
     if( fp == NULL )
 	return 0;
 
