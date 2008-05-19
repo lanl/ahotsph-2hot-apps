@@ -1,14 +1,14 @@
 defaultCC:=gcc
 defaultFC:=g77
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fast
+CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fast -fno-common
 FC_SPECIFIC:=
 ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC
 
 override OPTIMIZE=
 override AGGRESSIVE_OPT=
 # LDFLAGS:=-O3 -tpp7 -xW
-LOADLIBES:=
+LOADLIBES:=-lSystemStubs
 LEX:=flex
 YACC:=bison -y
 RANLIB:=ranlib
