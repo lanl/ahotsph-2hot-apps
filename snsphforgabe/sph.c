@@ -414,7 +414,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VxdV(const float pos_sink, = sink->pos);
     VxdV(const float v, = sink->vel);
     const float h = sink->h;
-    const float pro2 = (sink->pr+sink->prnu) / (sink->rho_est * sink->rho_est);
+    const double pro2 = (sink->pr+sink->prnu) / sink->rho_est / sink->rho_est;
     const float mass = sink->mass;
     const float rho_est = sink->rho_est;
     const float vsound = sink->vsound;
@@ -427,7 +427,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     /* end of additions */
 
     Vxd(float r);
-    Vxd(float f);
+    Vxd(double f);
     Vxd(float dv);
     Vxd(float smv);
     float min_nbr_dt = sink->min_nbr_dt;
@@ -438,16 +438,18 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     float hmean11, hmean21;
     int index;
     int nbrs = 0;
-    float rhoi = (float)0.0;
-    float divvi = (float)0.0;
+    double rhoi = (double)0.0;
+    double divvi = (double)0.0;
     float dr2;
     Vxd(float runi);
-    float dq = (float)0.0;
+    double dq = (double)0.0;
     float vv, vv2;
-    float dxx, dwdx, wtij, dgrwdx, grwtij;
-    float rapm, robar1, grpm, wpm;
-    float poro2;
-    float projv, vsbar, est_divv, t12, projv2d;
+    float dxx, dwdx, dgrwdx;
+    double wtij, grwtij;
+    float rapm, robar1;
+    double grpm, wpm;
+    double poro2;
+    double projv, vsbar, est_divv, t12, projv2d;
     float rij, rij1;
     float xfac;
     int interactions = 0;
@@ -525,8 +527,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	grpm = bp->mass * grwtij;
 	wpm = bp->mass * wtij;
 
-	poro2 = grpm * (pro2 + (bp->pr + bp->prnu) 
-			/ (bp->rho_est * bp->rho_est));
+	poro2 = grpm * (pro2 + (bp->pr + bp->prnu)/bp->rho_est/bp->rho_est);
 	rij1 = (float)1.0 / rij;
 	VxVVx(dv, = bp->vel, - v);
 	VxVx(smv, += robar1 * wpm * dv);
@@ -957,7 +958,7 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low,
 	  if (p->ebeta < 1.0) 
 	    p->udot2 += sfac*p->dye*(p->xmuhat-p->xmue);
 #if NDIM==3
-	  p->udot += p->drho_dt * (p->pr + p->prnu) / (p->rho * p->rho);
+	  p->udot += (p->drho_dt / p->rho) * ((p->pr + p->prnu) / p->rho);
 #else
 				/* WTF is vx/x here? */
 	  p->udot += p->pr/p->rho * (p->drho_dt/p->rho - p->vel[0]/p->pos[0]);
