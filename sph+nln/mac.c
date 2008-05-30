@@ -67,11 +67,21 @@ SetTol(float tol, float frac_tol, float newton_const, float eps, int gnobj)
 #define INTERACTF do_cheb_u2
 #endif
 
+#ifdef SPH_GRAV
+#undef INTERACTF
+#undef UNROLL
+#define INTERACTF do_SPHgrav
+#warning SPH_GRAV is #defined; INTERACTF points to do_SPHgrav
+#endif
+
 /* This should be dynamically extensible */
 #define IVECSZ 40960
 struct {
     float mass;
     float pos[NDIM];
+#ifdef SPH_GRAV
+    float h;
+#endif
 } Ivec[IVECSZ];
 
 void DLmacv(Sink *sink, const hcell **source_vec, int *result, int n);
@@ -90,6 +100,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	int ijunk = 0, nn;
 	float acc[NDIM];
 	float phi;
+	float indeps;
 
 	VS(acc, = (float)0.0);
 	phi = (float)0.0;
@@ -100,6 +111,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	while (from->icnt % UNROLL) {
 	    Ivec[from->icnt].mass = (float)0.0;
 	    VS(Ivec[from->icnt].pos, = (float)0.0);
+#ifdef SPH_GRAV
+	    Ivec[from->icnt].h = (float)0.0;
+#endif
 	    from->icnt++;
 	}
 #endif
@@ -116,8 +130,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  do_grav((float *)&Ivec[nn], (float *)&Ivec[from->icnt], 
 		  from->pos, &mtot, acc, &phi, &eps2, &ijunk);
 #else
-	do_grav((float *)&Ivec[0], (float *)&Ivec[from->icnt], 
-		from->pos, &mtot, acc, &phi, &eps2, &ijunk);
+#ifdef SPH_GRAV
+	indeps = bp->h;
+#else
+	indeps = eps2;
+#endif
+	/* Changing explicit do_grav call to INTERACTF */
+	/* Passing indeps instead of eps2 */
+	INTERACTF((float *)&Ivec[0], (float *)&Ivec[from->icnt], 
+		  from->pos, &mtot, acc, &phi, &indeps, &ijunk);
 #endif
 	StopTimer(&GravTm);
 
@@ -201,6 +222,9 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 	    const body *bp = source->ptr;
 	    Ivec[icnt].mass = bp->mass;
 	    VV(Ivec[icnt].pos, = bp->pos);
+#ifdef SPH_GRAV
+	    Ivec[icnt].h = bp->h;
+#endif
 	    icnt++;
 	    interactions++;
 	    result[i] = MAC_ACCEPT;
@@ -215,6 +239,9 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 	} else {
 	    Ivec[icnt].mass = mass;
 	    VVx(Ivec[icnt].pos, = pos);
+#ifdef SPH_GRAV
+	    Ivec[icnt].h = 0.0;
+#endif
 	    icnt++;
 	    interactions += daughters;
 	    result[i] = MAC_ACCEPT;
@@ -257,6 +284,9 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 	    const body *bp = source_vec[i]->ptr;
 	    Ivec[icnt].mass = bp->mass;
 	    VV(Ivec[icnt].pos, = bp->pos);
+#ifdef SPH_GRAV
+	    Ivec[icnt].h = bp->h;
+#endif
 	    icnt++;
 	    interactions += 1;
 	    result[i] = MAC_ACCEPT;
@@ -270,6 +300,9 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 	    /* cell-cell or body-cell */
 	    Ivec[icnt].mass = mass;
 	    VVx(Ivec[icnt].pos, = r);
+#ifdef SPH_GRAV
+	    Ivec[icnt].h = 0.0;
+#endif
 	    icnt++;
 	    interactions += daughters;
 	    result[i] = MAC_ACCEPT;
@@ -286,4 +319,65 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 }
 
 
+void
+SPHDLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
+{
+    VxdV(float pos_sink, = sink->pos);
+    float bmax = sink->bmax;
+    int icnt = sink->icnt;
+    int interactions = 0;
+    int daughters;
+    float dr2;
+    float mass;
+    Vxd(float r);
+    Vxd(float dx);
+    float rcrit_bmax;
+    int i;
 
+    StartTimer(&MACTm);
+    for (i = 0; i < n; i++) {
+	if (Sub_Flags(source_vec[i])) {
+	    const cell *cp = source_vec[i]->ptr;
+	    mass = cp->mass;
+	    VxV(r, = cp->pos);
+	    /* bmax is 0 if sink is a body */
+	    rcrit_bmax = (cp->rcrit > cp->bmax ? cp->rcrit : cp->bmax) + bmax;
+	    daughters = cp->daughters;
+	} else {
+	    /* cell-body or body-body */
+	    const body *bp = source_vec[i]->ptr;
+	    Ivec[icnt].mass = bp->mass;
+	    VV(Ivec[icnt].pos, = bp->pos);
+#ifdef SPH_GRAV
+	    Ivec[icnt].h = bp->h;
+#endif
+	    icnt++;
+	    interactions += 1;
+	    result[i] = MAC_ACCEPT;
+	    continue;
+	}
+	    
+	VxVxVx(dx, = r, - pos_sink);
+	dr2 = Dotx(dx, dx);
+	
+	if (dr2 > rcrit_bmax*rcrit_bmax) {
+	    /* cell-cell or body-cell */
+	    Ivec[icnt].mass = mass;
+	    VVx(Ivec[icnt].pos, = r);
+#ifdef SPH_GRAV
+	    Ivec[icnt].h = 0.0;  /* This used to be sqrt(eps2) */
+#endif
+	    icnt++;
+	    interactions += daughters;
+	    result[i] = MAC_ACCEPT;
+	} else if (RcritFac * bmax > rcrit_bmax) {
+	    result[i] = MAC_SPLIT_SINK;
+	    if (sink->isbody) Error("Trying to split body\n");
+	} else {
+	    result[i] = MAC_SPLIT_SRC;
+	}
+    }
+    sink->interactions += interactions;
+    sink->icnt = icnt;
+    StopTimer(&MACTm);
+}
