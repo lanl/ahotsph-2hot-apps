@@ -21,6 +21,8 @@ static float invdvtable; /* == 10000.0 ... */
 static float cnormk;
 static float wij[MAX_INDEX];
 static float grwij[MAX_INDEX];
+static float fmass[MAX_INDEX];
+static float fpoten[MAX_INDEX];
 static float Gamma = (float)(5.0/3.0);
 static float alpha = (float)1.0;
 static float beta = (float)2.5;
@@ -406,6 +408,7 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
     double v, v2;
     double w, dw;
     double ddvtable;
+    double dm, dm1;
     int i, i1, j;
 
     ndim = dim;
@@ -435,7 +438,14 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
     /* a) v less than 1 */
 
     wij[0] = cnormk*wcoef1[0];
-    grwij[0] = 0.0;		/* Is this right? */
+    grwij[0] = 0.0;
+    fmass[0] = 0.0;
+    fpoten[0] = 0.0;
+    for (j = 0; j <= ncoef1-1; j++) 
+	fpoten[0] += wcoef1[j]/(j+2.0) +
+	    wcoef2[j]/(j+2.) * (pow(2.0, j+2.0)-1.0);
+    fpoten[0]*=4.*M_PI*cnormk;
+
     i1 = 1.0 / ddvtable;
     for (i = 1; i <= i1; i++) {
 	v2 = i * ddvtable;
@@ -448,7 +458,27 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
           dw = dw * v + j * wcoef1[j];
 	wij[i] = cnormk * w;
 	grwij[i] = cnormk * dw;
+
+	/* Enclosed mass now for m=1, h=1*/
+	dm = wcoef1[ncoef1-1]/(ncoef1-1+3);
+	for (j = ncoef1-2; j >= 0; j--)
+	    dm = dm * v + wcoef1[j]/(j+3.);
+	fmass[i]=4*M_PI*cnormk*v*v*v*dm;
+
+	/* Potential now: fpoten is potential for G=1, m=1, h=1*/
+	fpoten[i]=(double)0.;
+	for (j = 0;j <= ncoef1-1; j++) 
+	    fpoten[i]+=wcoef1[j]/(j+3.)*pow(v,(j+2.))+
+		wcoef1[j]/(j+2.)*(1-pow(v,(j+2.)))+
+		wcoef2[j]/(j+2.)*(pow(2.,(j+2.))-1.);
+	fpoten[i]*=4.*M_PI*cnormk;
     }
+
+    v=1.;
+    dm1=wcoef2[ncoef2-1]/(ncoef2-1+3.);
+    for (j=ncoef2-2; j>=0;j--)  
+	dm1=dm1*v + wcoef2[j]/(j+3.);      
+    dm1=fmass[i1]-4*M_PI*dm1*cnormk*v*v*v;
 
     /*  b) v greater than 1 */
     for (i = i1+1; i <= NKERNEL_TABLE; i++) {
@@ -462,9 +492,31 @@ SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2)
           dw = dw * v + j * wcoef2[j];
 	wij[i] = cnormk * w;
 	grwij[i] = cnormk * dw;
+
+	/* Enclosed mass now */
+	dm = wcoef2[ncoef2-1]/(ncoef2-1+3);
+	for (j = ncoef2-2; j >= 0; j--)
+	    dm = dm * v + wcoef2[j]/(j+3.);
+	fmass[i]=4*M_PI*cnormk*v*v*v*dm+dm1;
+
+	/* Potential now: fpoten is potential for G=1, m=1, h=1*/
+	fpoten[i]=(double) 0.;
+	for (j=0; j <= ncoef2-1; j++)
+	    fpoten[i]+=1./v*wcoef1[j]/(j+3.)+
+		1./v*wcoef2[j]/(j+3.)*(pow(v,(j+3.))-1.)+
+		wcoef2[j]/(j+2.)*(pow(2.,(j+2.))-pow(v,(j+2.)));
+	fpoten[i]*=4.*M_PI*cnormk;
     }
+
+    /* Make sure the mass is perfectly normalized, don't generate mass */
+    for (i = 0; i <= NKERNEL_TABLE; i++) {
+	fmass[i]/=fmass[NKERNEL_TABLE];
+    }
+
     /* For interpolation of last table entry */
     wij[NKERNEL_TABLE+1] = grwij[NKERNEL_TABLE+1] = 0.0;
+    fpoten[NKERNEL_TABLE+1]=(double)0.5;
+    fmass[NKERNEL_TABLE+1]=(double)1.0;
 }
 
 void
@@ -643,4 +695,55 @@ update_point_SPHmass2(SPHbody *btab, int SPHnobj, float smooth2, float newt,
     }
 }
 
+void 
+do_SPHgrav(const float *p, const float *end, const float *pos0, float *mass0, 
+	   float *acc0, float *phi0, const float *eps2p, int *ncut)
+{
+    float dr2, h, h2, dxx, dphidx, dmassdx, v2;
+    Vxd(float r);
+    float phii, mor3, mass;
+    VxdV(const float ppos, = pos0);
+    Vxd(float a);
+    float phi = *phi0;
+    float total_mass = *mass0;
+    const float eps2 = *eps2p; /* Nuts! Eps2 is not eps^2, but hsink!*/
+    int index;
 
+    VxV(a, = acc0);
+
+    while (p < end) {
+	mass = *p++;
+	r0 = *p++;
+	r1 = *p++;
+	r2 = *p++;
+	h = *p++;
+
+	h=(h+eps2)/2.0;
+
+	h2= h * h;
+	VxVx(r, -= ppos);	    /* 3 flops */
+	dr2 = Dotx(r, r);	    /* 5 flops */
+	total_mass += mass; /* Hmm, do I need total mass or enclosed
+			       here?  If enclosed, put this statement
+			       after if clause*/
+	
+	if (dr2 >= 4.*h2) { /* Beyond 2h, point source for phi and acc! */
+	    phii = recipsqrtf(dr2); /* 8 flops */
+	    mor3 = phii * phii;	    /* 5 flops */
+	    phii *= mass;
+	    mor3 *= phii;
+	} 
+	else if (dr2 > (float) 0.) { /* Within 2h, use SPH particle
+					smoothing for gravity */
+	    v2 = dr2 / h2;
+	    index = v2 * invdvtable;
+	    phii=fpoten[index]*mass/h;
+	    mor3=mass*fmass[index]/dr2*recipsqrtf(dr2);
+	}
+	phi -= phii;
+	VxVx(a, += mor3 * r); /* 6 flops */
+    }
+    VVx(acc0, = a);
+    *mass0 = total_mass;
+    *phi0 = phi;
+}

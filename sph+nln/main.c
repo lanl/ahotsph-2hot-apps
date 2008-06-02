@@ -679,6 +679,10 @@ main(int argc, char *argv[])
     else
       mac = (macv_t)RcritMAC;
 
+#ifdef SPH_GRAV
+    mac = (macv_t)SPHDLRcritMAC;
+#endif
+
     this_eps = eps;
     this_tol = tol;
 

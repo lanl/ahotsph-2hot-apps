@@ -9,6 +9,7 @@
 #define NDIM 3
 #define SPH_SAVE_ACC
 #define POS_IS_DOUBLE
+#define SPH_GRAV
 
 /* Some physical constants, in cgs units */
 #define A_COEFF (1.043565e-17)

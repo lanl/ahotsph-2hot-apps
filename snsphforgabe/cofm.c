@@ -54,6 +54,14 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    bp = daughters[i]->ptr;
 	    dmass = bp->mass;
 	    cmp->mass += dmass;
+#ifdef SPH_GRAV
+	    /* Gabe+Steven Dirty trick: Fix bmax to be 2h for the case
+	       that you are on the lowest level to make sure that
+	       rcrit is at least as big as the maximum of all h within
+	       the cell. */
+	    cmp->bmax = (cmp->bmax > 2.0*fabs(bp->h)) ? 
+		cmp->bmax : 2.0*fabs(bp->h);
+#endif
 	    VV(cmp->pos, += dmass * bp->pos);
 	    cmp->ndaughters++;
 	} else {
@@ -102,6 +110,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     }
     /* This is an alternative bound on bmax, which is sometimes tighter */
     /* than the cumulative bound computed above. */
+#ifndef SPH_GRAV
     CELLCORNER(hptr->key, center, &cellsz);
     cmp->sz = cellsz;		/* for pure Barnes-But */
     cellsz *= (float)0.5;
@@ -109,6 +118,11 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     VxVVS(dx, = cellsz+ fabs LPAREN cmp->pos, - center,  RPAREN);
     newbmax = sqrtf_fast(Dotx(dx, dx));
     cmp->bmax = (newbmax < cmp->bmax) ? newbmax : cmp->bmax;
+    /* Gabe&Steven Dirty Fix: Let's leave this out for SPH particles,
+       as the new bmax has no clue about particle SPHs, and we don't
+       want to overwrite that information. */
+#endif
+
     hptr->ptr = cmp;
 }
 
