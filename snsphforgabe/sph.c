@@ -951,6 +951,7 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low,
 	{
 	  float tmp;
 	  tmp = p->udot;
+	  p->dq = p->udot;
 
 	  p->udot -= p->dunu;
 	  /* xxx check these changes to udot2 */

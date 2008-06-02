@@ -3,7 +3,7 @@ treedir_sed=\.\.
 ##### Application-specific stuff goes here
 
 ifndef prog
-src=cofm.c grav.c mac.c main.c physics.c print.c integrate.c \
+src=cofm.c eos.c grav.c mac.c main.c physics.c print.c integrate.c \
 	sphcofm.c sph.c sphinit.c shrink.c physics_sph.c sphprint.c sphplus.c \
 	SDFreadf.c
 
