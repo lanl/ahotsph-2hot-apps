@@ -26,10 +26,10 @@
 typedef struct {
     float mass;			/* mass of body */
     float pos[NDIM];		/* position of body */
-    float vel[NDIM];		/* velocity of body */
 #ifdef SPH_GRAV
     float h;
 #endif
+    float vel[NDIM];		/* velocity of body */
     float acc[NDIM];
     float phi;
     Key_t key;
@@ -41,7 +41,11 @@ typedef struct {
 } body, *bodyptr;
 
 /* When we send a body from node to node, how much must we send??? */
+#ifdef SPH_GRAV
+#define TBODYSZ (2+NDIM)*sizeof(float)
+#else
 #define TBODYSZ (1+NDIM)*sizeof(float)
+#endif
 
 typedef struct {
     float mass;			/* mass of body */
