@@ -9,3 +9,4 @@ sph*.g5sh
 sph*.x86_64*
 neuttest
 sph*.ofedq*
+sph*.i386-darwin
