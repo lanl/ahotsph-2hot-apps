@@ -68,6 +68,7 @@ typedef struct {
     float dt;
     float min_nbr_dt;
     unsigned int windid;
+    unsigned int dummy;
 } SPHbody;
 
 

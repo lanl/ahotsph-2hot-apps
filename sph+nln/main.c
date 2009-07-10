@@ -283,6 +283,7 @@ main(int argc, char *argv[])
 
     SetBoundary(30); /* From integrate.c; if you change this, also change
 			it in SPHDiags */
+    assert(SPHstride2 * 2 == SPHstride);
 
     SDFgetintOrDefault(csdfp, "timeout", &timeout, 600);
     if (timeout > 0) MPMY_TimeoutSet(timeout);

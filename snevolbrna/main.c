@@ -227,6 +227,7 @@ main(int argc, char *argv[])
     singlPrintf("Welcome to the variable O() integrator running on %d procs\n",
 		MPMY_Nproc());
     csdfp = startup(argc, argv);
+    assert(SPHstride2 * 2 == SPHstride);
     SDFgetintOrDefault(csdfp, "timeout", &timeout, 600);
     if (timeout > 0) MPMY_TimeoutSet(timeout);
     SDFgetstring(csdfp, "datafile", name, sizeof(name));
