@@ -1,7 +1,7 @@
 defaultCC:=gcc
-defaultFC:=g77
+defaultFC:=gfortran
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fast -fno-common
+CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fno-common
 FC_SPECIFIC:=
 ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC -DYY_SKIP_YYWRAP -D__BSD__
 
