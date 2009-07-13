@@ -2,7 +2,7 @@ defaultCC:=icc
 defaultFC:=ifort -nofor_main
 
 CC_SPECIFIC:=-g -DLONG_LONG_KEYS $(BURNERFLAGS)
-FC_SPECIFIC:=-80 $(BURNERFLAGS)
+FC_SPECIFIC:=$(BURNERFLAGS)
 ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -DUSE_SYSTEM_MALLOC -DYY_SKIP_YYWRAP
 OPTIMIZE:=-O3 -static -no-prec-div -xP
 AGGRESSIVE_OPT=-O3 -static -no-prec-div -xP
