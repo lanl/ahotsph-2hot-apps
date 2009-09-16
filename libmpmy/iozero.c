@@ -174,7 +174,7 @@ fseekrd0(int fd, long offset, int whence, void *buf, int reclen,
 		/* I'm not sure this is a well-defined operation */
 		doseek = (offset != 0);
 	    }else if( whence == MPMY_SEEK_SET ){
-		int cur_off = lseek(fd, 0, SEEK_CUR);
+		long cur_off = lseek(fd, 0, SEEK_CUR);
 		if (cur_off < 0){
 		    static int issued_seek_warning;
 		    if( errno == ESPIPE ){
