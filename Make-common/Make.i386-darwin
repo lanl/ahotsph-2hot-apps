@@ -17,6 +17,6 @@ include $(treedir)/Make-common/Make.default
 swsrc:=lsv.c swampi.c
 
 ifeq ($(PAROS),mpi)
-LOADLIBES:=-lmpi
-PAROSCFLAGS:=
+LOADLIBES:=-L$(HOME)/lib -lmpi
+PAROSCFLAGS:=-I$(HOME)/include
 endif
