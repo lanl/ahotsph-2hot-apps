@@ -682,6 +682,8 @@ main(int argc, char *argv[])
 
 #ifdef SPH_GRAV
     mac = (macv_t)SPHDLRcritMAC;
+
+    for (p = btab; p < btab + nobj; ++p) p->h = eps;
 #endif
 
     this_eps = eps;
