@@ -249,15 +249,16 @@ fseekrd0(int fd, long offset, int whence, void *buf, int reclen,
 static int
 write0_multi(int fd, const void *buf, unsigned int nbytes)
 {
-    int ret;
-    int *sizes;
+    long ret;
+    long *sizes;
     int i, n, sync;
     char *tmpbuf = 0;
-    int total_bytes;
+    long total_bytes, lnbytes=nbytes;
     int nproc = MPMY_Nproc();
     int procnum = MPMY_Procnum();
 
-    MPMY_Combine(&nbytes, &total_bytes, 1, MPMY_INT, MPMY_SUM);
+
+    MPMY_Combine(&lnbytes, &total_bytes, 1, MPMY_LONG, MPMY_SUM);
     /* If the total is small enough, we might as well concat it on proc 0 */
     if (total_bytes <= MAX_IOBUF) {
 	MPMY_NGather(buf, nbytes, MPMY_CHAR, (void **)&tmpbuf, 0);
@@ -269,13 +270,13 @@ write0_multi(int fd, const void *buf, unsigned int nbytes)
 	}
 	return nbytes;
     } else if (procnum == 0) {
-	sizes = Malloc(sizeof(int)*nproc);
-	MPMY_Gather(&nbytes, 1, MPMY_INT, sizes, 0);
-	ret = write(fd, buf, nbytes);
-	if (ret != nbytes) Shout("write failed, errno=%d\n", errno);
+	sizes = Malloc(sizeof(long)*nproc);
+	MPMY_Gather(&lnbytes, 1, MPMY_LONG, sizes, 0);
+	ret = write(fd, buf, lnbytes);
+	if (ret != lnbytes) Shout("write failed, errno=%d\n", errno);
 	Msgf(("write0 %d\n", ret));
 	if (nproc > 1) {
-	    tmpbuf = Malloc(nbytes);
+	    tmpbuf = Malloc(lnbytes);
 	    for (i = procnum+1; i < nproc; i++) {
 		/* This could be double-buffered */
 		tmpbuf = Realloc(tmpbuf, sizes[i]);
@@ -292,9 +293,9 @@ write0_multi(int fd, const void *buf, unsigned int nbytes)
 	}
 	Free(sizes);
     } else {
-	MPMY_Gather(&nbytes, 1, MPMY_INT, NULL, 0);
+	MPMY_Gather(&lnbytes, 1, MPMY_LONG, NULL, 0);
 	MPMY_recvn(&sync, sizeof(int), 0, MPMY_IOTAG);
-	MPMY_send(buf, nbytes, 0, MPMY_IOTAG);
+	MPMY_send(buf, lnbytes, 0, MPMY_IOTAG);
 	MPMY_recvn(&ret, sizeof(int), 0, MPMY_IOTAG);
     }
     return ret;

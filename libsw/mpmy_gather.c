@@ -177,8 +177,8 @@ MPMY_NGather(const void *sendbuf, int count, MPMY_Datatype type,
     int chan;
     int doc;
     int sendproc;
-    int bufsz;
-    int inbytes;
+    long bufsz;
+    long inbytes;
     unsigned int mask;
     void *buf;
     int procnum = MPMY_Procnum();
