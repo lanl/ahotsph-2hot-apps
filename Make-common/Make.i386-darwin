@@ -1,8 +1,8 @@
 defaultCC:=gcc
 defaultFC:=gfortran
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -Wno-long-double -g -fno-common
-FC_SPECIFIC:=
+CC_SPECIFIC:=-DLONG_LONG_KEYS -g -fno-common -fast
+FC_SPECIFIC:=-g -O2
 ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC -DYY_SKIP_YYWRAP
 
 override OPTIMIZE=
