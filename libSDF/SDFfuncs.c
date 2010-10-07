@@ -589,10 +589,11 @@ int SDFseekrdvecsarr(SDF *hdr, int nreq,
     blk_descrip_t *blk;
     int stride, sz;
     int ret;
-    int nread, rec_cnt, rec_left, ncopy, ntry;
+    long rec_left;
+    int nread, rec_cnt, ncopy, ntry;
     int *nleft, *seekto;
     char **toptr_arr;
-    int whole_sz;
+    long int whole_sz;
     Error_t oldmallochandler;
 
     if( hdr == NULL ){
