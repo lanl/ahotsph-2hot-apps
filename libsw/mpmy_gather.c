@@ -201,11 +201,11 @@ MPMY_NGather(const void *sendbuf, int count, MPMY_Datatype type,
 	if (sendproc >= 0 && sendproc < nproc) {
 	    if (procnum & (1 << chan)) {
 		Msgf(("NGather: to %d, bufsz %d\n", sendproc, bufsz));
-		MPMY_send(&bufsz, sizeof(int), sendproc, NGATHER_TAG+chan);
+		MPMY_send(&bufsz, sizeof(long), sendproc, NGATHER_TAG+chan);
 		MPMY_send(buf, bufsz, sendproc, NGATHER_TAG+chan);
 		break;
 	    } else {
-		MPMY_recvn(&inbytes, sizeof(int), sendproc, NGATHER_TAG+chan);
+		MPMY_recvn(&inbytes, sizeof(long), sendproc, NGATHER_TAG+chan);
 		Msgf(("NGather: from %d, inbytes %d\n", sendproc, inbytes));
 		buf = Realloc(buf, bufsz+inbytes);
 		MPMY_recvn(bufsz+(char*)buf, inbytes, sendproc, NGATHER_TAG+chan);
