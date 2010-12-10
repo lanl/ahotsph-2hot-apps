@@ -265,7 +265,7 @@ write0_multi(int fd, const void *buf, unsigned int nbytes)
 	if (procnum == 0) {
 	    ret = write(fd, tmpbuf, total_bytes);
 	    if (ret != total_bytes) Error("write failed, errno=%d\n", errno);
-	    Msgf(("write0 %d (one block)\n", ret));
+	    Msgf(("write0 %ld (one block)\n", ret));
 	    Free(tmpbuf);
 	}
 	return nbytes;
@@ -274,7 +274,7 @@ write0_multi(int fd, const void *buf, unsigned int nbytes)
 	MPMY_Gather(&lnbytes, 1, MPMY_LONG, sizes, 0);
 	ret = write(fd, buf, lnbytes);
 	if (ret != lnbytes) Shout("write failed, errno=%d\n", errno);
-	Msgf(("write0 %d\n", ret));
+	Msgf(("write0 %ld\n", ret));
 	if (nproc > 1) {
 	    tmpbuf = Malloc(lnbytes);
 	    for (i = procnum+1; i < nproc; i++) {
