@@ -76,7 +76,6 @@ static void Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad, 
 static void ReadCosmo(SDF *sdfp, struct cosmo_s *cosmo, float tpos, float *R0p);
 static void CosmoPush(struct cosmo_s *p, float time);
 static int dark_need_update(float dark_tacc, float dark_dt);
-static float IdtSPHGetCost(const SPHbody *ptr);
 static void AngularPeriodicSPH(tree_t *tp, float aleph);
 static void SPHWrapAngularPeriodic(SPHbody *bp, int n, float aleph);
 
@@ -126,12 +125,6 @@ static bndry_t bndry;
 
 #define MAXCOEF 16
 
-static void fpe_handler(int x)
-{
-    SeriousWarning("ignoring FPE\n");
-    return;
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -141,7 +134,7 @@ main(int argc, char *argv[])
     int SPHsinkgnobj, SPHsinknobj;
     body *btab, *p;
     body *pmtab;
-    SPHbody *SPHbtab, *SPHsinkbtab, *q, *qq;
+    SPHbody *SPHbtab, *SPHsinkbtab, *q;
     float eps;			/* Plummer smoothing length */
     float tol;			/* MAC tolerance */
 		/* for big MAC, this is multiplied by M/(rsize*rsize) */
@@ -152,7 +145,6 @@ main(int argc, char *argv[])
     int stride = sizeof(body)/sizeof(float);
     int SPHstride = sizeof(SPHbody)/sizeof(float);
     int SPHstride2 = sizeof(SPHbody)/sizeof(double);
-    int SPHstride3 = sizeof(SPHbody)/sizeof(unsigned int);
     int do_output;
     int output_freq;
     int timer_freq;
@@ -2414,15 +2406,6 @@ dark_need_update(float dark_tacc, float dark_dt)
 {
     if (!dark_independent_dt) return 1;
     return (dark_tacc + dark_dt <= tpos + dt * 1.00001);
-}
-
-static float 
-IdtSPHGetCost(const SPHbody *ptr)
-{
-    if (SPH_need_update(ptr))
-      return (float) ptr->nterms;
-    else
-      return (float) default_nterms;
 }
 
 int

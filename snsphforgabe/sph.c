@@ -328,7 +328,9 @@ macRho(SinkSPH *sink, hcell **source_vec, int *result, int n)
     float rhoi = (float)0.0;
     float divvi = (float)0.0;
     float dr2;
+#if NDIM != 3
     float xfac;
+#endif
     int interactions = 0;
 
     for (i = 0; i < n; i++) {
@@ -452,7 +454,10 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     float rapm, robar1;
     double grpm, wpm;
     double poro2;
-    double projv, vsbar, est_divv, t12, projv2d;
+    double projv, vsbar, est_divv, t12;
+#if NDIM != 3
+    double projv2d;
+#endif
     float rij, rij1;
     float xfac;
     int interactions = 0;
@@ -1656,8 +1661,9 @@ update_bardeen(SPHbody *btab, int nobj, float G, float c, bndry_t b)
     Vxd(float S);
     Vxd(float ppos);
     Vxd(float pvel);
-    float dr2, oneor, A, B, C;
-    float rplus = G*b.mass/(c*c);
+    float dr2, oneor, A;
+/*     float B, C; */
+/*     float rplus = G*b.mass/(c*c); */
 
     VxS(ppos, = (float)0.0);  /* BH fixed at origin */
     VxS(pvel, = (float)0.0);
@@ -1693,7 +1699,7 @@ void
 do_SPHgrav(const float *p, const float *end, const float *pos0, float *mass0, 
 	   float *acc0, float *phi0, const float *eps2p, int *ncut)
 {
-    float dr2, h, h2, dxx, dphidx, dmassdx, v2;
+    float dr2, h, h2, v2;
     Vxd(float r);
     float phii, mor3, mass;
     VxdV(const float ppos, = pos0);

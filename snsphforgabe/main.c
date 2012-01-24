@@ -78,7 +78,6 @@ static void ReadCosmo(SDF *sdfp, struct cosmo_s *cosmo, float tpos, float *R0p);
 static void ReadCosmo(SDF *sdfp, struct cosmo_s *cosmo, float tpos, float *R0p);
 static void CosmoPush(struct cosmo_s *p, float time);
 static int dark_need_update(float dark_tacc, float dark_dt);
-static float IdtSPHGetCost(const SPHbody *ptr);
 static void AngularPeriodicSPH(tree_t *tp, float aleph);
 static void SPHWrapAngularPeriodic(SPHbody *bp, int n, float aleph);
 
@@ -2068,7 +2067,6 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
 
 static void accOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter)
 {
-    SPHbody *p;
     int i;
     sortresult_t outputsort;
     SPHoutbody *output_btab;
@@ -2741,15 +2739,6 @@ dark_need_update(float dark_tacc, float dark_dt)
 {
     if (!dark_independent_dt) return 1;
     return (dark_tacc + dark_dt <= tpos + dt * 1.00001);
-}
-
-static float 
-IdtSPHGetCost(const SPHbody *ptr)
-{
-    if (SPH_need_update(ptr))
-      return (float) ptr->nterms;
-    else
-      return (float) default_nterms;
 }
 
 int

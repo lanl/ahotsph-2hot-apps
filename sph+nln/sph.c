@@ -699,7 +699,7 @@ void
 do_SPHgrav(const float *p, const float *end, const float *pos0, float *mass0, 
 	   float *acc0, float *phi0, const float *eps2p, int *ncut)
 {
-    float dr2, h, h2, dxx, dphidx, dmassdx, v2;
+    float dr2, h, h2, v2;
     Vxd(float r);
     float phii, mor3, mass;
     VxdV(const float ppos, = pos0);

@@ -516,7 +516,9 @@ static void
 sock_setopt(int fd)
 {
     int nodelay = 1;
+#ifdef SO_NO_CHECK
     int no_check = 0;		/* not clear if this does anything */
+#endif
     int sendbuf = 65535;
     int recvbuf = 65535;
 

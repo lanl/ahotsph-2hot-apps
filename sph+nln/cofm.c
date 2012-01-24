@@ -33,8 +33,10 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     body *bp;
     float dmass;
     float newbmax;
+#ifndef SPH_GRAV
     float center[NDIM], cellsz;
     Vxd(float dx);
+#endif
 
     assert(Sub_Flags(hptr));
 

@@ -107,7 +107,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	body *bp = pp->ptr;
 	/* must init mtot or else you get quiet exceptions in asm code */
 	float mtot = (float)0.0;
-	int ijunk = 0, nn;
+	int ijunk = 0;
+#ifdef UNROLL
+        int nn;
+#endif
 	float acc[NDIM];
 	float phi;
 	float indeps;
