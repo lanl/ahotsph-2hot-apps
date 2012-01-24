@@ -32,7 +32,7 @@ SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax)
     MPMY_ICombine_Wait(req);
 }    
 
-void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const SPHbody *)){
+void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const void *)){
     SPHbody *btabend= btab+nobj;
 
     while(btab<btabend){

@@ -379,8 +379,8 @@ void CellCorner(Key_t key, float *corner, float *size);
 /* In physics_sph.c */
 /* There are various void * decls here, since we don't want to have body *s */
 void SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax);
-void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const SPHbody *));
-Key_t SPHGetKey(const SPHbody *p);
+void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const void *));
+Key_t SPHGetKey(const void *p);
 float SPHGetCost(const SPHbody *p);
 Key_t SPHGetKeyFromStruct(const SPHbody *p);
 void SPHFixId(SPHbody *btab, int nobj, int gnobj);
