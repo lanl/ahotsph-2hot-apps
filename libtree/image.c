@@ -164,7 +164,7 @@ write_image(pixel *image, int npix, int nx, int ny, float *rmin, float *rmax,
     for (ip = image; ip < image+npix; ip++) {
 	k = KeyAndInt(ip->key, PixMask) - first_k;
 	if (k > n || k < 0)
-	  Error("Bad k value (%d), n is %d, key is %d, ip is %d\n", 
+	  Error("Bad k value (%d), n is %d, key is %d, ip is %ld\n", 
 		k, n, KeyAndInt(ip->key, PixMask), ip-image);
 	fimage[k] += ip->value;
 	setmax(fimage[k], &vmax, &vmin, do_log);

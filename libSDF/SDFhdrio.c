@@ -55,7 +55,7 @@ int SDF_Hdrgetc(){
 
     if( ptr < endbuf ){
 	if( *ptr == '\0' ){
-	    SinglWarning("Returning NULL at char %d in SDFhdrio\n", ptr-buf);
+	    SinglWarning("Returning NULL at char %ld in SDFhdrio\n", ptr-buf);
 	}
 	Msgf(("SDF_hdrgetc:  %c\n", *ptr));
 	return *ptr++;

@@ -23,7 +23,7 @@ SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax)
 	VVVV(if LPAREN rmin, > b->pos, RPAREN rmin, = b->pos);
 	VVVV(if LPAREN rmax, < b->pos, RPAREN rmax, = b->pos);
 	VS(if LPAREN !finite LPAREN b->pos, RPAREN RPAREN 
-	     	  Error("Bad value for particle %d of %d\n",
+	     	  Error("Bad value for particle %ld of %d\n",
 		b-bp, n));
     }
     MPMY_ICombine_Init(&req);

@@ -27,7 +27,7 @@ PrintKey(Key_t key)
 	      key.k[0] & ~(1L << 63));
 #endif
 #else
-    sprintf(str, "%010o.%01o%010o", 
+    sprintf(str, "%010lo.%01lo%010lo", 
 	    (unsigned long int)(key.k[0]>>33), /* bits 63-33 */
 	    (unsigned long int)((key.k[0]>>30) & 7), /* bits 32,31,30 */
 	    (unsigned long int)(key.k[0] & ((1<<30)-1))); /* 29-0 */
