@@ -47,11 +47,11 @@ int MPMY_Isend(const void *buf, int cnt, int dest, int tag,
 
     Msgf(("Isend: buf=%p, dest=%d, tag=%d\n",
 	  buf, dest, tag));
-    if (MPI_Isend(buf, cnt, MPI_BYTE, dest, tag, MPI_COMM_WORLD,
+    if (MPI_Isend((void *)buf, cnt, MPI_BYTE, dest, tag, MPI_COMM_WORLD,
 		  &comm->hndl) != MPI_SUCCESS)
 	Error("MPMY_Isend MPI_Isend failed\n");
     comm->inout = OUT;
-    Msgf(("Isend: hndl=%d\n", (int) comm->hndl));
+    Msgf(("Isend: hndl=%ld\n", (long) comm->hndl));
     *reqp = comm;
     return MPMY_SUCCESS;
 }
@@ -85,7 +85,7 @@ int MPMY_Irecv(void *buf, int cnt, int src, int tag, MPMY_Comm_request *reqp) {
 		  &comm->hndl) != MPI_SUCCESS)
 	Error("MPMY_Irecv MPI_Irecv failed\n");
     comm->inout = IN;
-    Msgf(("Irecv: hndl=%d\n", (int) comm->hndl));
+    Msgf(("Irecv: hndl=%ld\n", (long) comm->hndl));
     *reqp = comm;
     return MPMY_SUCCESS;
 }
@@ -95,7 +95,7 @@ int MPMY_Test(MPMY_Comm_request req, int *flag, MPMY_Status *stat) {
     MPI_Status status;
     int cnt;
 
-    Msgf(("MPMY_Test hndl=%d\n",  (int) comm->hndl));
+    Msgf(("MPMY_Test hndl=%ld\n",  (long) comm->hndl));
     if (MPI_Test(&comm->hndl, flag, &status) != MPI_SUCCESS)
 	Error("MPMY_Test MPI_Test failed\n");
     Msgf(("Tested (%s), %d\n", 
@@ -122,7 +122,7 @@ int MPMY_Wait(MPMY_Comm_request req, MPMY_Status *stat) {
     MPI_Status status;
     int cnt;
 
-    Msgf(("Wait for %d\n", (int) comm->hndl));
+    Msgf(("Wait for %ld\n", (long) comm->hndl));
     if (MPI_Wait(&comm->hndl, &status) != MPI_SUCCESS)
 	Error("MPMY_Wait MPI_Wait failed\n");
     Msgf(("Waited for (%s), deallocated\n", 
@@ -151,7 +151,7 @@ int MPMY_Shift(int proc, void *recvbuf, int recvcnt,
     Msgf(("Starting MPMY_Shift(proc=%d, recvcnt=%d, sendcnt=%d, recvbuf=%p, sendbuf=%p\n",
 	  proc, recvcnt, sendcnt, recvbuf, sendbuf));
 
-    if (MPI_Sendrecv(sendbuf, sendcnt, MPI_BYTE, proc, SHIFT_TAG,
+    if (MPI_Sendrecv((void *)sendbuf, sendcnt, MPI_BYTE, proc, SHIFT_TAG,
 		     recvbuf, recvcnt, MPI_BYTE, proc, SHIFT_TAG,
 		     MPI_COMM_WORLD, &status) != MPI_SUCCESS)
 	Error("MPMY_Shift MPI_Sendrecv failed\n");
