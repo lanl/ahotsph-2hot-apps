@@ -1,12 +1,12 @@
 defaultCC:=gcc
 defaultFC:=gfortran
 
-CC_SPECIFIC:=-DLONG_LONG_KEYS -g -fno-common -fast
-FC_SPECIFIC:=-g -O2
-ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC -DYY_SKIP_YYWRAP
+CC_SPECIFIC:=-g -Wall
+FC_SPECIFIC:=-g
+ARCH_SPECIFIC:=-DUSE_SYSTEM_MALLOC -DYY_SKIP_YYWRAP -DLONG_LONG_KEYS
 
-override OPTIMIZE=
-override AGGRESSIVE_OPT=
+override OPTIMIZE=-O3
+override AGGRESSIVE_OPT=-O3
 # LDFLAGS:=
 LEX:=flex
 YACC:=bison -y
@@ -17,6 +17,6 @@ include $(treedir)/Make-common/Make.default
 swsrc:=lsv.c swampi.c
 
 ifeq ($(PAROS),mpi)
-LOADLIBES:=-L$(HOME)/lib -lmpi
-PAROSCFLAGS:=-I$(HOME)/include
+LOADLIBES:=-L/usr/local/lib -lmpi
+PAROSCFLAGS:=-I/usr/local/include
 endif
