@@ -607,7 +607,7 @@ void Fortran(neutrino)(float *steps, float *rhok, float *yek, float *xpk,
 		       float *unuebi, float *unuxi, float *rmaxnue,
 		       float *rmaxnueb, float *rmaxnux, float *ftrape,
 		       float *ftrapb, float *ftrapx, float *jtrape,
-		       float *jtrapb, float *jtrapx, int *ident);
+		       float *jtrapb, float *jtrapx, unsigned int *ident);
 void Fortran(neutrino2)(float *steps, float *rhok, float *xpk, float *xnk,
 			float *etak, float *tempk, float *ri, float *pmassi,
 			float *vsoundi, float *xmuhati, float *ynuei,
