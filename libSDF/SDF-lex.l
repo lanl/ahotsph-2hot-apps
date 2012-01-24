@@ -83,7 +83,7 @@ byteorder {yylval.valueparam = BYTEORDER; return VALUEPARAM;}
 	strcpy(yylval.string, (char *)yytext);
 #if YYDEBUG
 	if(yydebug)
-	    printf("lex-malloc(%d) at 0x%lx\n", 
+	    printf("lex-malloc(%ld) at 0x%lx\n", 
 		   yyleng+1, (unsigned long)yylval.string);
 #endif
 	return NAME;}
@@ -98,7 +98,7 @@ byteorder {yylval.valueparam = BYTEORDER; return VALUEPARAM;}
 	    yylval.constant.type = SDF_STRING;
 #if YYDEBUG
 	    if(yydebug)
-	        printf("lex-malloc(%d) = 0x%lx\n", yyleng-1, 
+	        printf("lex-malloc(%ld) = 0x%lx\n", yyleng-1, 
 		    (unsigned long)yylval.constant.u.stringval);
 #endif
 	    return CONST;}
