@@ -172,7 +172,8 @@ void WVTInitCube(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
 
@@ -237,7 +238,8 @@ void WVTInitHex(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     double xoff, xmin, yoff, ymin, zmin;
@@ -313,7 +315,8 @@ void WVTInitCCP(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     double xoff, xmin, yoff, ymin, zmin;
@@ -410,7 +413,8 @@ void WVTInitHCP(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     double xoff, xmin, yoff, ymin, zmin;
@@ -507,7 +511,8 @@ void WVTInitHex2(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     /* INCORRECT VERSION !!! USE WVTINITHCP INSTEAD */
     double pos[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
 
@@ -641,7 +646,8 @@ void WVTInitProbdist(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q, *qq;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0, j=0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     double h, rho, r;
@@ -888,7 +894,8 @@ void WVTInitProbdist_lotsmem(SPHbody **btabp, int *gnobj, int *nobj,
     SPHbody *q, *p, *qq;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0, j=0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     double h, rho, r;
@@ -1014,7 +1021,8 @@ void WVTInitCube2(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     
@@ -1078,7 +1086,8 @@ void WVTInitProbdist2(SPHbody **btabp, int *gnobj, int *nobj,
     SPHbody *q, *p, *qq;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq, randoffset[NDIM];
+    double rsq;
+    float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
     double h, rho, r;

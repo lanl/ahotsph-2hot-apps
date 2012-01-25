@@ -12,7 +12,7 @@
 
 /* Call FindBbox to learn what the extent of the system is. */
 void
-SPHFindBbox(SPHbody *bp, int n, double *rmin, double *rmax)
+SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax)
 {
     SPHbody *b;
     MPMY_Comm_request req;

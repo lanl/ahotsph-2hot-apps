@@ -22,7 +22,7 @@ void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     SPHbody *bp;
     double dmass;
     double newbmax;
-    double center[NDIM], cellsz;
+    float center[NDIM], cellsz;
     Vxd(double dx);
 
     assert(Sub_Flags(hptr));

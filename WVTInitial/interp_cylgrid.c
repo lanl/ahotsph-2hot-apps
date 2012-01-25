@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     tree_t SPHtree;
     double mtot;
     int num[NDIM];  /* uniform mesh for now */
-    double rmin[NDIM], rmax[NDIM];
+    float rmin[NDIM], rmax[NDIM];
     double outrmin[NDIM], outrmax[NDIM];
     double sysradius;
     double sort_tol = 0.01;

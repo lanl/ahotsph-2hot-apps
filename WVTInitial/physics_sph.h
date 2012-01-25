@@ -382,11 +382,11 @@ typedef struct{
 int SPH_need_update(const SPHbody *p);
 
 /* In physics_generic.c */
-void CellCorner(Key_t key, double *corner, double *size);
+void CellCorner(Key_t key, float *corner, float *size);
 
 /* In physics_sph.c */
 /* There are various void * decls here, since we don't want to have body *s */
-void SPHFindBbox(SPHbody *bp, int n, double *rmin, double *rmax);
+void SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax);
 void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const void *));
 Key_t SPHGetKey(const void *p);
 double SPHGetCost(const SPHbody *p);
