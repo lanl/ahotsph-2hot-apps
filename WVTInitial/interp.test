@@ -1,0 +1,387 @@
+/* 
+   Parallel SPH interpolation + some physics on the mesh
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "error.h"
+#include "mpmy.h"
+#include "Msgs.h"
+#include "physics.h"
+#include "physics_sph.h"
+#include "SDF.h"
+#include "SDFwrite.h"
+#include "singlio.h"
+#include "sphinit.h"
+#include "vop.h"
+#include "mesh.h"
+#include "decomp.h"
+#include "consts.h"
+#include "math.h"
+
+static SDF *initfiles(int argc, char *argv[]);
+static void SPHSanityCheck(SPHbody *btab, int nobj, int gnobj, double *mtotp);
+static void MeshOutput(Meshbody *btab, int nobj, const char *outnamebase);
+Key_t MeshGetKey(const void *p);
+static void Eos(Meshbody *p, int nobj);
+static void AdjustBtab(SPHbody **SPHbtabp, int *nobj, int gnobj);
+
+Timer_t StepTot, StepTotWC, BuildTot;
+Timer_t FindForcesTm;
+Timer_t RhoSPH, ForceSPH, PerTmSPH;
+Timer_t FixCubeTm;
+Timer_t WTermTm, WNTTm, PerTm;
+Timer_t EosTm;
+Counter_t NbodyCnt;
+Counter_t MemCnt;
+Counter_t HeapCnt_;	/* HeapCnt is in the SunOS name space?! */
+Counter_t NtermsCnt;
+Counter_t SPHbodyCnt;
+
+int do_diffusion = 0;
+
+int main(int argc, char *argv[]) 
+{
+    SDF *csdfp, *sdfp;
+    SPHbody *btab;
+    Meshbody *mesh;
+/*     void *decomp_info = NULL; */
+    sortresult_t sortedbtab, sortedmeshbtab;
+    tree_t SPHtree, meshtree;
+    double mtot;
+    int num[NDIM];  /* uniform mesh for now */
+    double rmin[NDIM], rmax[NDIM];
+    double sysradius;
+    double sort_tol = 0.01;
+    int i;
+    int gnobj, nobj, meshgnobj, meshnobj;
+
+
+    MPMY_Init(&argc, &argv);
+    singlPrintf("Welcome to the SPH interpolator running on %d procs\n", 
+		MPMY_Nproc());
+
+/* #ifdef HAS_NTERMS */
+/*     singlPrintf("HAS_NTERMS is on\n"); */
+/* #endif */
+
+/* #ifdef HAS_KEY */
+/*     singlPrintf("HAS_KEY is on\n"); */
+/* #endif */
+
+    csdfp = initfiles(argc, argv);
+
+    SDFgetintOrDie(csdfp, "n_x", &(num[0]));
+    SDFgetintOrDie(csdfp, "n_y", &(num[1]));
+    SDFgetintOrDie(csdfp, "n_z", &(num[2]));
+
+    SDFclose(csdfp);
+
+    for(i = 2; i < argc; ++i) {
+	ClearEnabledTimers();
+	ClearEnabledCounters();
+	StartTimer(&StepTotWC);
+	StartTimer(&StepTot);
+
+	sdfp = SPHReadf(argv[i], &btab, &gnobj, &nobj);
+	SDFclose(sdfp);
+	singlPrintf("SPHReadf done");
+	SPHSanityCheck(btab, nobj, gnobj, &mtot);
+	SPHFixNterms(btab, nobj);
+
+	SetupTree(&SPHtree, NDIM, sizeof(SPHbody), sizeof(SPHcell),
+		  SPHTBODYSZ, sizeof(SPHcofmdata), 
+		  (pq_keyproto)SPHGetKeyFromStruct, (pq_wgtproto)SPHGetCost,
+		  SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm);
+
+	SetupTree(&meshtree, NDIM, sizeof(Meshbody), sizeof(Meshcell),
+		  MESHTBODYSZ, sizeof(Meshcofmdata), 
+		  (pq_keyproto)MeshGetKeyFromStruct, (pq_wgtproto)MeshGetCost,
+		  MeshCofmFromDaugh, (cellfromcofm_t)MeshCellFromCofm);
+
+	SPH_setup(NDIM);
+
+	/* Chop out particles that you don't want */
+	AdjustBtab((SPHbody **)&btab, &nobj, gnobj);
+	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
+
+	SPHFindBbox(btab, nobj, rmin, rmax);
+	sysradius = 0.5*FixRsize(rmin, rmax);
+
+	/* Needs to be made parallel, and to use valid memory */
+	MeshInit(&mesh, &meshgnobj, &meshnobj, rmin, rmax, num);
+
+	singlPrintf("Mesh: rmin:  %8.1f %8.1f %8.1f\n", 
+		    rmin[0], rmin[1], rmin[2]);
+	singlPrintf("      rmax:  %8.1f %8.1f %8.1f\n", 
+		    rmax[0], rmax[1], rmax[2]);
+	singlPrintf("      num:  %8d  %8d  %8d\n", 
+		    num[0], num[1], num[2]);
+
+	Msgf(("rmin=(%g, %g, %g) rmax=(%g, %g, %g)\n",
+	      rmin[0], rmin[1], rmin[2], 
+	      rmax[0], rmax[1], rmax[2]));
+
+	singlPrintf("BuildTree\n");
+	StartTimer(&BuildTot);
+	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
+		    Realloc_f);
+	SPHFixKeys(btab, nobj, SPHGetKey);
+	BuildTree(&SPHtree, &sortedbtab);
+	btab = sortedbtab.data;
+	nobj = sortedbtab.nobj;
+/* 	decomp_info = SaveDecomp(); */
+
+/* 	SetDecomp(decomp_info); */
+	pqsortsetup(&sortedmeshbtab, mesh, meshnobj, sizeof(Meshbody), 
+		    sort_tol, Realloc_f);
+/*     	mesh = pqsort(&sortedmeshbtab, UnityCost, MeshGetKey); */
+	MeshFixKeys(mesh, meshnobj, MeshGetKey);
+	BuildTree(&meshtree, &sortedmeshbtab);
+	mesh = sortedmeshbtab.data;
+	meshnobj = sortedmeshbtab.nobj;
+	StopTimer(&BuildTot);
+
+	singlPrintf("Walk\n");
+
+	WalkInit(&SPHtree, &meshtree, sizeof(Meshbody), (macv_t)Meshgate,
+		 (inherit_t)InheritMesh);
+	WalkNT(&meshtree);
+	WalkTerminate();
+
+	FreeTree(&meshtree);
+	FreeTree(&SPHtree);
+	singlPrintf("FreeTree done\n");
+
+	StartTimer(&EosTm);
+	Eos(mesh, meshnobj);
+	StopTimer(&EosTm);
+
+	StopTimer(&StepTot);
+	StopTimer(&StepTotWC);
+
+	OutputTimers(singlPrintf);
+
+	MeshOutput(mesh, meshnobj, argv[i]);
+/* 	ClearDecomp(decomp_info); */
+    }
+
+    singlPrintf("Bye!\n");
+
+    return 0;
+}
+
+
+static SDF *initfiles(int argc, char *argv[]) 
+{
+    SDF *csdfp;
+    char msg_turn_on[512];
+    char tmp[256];
+    char msgdir[256];
+    char *msgbase, *lastslash;
+
+    if (argc < 3)
+	SinglError("Usage: %s control-file data-file(s)\n", argv[0]);
+
+    if ( (csdfp = SDFopen(NULL, argv[1])) == NULL )
+	SinglError("%s: couldn't SDFopen %s: %s\n", argv[0], argv[1], 
+		   SDFerrstring);
+
+    /* Set up message directory */
+    if( SDFgetstring(csdfp, "msgbase", tmp, sizeof(tmp))==0 )
+	msgbase = tmp;
+    else {
+	lastslash = strrchr(argv[0], '/');
+	if (lastslash) 
+	    msgbase = lastslash + 1;
+	else 
+	    msgbase = argv[0];
+	sprintf(tmp, "misc.%s/msg", msgbase);
+	msgbase = tmp;
+    }
+    sprintf(msgdir, "%s.%d", msgbase, MPMY_Procnum());
+    MsgdirInit(msgdir);
+
+    SDFgetstringOrDefault(csdfp, "Msg_turn_on", msg_turn_on, 
+			  sizeof(msg_turn_on), "");
+    Msg_turnon(msg_turn_on);
+
+    EnableTimer(&StepTot, "Step Total");
+    EnableWCTimer(&StepTotWC, "Step Tot(WC)");
+    EnableTimer(&BuildTot, "Build Total");
+    EnableTimer(&DecompTm, "Decomp");
+    EnableTimer(&DecompCommTm, "DecompComm");
+    EnableTimer(&SortTm, "Sort");
+    EnableTimer(&MakeTreeTm, "Make Tree");
+/*     EnableTimer(&FindForcesTm, "Force Eval"); */
+/*     EnableTimer(&GravTm, "Grav Time"); */
+/*     EnableTimer(&MACTm, "MAC Time"); */
+/*     EnableTimer(&ForceSPH, "Force (SPH)"); */
+/*     EnableTimer(&RhoSPH, "Rho (SPH)"); */
+    EnableTimer(&WalkDeferTm, "Walk Defer");
+    EnableTimer(&WTermTm, "WalkTerm");
+    EnableTimer(&WNTTm, "WalkNT");
+    EnableTimer(&EosTm, "Eos");
+/*     EnableTimer(&PerTm, "Periodic"); */
+/*     EnableTimer(&PerTmSPH, "Periodic SPH"); */
+
+    EnableCounter(&NtermsCnt, "Nterms");
+    EnableCounter(&NbodyCnt, "Nbody");
+    EnableCounter(&SPHbodyCnt, "SPHbody");
+    EnableCounter(&CCIntRej, "MAC fail");
+    EnableCounter(&SharedCnt, "Shared Cells");
+    EnableCounter(&TranslateCnt, "Translate");
+    EnableCounter(&DeferCnt, "Deferred");
+    EnableCounter(&MemCnt, "Mem Used (K)");
+    EnableCounter(&HeapCnt_, "Heap Sz (K)");
+
+    return csdfp;
+}
+
+
+static void SPHSanityCheck(SPHbody *btab, int nobj, int gnobj, double *mtotp){
+    double mtot;
+    SPHbody *p;
+    int sumnobj;
+    MPMY_Comm_request req;
+
+    mtot = 0.0;
+    for (p = btab; p < btab+nobj; p++) {
+	mtot += p->mass;
+	/* We really could use more checks here! */
+    }
+
+    sumnobj = nobj;
+    MPMY_ICombine_Init(&req);
+    MPMY_ICombine(&mtot, &mtot, 1, MPMY_DOUBLE, MPMY_SUM, req);
+    MPMY_ICombine(&sumnobj, &sumnobj, 1, MPMY_INT, MPMY_SUM, req);
+    MPMY_ICombine_Wait(req);
+    assert(sumnobj == gnobj);
+    Msgf(("SPH Particle 0 (%d), %g, %g %g %g, %g %g %g\n",
+	  btab->ident, btab->mass, 
+	  btab->pos[0], btab->pos[1], btab->pos[2],
+	  btab->vel[0], btab->vel[1], btab->vel[2]));
+    Msgf(("SPH Particle %d (%d), %g, %g %g %g, %g %g %g\n", nobj-1,
+	  btab[nobj-1].ident, btab[nobj-1].mass, 
+	  btab[nobj-1].pos[0], btab[nobj-1].pos[1], btab[nobj-1].pos[2],
+	  btab[nobj-1].vel[0], btab[nobj-1].vel[1], btab[nobj-1].vel[2]));
+    singlPrintf("Sanity check: gnobj = %d, mtot = %f\n", gnobj, mtot);
+    *mtotp = mtot;
+}
+
+
+int SPH_need_update(const SPHbody *p)
+{
+    return 1;
+}
+
+
+Key_t SPHGetKey(const void *p)
+{
+    body t;
+    VV(t.pos, = ((SPHbody *)p)->pos);
+    return GETKEY(&t);
+}
+
+
+Key_t MeshGetKey(const void *p)
+{
+    body t;
+    VV(t.pos, = ((Meshbody *)p)->pos);
+    return GETKEY(&t);
+}
+
+
+static void MeshOutput(Meshbody *btab, int nobj, const char *outnamebase) 
+{
+    Meshoutbody *output_btab;
+    MPMY_Comm_request req;
+    char outname[256];
+    int output_nobj = nobj;
+    int i, output_gnobj;
+
+    sprintf(outname, "%s-grid", outnamebase);
+    output_btab = Malloc(output_nobj * sizeof(Meshoutbody));
+
+    for(i = 0; i < output_nobj; ++i) {
+	VV(output_btab[i].pos, = btab[i].pos);
+	output_btab[i].rho = btab[i].rho;
+	output_btab[i].u = btab[i].u;
+	output_btab[i].T = btab[i].T;
+	output_btab[i].s = btab[i].s;
+    }
+
+    Msgf(("Doing output of %d bodies\n", output_nobj));
+    MPMY_ICombine_Init(&req);
+    MPMY_ICombine(&output_nobj, &output_gnobj, 1, MPMY_INT, MPMY_SUM, req);
+    MPMY_ICombine_Wait(req);
+
+    SDFwrite(outname, output_gnobj, output_nobj, output_btab,
+	     sizeof(Meshoutbody), MESHOUTBODYDESC,
+	     "npart", SDF_INT, output_gnobj,
+	     NULL);
+    Free(output_btab);
+
+    singlPrintf("Output written to %s\n", outname);
+
+    return;
+}
+
+
+static void Eos(Meshbody *p, int nobj) 
+{
+    Meshbody *q;
+
+    for (q = p; q < p+nobj; ++q) {
+	q->u *= (LEN/TIM)*(LEN/TIM);
+	q->rho *= MAS/LEN/LEN/LEN;
+
+	/* Be careful; are these actually accurate? */
+	/* Wrong: this T is the electron temperature, which is
+	   decoupled from the radiation temperature.  Instead,
+	   calculate T using u = aT^4/rho, then use that in the
+	   entropy calculation */
+	/* q->T = 1.0/3.0*mh_cgs*q->u/kboltz_cgs; */
+	/* q->s = (q->rho > 0.0) ?  */
+	/*(4.0/3.0 * a_cgs * q->T*q->T*q->T / (q->rho * kboltz_cgs * N_a)) : */
+	/*(0.0); */
+
+	q->T = pow(q->rho * q->u / a_cgs, 0.25);
+	q->s = 4.0/3.0 * a_cgs * q->T*q->T*q->T / q->rho;
+    }
+
+    return;
+}
+
+
+static void
+AdjustBtab (SPHbody **SPHbtabp, int *nobj, int gnobj)
+{
+    SPHbody *btab = *SPHbtabp;
+    SPHbody *p;
+    Stk s;
+    SPHbody *q;
+
+    StkInitEz(&s);
+
+    for (p = btab; p < btab+*nobj; p++) {
+	/* keep all particles inside reasonable volume of solution */
+
+	if ( (fabs(p->pos[0]) <= 0.5*pc_cgs/LEN) 
+	     && (fabs(p->pos[1]) <= 0.5*pc_cgs/LEN) 
+	     && (fabs(p->pos[2]) <= 0.5*pc_cgs/LEN) ) { 
+
+	    q = StkPush(&s, sizeof(SPHbody));
+	    *q = *p;
+
+	}
+    }
+
+    Free(btab);
+    StkCrunch(&s);
+    *nobj = StkSz(&s)/sizeof(SPHbody);
+    btab = StkBase(&s);
+    *SPHbtabp = Realloc(btab, *nobj * sizeof(SPHbody));
+}

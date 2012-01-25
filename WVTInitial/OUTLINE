@@ -1,0 +1,72 @@
+Outline for getting randomly complex initial conditions into the WVT setup
+**************************************************************************
+
+In order to make this as useful as possible, we will do this in two
+separate steps. In the first, we will take whatever grid we have into
+a set of pseudo SPH particles. In the second step, we will then use
+this set of particles and SPH interpolate between them to get the new
+set of particles. This will allow us to have the same
+setup for regridding an existing SPH simulation, which will be
+extremely useful for restarting a simulation at a different
+resolution.
+
+
+Step I:
+-------
+
+Take whatever grid you have the initial conditions on (AMR,
+cylindrical, doesn't really matter) and turn it into a set of SPH
+particles at the grid centers. 
+
+1) Turn initial conditions set into a set of pseudo SPH particles.
+
+2) In case you haven't given the SPH particles sizes for the grid, try
+to find h by settting a constant number of neighbors. For a cartesion
+grid, h should simple be the grid spacing for example.
+
+
+
+Step II:
+--------
+
+Use the existing set of SPH particles and interpolate between them to
+get the new particle setup.
+
+1) Load SPH data set
+
+2) Do WVT iterations. wvt_hofpos should now be an input from the
+interpolation. Note that the grid itself needs its proper smoothing
+lengths, which are necessary for interpolation the SPH properties in a
+later step. Instead, we another tag that is unused, and which we use
+as the "target smoothing length" for WVT. wvt_hofpos and SPHofpos have
+to take these two smoothing lengths into account.
+
+3) Remove all SPH particles that are outside of the setup area,
+i.e. that have no neighbors within the next grid particle's smoothing
+length.
+
+
+
+
+Open Issues: 
+------------
+
+- How do I handle empty space now, in particular the boundary, which
+may be anything now. So far, this has been handled by invoking ghost
+particles across the boundary. There are two principle approaches. 
+
+The first idea would be to have an "outer" boundary further out than
+the size of the computational domain. Then, I would need to put a (or
+rather a few) static "layer" of SPH particles around the computational
+domain. Now in principle, this may be the easiest way to do things. In
+particular if the outer layers all share the same resolution. Then, I
+can just make up a ideally packed grid within the outer boundary. Any
+particles within the computational domain would then be removed. All
+of the other ones are kept with positions fixed, so they are excluded
+from the iterations to save time.
+
+The second and a little cleaner, but more complex approach would be to
+actually find the "boundary" of the simulation and to define it as a
+function of the boundary particles. The criteria on what is a boundary
+will be different for each setup. Then the problem would be to put
+ghost particles perpendicular to this boundary and continue as usual.

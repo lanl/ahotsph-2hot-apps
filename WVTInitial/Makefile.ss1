@@ -1,0 +1,62 @@
+CC:=/ss1-raid/opt/intel/compiler71/compiler70/ia32/bin/icc
+CFLAGS = -g -Wall -DLONG_LONG_KEYS -march=pentium4 -mcpu=pentium4\
+	-I${TREEHOME}/include -D__iX86__=686 -DUSE_SYSTEM_MALLOC -align -Zp8
+#CC:=/usr/bin/gcc
+#CFLAGS = -g -Wall -DLONG_LONG_KEYS \
+#	-I${TREEHOME}/include -D__iX86__=686 -DUSE_SYSTEM_MALLOC -malign-double
+
+LDFLAGS = -L${TREEHOME}/Objfiles/${ARCH}
+LDLIBS = -ltree -lsw -lm
+
+PROGS = interp interp.swampi
+
+.PHONY: all clean
+
+all: ${PROGS}
+
+clean: 
+	-${RM} *.o ${PROGS}
+
+interp: grav.o interp.o mac.o physics.o physics_sph.o sphcofm.o sphinit.o \
+	sph.o sphprint.o sphplus.o ghosts.o com.o ranlib.o wvt.o polint.o \
+	initial.o	
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_seq.o -o $@ \
+	$(LDLIBS)
+
+interp.swampi: grav.o interp.o mac.o physics.o physics_sph.o sphcofm.o \
+	sphinit.o sph.o sphprint.o sphplus.o ghosts.o com.o ranlib.o wvt.o \
+	polint.o initial.o
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_swampi.o -o $@ \
+	$(LDLIBS)
+
+gridtosdf: grav.o gridtosdf.o mac.o physics.o physics_sph.o sphcofm.o \
+	sphinit.o sph.o sphprint.o sphplus.o ghosts.o com.o ranlib.o wvt.o \
+	polint.o initial.o
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_seq.o -o $@ \
+	$(LDLIBS)
+
+gridtosdf.swampi: grav.o gridtosdf.o mac.o physics.o physics_sph.o sphcofm.o \
+	sphinit.o sph.o sphprint.o sphplus.o ghosts.o com.o ranlib.o wvt.o \
+	polint.o initial.o
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_swampi.o -o $@ \
+	$(LDLIBS)
+
+
+wvt_regrid: grav.o wvt_regrid.o mac.o physics.o physics_sph.o sphcofm.o \
+	sphinit.o sph.o sphprint.o sphplus.o ghosts.o com.o ranlib.o wvt.o \
+	polint.o initial.o
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_seq.o -o $@ \
+	$(LDLIBS)
+
+wvt_regrid.swampi: grav.o wvt_regrid.o mac.o physics.o physics_sph.o sphcofm.o \
+	sphinit.o sph.o sphprint.o sphplus.o ghosts.o com.o ranlib.o wvt.o \
+	polint.o initial.o
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_swampi.o -o $@ \
+	$(LDLIBS)
+
+interp_cylgrid: grav.o interp_cylgrid.o mac.o physics.o physics_sph.o \
+	sphcofm.o sphinit.o sph.o sphprint.o sphplus.o ghosts.o com.o \
+	ranlib.o wvt.o polint.o initial.o
+	$(CC) $(LDFLAGS) $^ ${TREEHOME}/Objfiles/${ARCH}/mpmy_seq.o -o $@ \
+	$(LDLIBS)
+
