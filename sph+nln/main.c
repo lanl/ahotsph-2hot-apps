@@ -2536,7 +2536,8 @@ Fix_dt(float *dt, float dt_max, int tlow_cut, float tmin, int tbad,
 	singlPrintf(("Adjusting dt down by factor of 1/2\n"));
 	*dt *= (float)(1./2.);
 	dtshortvote = dtlongvote = 0;
-    } else if (dtlongvote > dtlong && (2.0)**dt <= dt_max) {
+    } else if (dtlongvote > dtlong && (2.0)**dt <= dt_max &&
+               (2.0)**dt <= tmin) {
 	singlPrintf(("Adjusting dt up by factor of 2\n"));
 	*dt *= (float)(2./1.);
 	dtshortvote = dtlongvote = 0;
