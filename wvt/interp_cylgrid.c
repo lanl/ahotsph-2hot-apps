@@ -363,6 +363,9 @@ int main(int argc, char *argv[])
 	btab[0].pos[0]=0.;
 	btab[0].pos[1]=0.;
 	btab[0].pos[2]=0.;
+        btab[0].vel[0]=0.;
+        btab[0].vel[1]=0.;
+        btab[0].vel[2]=0.;
 	btab[0].h=0.;    /* h=0 should be equivalent of keeping pos fixed */
 	btab[0].ident=btab[0].ident | POSFIXED_FLAG;
 	btab[0].ident=btab[0].ident | DUAL_FLAG;
