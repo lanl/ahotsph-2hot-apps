@@ -111,9 +111,14 @@ void SPHofpos(SPHbody *btab, int nobj)
 	    (press[index+1]-press[index]);
         vr=vel[index]+(rad-r[index])/(r[index+1]-r[index])*
             (vel[index+1]-vel[index]);
-        p->vel[0]=vr*p->pos[0]/rad;	
-        p->vel[1]=vr*p->pos[1]/rad;	
-        p->vel[2]=vr*p->pos[2]/rad;	
+        if (rad > 0.0) {
+            p->vel[0]=vr*p->pos[0]/rad;
+            p->vel[1]=vr*p->pos[1]/rad;
+            p->vel[2]=vr*p->pos[2]/rad;
+        }
+        else {
+            p->vel[0] = p->vel[1] = p->vel[2] = 0.0;
+        }
     }
 }
 
