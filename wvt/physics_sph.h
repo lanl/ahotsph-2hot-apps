@@ -389,7 +389,7 @@ void CellCorner(Key_t key, float *corner, float *size);
 void SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax);
 void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const void *));
 Key_t SPHGetKey(const void *p);
-double SPHGetCost(const SPHbody *p);
+float SPHGetCost(const SPHbody *p);
 Key_t SPHGetKeyFromStruct(const SPHbody *p);
 void SPHFixId(SPHbody *btab, int nobj, int gnobj);
 void SPHFixNterms(SPHbody *btab, int nobj);

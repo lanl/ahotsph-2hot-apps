@@ -41,9 +41,9 @@ void SPHFixKeys(SPHbody *btab, int nobj, Key_t (*func)(const void *)){
     }
 }
 
-double SPHGetCost(const SPHbody *ptr)
+float SPHGetCost(const SPHbody *ptr)
 {
-    return (double) ptr->nterms;
+    return (float) ptr->nterms;
 }
 
 void SPHFixId(SPHbody *btab, int nobj, int gnobj){
