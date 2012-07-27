@@ -27,8 +27,8 @@ SPHFindBbox(SPHbody *bp, int n, float *rmin, float *rmax)
 		b-bp, n));
     }
     MPMY_ICombine_Init(&req);
-    MPMY_ICombine(rmin, rmin, NDIM, MPMY_DOUBLE, MPMY_MIN, req);
-    MPMY_ICombine(rmax, rmax, NDIM, MPMY_DOUBLE, MPMY_MAX, req);
+    MPMY_ICombine(rmin, rmin, NDIM, MPMY_FLOAT, MPMY_MIN, req);
+    MPMY_ICombine(rmax, rmax, NDIM, MPMY_FLOAT, MPMY_MAX, req);
     MPMY_ICombine_Wait(req);
 }    
 
