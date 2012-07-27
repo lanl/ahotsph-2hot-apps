@@ -49,6 +49,9 @@ static double offset[NDIM];
 static double voffset[NDIM];
 static void (*bodyfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
 static void (*cellfunc)(SinkSPH *sink, hcell **src_vec, int *res, int n);
+static double *rglob, *hglob;
+static int iglob;
+
 int inputoption=1;
 
 

@@ -59,6 +59,3 @@ void WVT_hofpos_cylgrid(SPHbody *btab, int nobj, double totvol,
 			double *tothvol, int dim);
 void WVT_hofpos_cartgrid(SPHbody *btab, int nobj, double totvol, 
 			 double *tothvol, int dim);
-
-double *rglob, *hglob;
-int iglob;
