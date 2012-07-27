@@ -23,8 +23,6 @@
 
 #define NO_UPDATE 2
 
-Counter_t SPHCnt, SPHrej, nbrMACCnt;
-
 static double dvtable; /* == 0.0001 ... */
 static double invdvtable; /* == 10000.0 ... */
 static double cnormk;
