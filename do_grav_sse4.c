@@ -1,6 +1,7 @@
 /*
  * Copyright 2012 Michael S. Warren. All Rights Reserved.
  */
+#ifndef __AVX__
 typedef float v4sf __attribute__ ((vector_size (16)));
 
 #define mass f[0]
@@ -30,6 +31,7 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 #define qxyyz f[24]
 #define qyyyz f[25]
 
+/* 217 flops, 100 bytes */
 void
 do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
@@ -150,7 +152,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 }
 
 void
-do_gravh_sse4_amd6100(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     v4sf t, r2, rinv, rinv2;
     v4sf x, y, z;
@@ -331,6 +333,7 @@ do_gravh_sse4_amd6100(const v4sf *f, const v4sf *fend, const float *pos0, float 
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
 
+/* 66 flops, 40 bytes */
 void
 do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
@@ -402,6 +405,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 }
 
 
+/* 26 flops, 16 bytes */
 void
 do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
@@ -779,8 +783,6 @@ do_gravsU_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
 
-
-
 /* Compact Plummer kernel */
 
 #define fac98pow32 1.1932426932523f
@@ -1005,7 +1007,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 }
 
 void
-do_gravph_sse4_amd6100(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
     v4sf t, r2, rinv, rinv2;
     v4sf x, y, z;
@@ -1356,4 +1358,4 @@ do_gravp11bits_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *m
     acc[1] -= __builtin_ia32_haddps(a1, a1)[0];
     acc[2] -= __builtin_ia32_haddps(a2, a2)[0];
 }
-
+#endif

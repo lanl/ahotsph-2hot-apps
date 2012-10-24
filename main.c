@@ -68,6 +68,8 @@ Counter_t KNtermsCnt, Scycles, Mcycles, Qcycles, Hcycles;
 
 Timer_t WITm,WTermTm,WNTTm,WITm;
 
+extern Timer_t GravQFTm, GravHFTm;;
+
 #ifdef AMD6100
 #define GHZ 2.30e9
 #else
@@ -379,7 +381,7 @@ main(int argc, char *argv[])
 	    cosmo.H0 = 0.0511365;
 	    cosmo.a = pow(1.5*cosmo.t*cosmo.H0, 2./3.);
 	    cosmo.Omega0 = 1.0;
-	    cosmo.Omega_m = cosmo.Omega0-cosmo.Omega0_r;
+	    cosmo.Omega0_m = cosmo.Omega0-cosmo.Omega0_r;
 	    cosmo.Gnewt = GNEWT;
 	    R[0] = R[1] = R[2] = 100000.0;
 	    for (p = &btab[0]; p < &btab[nobj]; p++) {
@@ -657,7 +659,7 @@ main(int argc, char *argv[])
 	    /* Perhaps not what you expect for high-aspect volumes */
 	    this_tol = tol*mtot*5e5/((1.0+cosmo.z_at_t(&cosmo, tpos))*sysradius[0]*sysradius[0]*sysradius[0]);
 	}
-	if (Ztol) {
+	if (do_cosmology && Ztol) {
 	    double fac = cosmo.growthfac_at_t(&cosmo, tpos);
 	    if (Ztol == 2 && cosmo.z_at_t(&cosmo, tpos) > 30.0) {
 		double fac30 = cosmo.growthfac_at_t(&cosmo, tpos)/cosmo.growthfac_at_z(&cosmo, 30.0);
@@ -734,6 +736,7 @@ main(int argc, char *argv[])
 	    EwaldForces(btab, nobj, n2_sample_frac, &ranstate);
 	} else {
 	    StartTimer(&WITm);
+	    WalkInitSink(&thetree, btab, nobj);
 	    WalkInit(&thetree, &thetree, sizeof(Sink), walk_init_src, mac, walk_inherit);
 	    StopTimer(&WITm);
 
@@ -1143,6 +1146,7 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&GravMTm, "Mono Time");
     EnableCPUTimer(&GravQTm, "Quad Time");
     EnableCPUTimer(&GravHTm, "Hexa Time");
+    EnableCPUTimer(&GravHFTm, "HexaF Time");
     EnableCPUTimer(&GravTm, "Grav Time");
     EnableCPUTimer(&MACTm, "MAC Time");
     EnableTimer(&WalkDeferTm, "Walk Defer");
@@ -1152,6 +1156,7 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BCInt, "Body-mono");
     EnableCounter(&BC2Int, "Body-quad");
     EnableCounter(&BC4Int, "Body-hexa");
+    EnableCounter(&FBC4Int, "Body-hexaF");
     EnableCounter(&BSMax, "Max smth");
     EnableCounter(&Scycles, "Smth cycles");
     EnableCounter(&Mcycles, "Mono cycles");

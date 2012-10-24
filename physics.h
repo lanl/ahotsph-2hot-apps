@@ -172,9 +172,11 @@ typedef struct{
     int mcnt;
 #ifdef QUAD
     int qcnt;
+    int qcnt_done;
 #endif
 #ifdef HEXA
     int hcnt;
+    int hcnt_done;
 #endif
 } Sink;
 
@@ -211,11 +213,10 @@ char *PrintBodyContents(const body *bp);
 char *PrintBodyContentsLong(const body *vp);
 char *PrintBranch(const cofmdata *cmp);
 
-
-
 /* In mac.c */
 extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
+extern Counter_t FBC2Int, FBC4Int;
 extern Counter_t CCIntRej;
 extern Counter_t TranslateCnt;
 
@@ -225,6 +226,7 @@ void InheritSink(const Sink *from, Sink *to, hcell *pp);
 void DLRcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
 void SetGravOffset(float *off, int nimage);
+void WalkInitSink(tree_t *tp, body *btab, int64_t nobj);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
 void WalkInitSrcPeriodic(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
@@ -234,7 +236,7 @@ typedef void (*grav_t)(const float *p, const float *end, const float *pos0, floa
 		       float *acc0, float *phi0, const float *eps2p, int *ncut);
 
 void do_gravh_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravh_sse4_amd6100(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void do_gravh_amd6100_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_gravq_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_grav_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_grav_sse16_ivec_asm(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
@@ -246,9 +248,13 @@ void do_gravsS_sse4(const float *f, const float *fend, const float *pos0, float 
 void do_gravsCP_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
 void do_gravph_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravph_sse4_amd6100(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void do_gravph_amd6100_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_gravpq_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_gravp_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void pHinteract(const float *p, float *accp, const int n, const int stride, 
+		const float *f, const int source_n);
+void pQinteract(const float *p, float *accp, const int n, const int stride, 
+		const float *f, const int source_n);
 
 /* In ewald.c */
 void ewald(double *x, double L, double *f, double *phi);

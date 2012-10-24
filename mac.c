@@ -11,13 +11,15 @@
 #include "mpmy.h"
 
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
+Counter_t FBC2Int, FBC4Int;
 Counter_t CCIntRej;
 Counter_t TranslateCnt;
 
-Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, PGravHTm;
+Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
+
 Timer_t MACTm;
 
-static int64_t Nobj;
+static int64_t GNobj, Nobj;
 static float Eps2, Eps;
 static int Smooth_type;
 static float GNewt;
@@ -27,6 +29,8 @@ static int Hexa_Ncut = 20;
 #define MAX_IMAGE 125
 static int Nimage = 1;
 static float offset_array[MAX_IMAGE][NDIM];
+static tree_t *SinkTree;
+static body *Btab;
 
 static grav_t Sinteract;
 static grav_t Minteract;
@@ -131,16 +135,16 @@ SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max
 {
     GNewt = newton_const;
     Smooth_type = smooth_type;
-    Nobj = gnobj;
+    GNobj = gnobj;
     DLfac = dl_fac;
     DLmax = dl_max;
     Quad_Ncut = qcut;
     Hexa_Ncut = hcut;
     if (smooth_type == 0) {
 	Eps = e;
-	Sinteract = Minteract = do_gravp_sse4;
-	Qinteract = do_gravpq_sse4;
-	Hinteract = (amd6100) ? do_gravph_sse4_amd6100 : do_gravph_sse4;
+	Sinteract = Minteract = Arch(do_gravp);
+	Qinteract = Arch(do_gravpq);
+	Hinteract = (amd6100) ? Arch(do_gravph_amd6100) : Arch(do_gravph);
     } else {
 	if (smooth_type == 1) {
 	    Eps = 1.6f*e;
@@ -165,12 +169,20 @@ SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max
 	}
 	Minteract = do_grav_sse4;
 	Qinteract = do_gravq_sse4;
-	Hinteract = (amd6100) ? do_gravh_sse4_amd6100 : do_gravh_sse4;
+	Hinteract = (amd6100) ? do_gravh_amd6100_sse4 : do_gravh_sse4;
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
 }
 
 void Nlognmacv(Sink *sink, const hcell **source_vec, int *result, int);
+
+void
+WalkInitSink(tree_t *tp, body *btab, int64_t nobj)
+{
+    SinkTree = tp;
+    Btab = btab;
+    Nobj = nobj;
+}
 
 void
 WalkInitSrc(Stk *kstk, Stk *ostk)
@@ -188,6 +200,54 @@ WalkInitSrcPeriodic(Stk *kstk, Stk *ostk)
 	StkPushType(kstk, KeyInt(1), Key_t);
 	StkPushType(ostk, offset_array[i], float *);
     }
+}
+
+body *
+FirstBody(hcell *pp)
+{
+    Key_t k;
+    hcell *p;
+    tree_t *tp = SinkTree;
+    int nsub = 1<<tp->ndim;
+    int sub_flags, i;
+
+    if (pp->type & SHARED) return NULL;
+    while ((sub_flags = Sub_Flags(pp))) {
+	k = KeyLshift(pp->key, tp->ndim);
+	for (i = 0; i < nsub; i++) {
+	    if (sub_flags & (1 << i)) {
+		p = Find(tp, KeyOrInt(k, i));
+		if (p == NULL) Error("FirstBody failed\n");
+		pp = p;
+		break;
+	    }
+	}
+    }
+    return pp->ptr;
+}
+
+body *
+LastBody(hcell *pp)
+{
+    Key_t k;
+    hcell *p;
+    tree_t *tp = SinkTree;
+    int nsub = 1<<tp->ndim;
+    int sub_flags, i;
+
+    if (pp->type & SHARED) return NULL;
+    while ((sub_flags = Sub_Flags(pp))) {
+	k = KeyLshift(pp->key, tp->ndim);
+	for (i = nsub-1; i >= 0; i--) {
+	    if (sub_flags & (1 << i)) {
+		p = Find(tp, KeyOrInt(k, i));
+		if (p == NULL) Error("LastBody failed\n");
+		pp = p;
+		break;
+	    }
+	}
+    }
+    return pp->ptr;
 }
 
 void 
@@ -229,7 +289,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 #endif
 	StartTimer(&GravHTm);
 	nn = from->hcnt;
-	while (nn % 4) {
+	while (nn % NSSE) {
 	    Hvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
 	    VS(Hvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
 	    Hvec[nn/NSSE].R[nn%NSSE] = 0.0f;
@@ -258,15 +318,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Hvec[0] & 0xF || (long long)&Hvec[1] & 0xF)
 	  Error("Hvec not aligned for asm code\n");
-	if (nn) Hinteract((float *)&Hvec[0], (float *)&Hvec[nn/NSSE], 
+	if (nn) Hinteract((float *)&Hvec[from->hcnt_done/NSSE], (float *)&Hvec[nn/NSSE], 
 			  from->pos, &mtot, acc, &phi, &e, &ijunk);
-	AddCounter(&BC4Int, from->hcnt);
+	AddCounter(&BC4Int, from->hcnt-from->hcnt_done);
 	StopTimer(&GravHTm);
 #endif
 #ifdef QUAD
 	StartTimer(&GravQTm);
 	nn = from->qcnt;
-	while (nn % 4) {
+	while (nn % NSSE) {
 	    Qvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
 	    VS(Qvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
 	    Qvec[nn/NSSE].R[nn%NSSE] = 0.0f;
@@ -279,14 +339,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Qvec[0] & 0xF || (long long)&Qvec[1] & 0xF)
 	  Error("Qvec not aligned for asm code\n");
-	if (nn) Qinteract((float *)&Qvec[0], (float *)&Qvec[nn/NSSE], 
+	if (nn) Qinteract((float *)&Qvec[from->qcnt_done/NSSE], (float *)&Qvec[nn/NSSE], 
 			  from->pos, &mtot, acc, &phi, &e, &ijunk);
-	AddCounter(&BC2Int, from->qcnt);
+	AddCounter(&BC2Int, from->qcnt-from->qcnt_done);
 	StopTimer(&GravQTm);
 #endif
 	StartTimer(&GravMTm);
 	nn = from->mcnt;
-	while (nn % 4) {
+	while (nn % NSSE) {
 	    Mvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
 	    VS(Mvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
 	    nn++;
@@ -300,7 +360,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	StartTimer(&GravSTm);
 	nn = from->scnt;
 	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
-	while (nn % 4) {
+	while (nn % NSSE) {
 	    Svec[nn/NSSE].mass[nn%NSSE] = 0.0f;
 	    VS(Svec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
 	    nn++;
@@ -312,7 +372,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	AddCounter(&BSInt, from->scnt);
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
-	if (isnan(acc[0]) || isnan(acc[1]) || isnan(acc[2]) || isnan(phi)) {
+	if (!finite(acc[0]) || !finite(acc[1]) || !finite(acc[2]) || !finite(phi)) {
 	    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", from->pos[0], from->pos[1], from->pos[2],
 		  acc[0], acc[1], acc[2], phi);
 	}
@@ -324,10 +384,12 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 
 	/* Make sure these are initialized to zero externally */
-	bp->phi += GNewt*from->M0;
-	bp->phi += GNewt*phi;
-	VV(bp->acc, += -GNewt*from->M1);
-	VV(bp->acc, += GNewt*acc);
+	bp->phi += from->M0;
+	bp->phi += phi;
+	bp->phi *= GNewt;
+	VV(bp->acc, -= from->M1);
+	VV(bp->acc, += acc);
+	VS(bp->acc, *= GNewt);
 	bp->nterms += from->nterms + from->scnt + from->mcnt 
 #ifdef QUAD
 	    + 3*from->qcnt 
@@ -336,12 +398,8 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    + 9*from->hcnt
 #endif
 	    ;
-	if (from->interactions != Nimage*Nobj)
-	  Error("Ninteract is %ld, should be %ld\n", from->interactions, Nimage*Nobj);
-	if (bp->ident % 100 == 0) {
-	    Msgf(("Did %10ld %d %d %d %d\n", 
-		  bp->ident, from->hcnt, from->qcnt, from->mcnt, from->scnt));
-	}
+	if (from->interactions != Nimage*GNobj)
+	  Error("Ninteract is %ld, should be %ld\n", from->interactions, Nimage*GNobj);
 	return;
     }
 
@@ -371,12 +429,41 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (to->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
 #ifdef QUAD
 	to->qcnt = from->qcnt;
+	to->qcnt_done = from->qcnt_done;
 	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
 #endif
 #ifdef HEXA
 	to->hcnt = from->hcnt;
+	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
 #endif
+	if (to->daughters >= 128 && to->daughters <= 1024 && to->hcnt-to->hcnt_done >= 512) {
+	    body *first = FirstBody(pp);
+	    body *last = LastBody(pp);
+	    if (first && last) {
+		int n0, n1, np;
+		if (first < Btab || last >= first+Nobj) Error("first/last out of range\n");
+		Msgf(("%5ld %5ld - %d %d\n", 
+		      first-Btab, 1+last-first, to->hcnt - to->hcnt_done, to->qcnt - to->qcnt_done));
+		
+		StartTimer(&GravHFTm);
+		n0 = to->hcnt_done/NSSE;
+		n1 = to->hcnt/NSSE;
+		np = 1+last-first;
+		pHinteract(&first->mass, first->acc, np, sizeof(body)/sizeof(float),
+			   (float *)&Hvec[n0], n1-n0);
+		to->hcnt_done = n1*NSSE;
+		AddCounter(&BC4Int, np*(n1-n0)*NSSE);
+		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
+		StopTimer(&GravHFTm);
+
+		if (!finite(first->acc[0]) || !finite(first->acc[1]) || !finite(first->acc[2]) || !finite(first->phi)) {
+		    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
+			  first->pos[0], first->pos[1], first->pos[2],
+			  first->acc[0], first->acc[1], first->acc[2], first->phi);
+		}
+	    }
+	}
     } else {
 	to->interactions = 0;
 	to->nterms = 0;
@@ -385,10 +472,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->mcnt = 0;
 	to->scnt = 0;
 #ifdef QUAD
-	to->qcnt = 0;
+	to->qcnt = to->qcnt_done = 0;
 #endif
 #ifdef HEXA
-	to->hcnt = 0;
+	to->hcnt = to->hcnt_done = 0;
 #endif
     }
 }
