@@ -18,24 +18,25 @@
 #include "cosmo.h"
 #include "integrate.h"
 #include "output.h"
+#include "version.h"
 
 int maxmem(void);
 int maxheap(void);
 
 void
 output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int iter, 
-       double dt, double dtv, struct cosmo_s *cosmo, 
-       double tpos, double tvel, int cosmology, int do_periodic, 
+       double dt, double dtv, cosmology *cosmo, 
+       double tpos, double tvel, int do_cosmology, int do_periodic, 
        float eps, float this_eps_scaled, int force_smoothing_type,
        float this_tol, float frac_tol, float frac_tol0, 
        const float *R, const int *N, 
        int write_nfiles, double *ke, double *pe, 
-       int do_output, int identsort_output)
+       int do_output, int identsort_output, int ic_Nmesh, double ic_growthfac)
 {
     int i;
     sortresult_t outputsort;
     outbodyptr output_btab;
-    double z, a, h, tacc;
+    double z, a, H, tacc;
     char outname[256];
     outbodyptr b;
     float rmin[NDIM], rmax[NDIM];
@@ -66,7 +67,7 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
     /* Don't sort before Integrate_out or btab and output_btab */
     /* will not be in the same order */
     tacc = tpos;	   /* tpos and tvel advanced in Integrate()  */
-    if (cosmology && do_periodic) {
+    if (do_cosmology && do_periodic) {
 	CosmoIntegrate(&btab[0].mass, &btab[0].pos[0], &btab[0].vel[0],
 		       &btab[0].acc[0], &btab[0].phi, sizeof(body),
 		       &output_btab[0].pos[0], &output_btab[0].vel[0], sizeof(outbody),
@@ -86,14 +87,14 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	nobj = outputsort.nobj;
 	Msgf(("After output pqsort, %d outbodies\n", nobj));
     }
-    if (cosmology) {
-	a = Anow(cosmo, tpos);
-	z = Znow(cosmo, tpos);
-	h = Hnow(cosmo, tpos);
+    if (do_cosmology) {
+	a = cosmo->a_at_t(cosmo, tpos);
+	z = cosmo->z_at_t(cosmo, tpos);
+	H = cosmo->H_at_t(cosmo, tpos);
 	VV(sysradius, = a*R);
 	VV(rmin, = -sysradius);
 	VV(rmax, = sysradius);
-	ConvertV(&output_btab[0].vel[0], sizeof(outbody), nobj, Anow(cosmo, tpos), 1);
+	ConvertV(&output_btab[0].vel[0], sizeof(outbody), nobj, cosmo->a_at_t(cosmo, tpos), 1);
 	/* WrapPeriodic */
 	for(b=output_btab; b<&output_btab[nobj]; b++) {
 	    VVVV(if LPAREN b->pos, > rmax, RPAREN b->pos, -= 2.0*sysradius);
@@ -102,7 +103,7 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
     } else {
 	a = 0.0;
 	z = 0.0;
-	h = 0.0;
+	H = 0.0;
     }
     MPMY_ICombine_Init(&req);
     MPMY_ICombine(ke, ke, 1, MPMY_DOUBLE, MPMY_SUM, req);
@@ -112,7 +113,7 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
     if (checkpoint) {
 	iter++;
 	sprintf(outname, "%s.%04d", outnamebase, iter);
-    } else if (cosmology) {
+    } else if (do_cosmology) {
 	sprintf(outname, "%s_%.03f", outnamebase, a);
     } else {
 	sprintf(outname, "%s_t%.03f", outnamebase, tpos);
@@ -123,6 +124,7 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
     if (write_nfiles) MPMY_Nfileio(1);
     SDFwrite64(outname, gnobj, 
 	       nobj, output_btab, sizeof(outbody), OUTBODYDESC,
+	       "version", SDF_INT, 2,
 	       "npart", SDF_INT64, gnobj,
 	       "iter", SDF_INT, iter,
 	       "tpos", SDF_DOUBLE, tpos,
@@ -131,16 +133,29 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	       "R0", SDF_FLOAT, R[2],
 	       "redshift", SDF_DOUBLE, z,
 	       "a", SDF_DOUBLE, a,
+	       "a_tvel", SDF_DOUBLE, cosmo->a_at_t(cosmo, tvel),
+	       "a_tacc", SDF_DOUBLE, cosmo->a_at_t(cosmo, tacc),
 	       "Omega0", SDF_DOUBLE, cosmo->Omega0,
-	       "Omega_m", SDF_DOUBLE, cosmo->Omega_m,
-	       "Omega_r", SDF_DOUBLE, cosmo->Omega_r,
-	       "Omega_de", SDF_DOUBLE, cosmo->Omega_de,
-	       "w0", SDF_DOUBLE, cosmo->w0,
-	       "wa", SDF_DOUBLE, cosmo->wa,
+	       "Omega0_m", SDF_DOUBLE, cosmo->Omega0_m,
+	       "Omega0_r", SDF_DOUBLE, cosmo->Omega0_r,
+	       "Omega0_lambda", SDF_DOUBLE, cosmo->Omega0_lambda,
+	       "Omega0_cdm", SDF_DOUBLE, cosmo->Omega0_cdm,
+	       "Omega0_ncdm_tot", SDF_DOUBLE, cosmo->Omega0_ncdm_tot,
+	       "Omega0_b", SDF_DOUBLE, cosmo->Omega0_b,
+	       "Omega0_g", SDF_DOUBLE, cosmo->Omega0_g,
+	       "Omega0_ur", SDF_DOUBLE, cosmo->Omega0_ur,
+	       "Omega0_fld", SDF_DOUBLE, cosmo->Omega0_fld,
+	       "w0_fld", SDF_DOUBLE, cosmo->w0_fld,
+	       "wa_fld", SDF_DOUBLE, cosmo->wa_fld,
+	       "h_100", SDF_DOUBLE, cosmo->h_100,
 	       "H0", SDF_DOUBLE, cosmo->H0,
-	       "Lambda_prime", SDF_DOUBLE, cosmo->Lambda,
-	       "hubble", SDF_DOUBLE, h,
+	       "hubble", SDF_DOUBLE, H,
+	       "H", SDF_DOUBLE, H,
 	       "Gnewt", SDF_DOUBLE, cosmo->Gnewt,
+	       "growthfac", SDF_DOUBLE, cosmo->growthfac_at_z(cosmo, z),
+	       "growthfac_tvel", SDF_DOUBLE, cosmo->growthfac_at_t(cosmo, tvel),
+	       "growthfac_tacc", SDF_DOUBLE, cosmo->growthfac_at_t(cosmo, tacc),
+	       "velfac", SDF_DOUBLE, cosmo->velfac_at_z(cosmo, z),
 	       "tolerance", SDF_FLOAT, this_tol,
 	       "frac_tolerance", SDF_FLOAT, frac_tol,
 	       "frac_tolerance0", SDF_FLOAT, frac_tol0,
@@ -154,9 +169,14 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	       "epsilon_scaled", SDF_FLOAT, this_eps_scaled,
 	       "epsilon0", SDF_FLOAT, this_eps_scaled/a,
 	       "force_smoothing_type", SDF_INT, force_smoothing_type,
+	       "ic_Nmesh", SDF_INT, ic_Nmesh,
+	       "ic_growthfac", SDF_DOUBLE, ic_growthfac,
 	       "checkpoint", SDF_INT, checkpoint,
 	       "ke", SDF_DOUBLE, *ke,
 	       "pe", SDF_DOUBLE, *pe,
+	       "compiled_version", SDF_STRING, Version,
+	       "compiled_date", SDF_STRING, Compiled_date,
+	       "compiled_time", SDF_STRING, Compiled_time,
 	       NULL);
     if (write_nfiles) MPMY_Nfileio(0);
     singlPrintf("%s to %s done %d (%d)\n", 

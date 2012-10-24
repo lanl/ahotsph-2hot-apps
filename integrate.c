@@ -71,7 +71,7 @@ CosmoIntegrate(const float *inmass, const float *inpos, const float *invel,
 	       const float *inacc, const float *inphi, const int instride,
 	       float *outpos, float *outvel, const int outstride,
 	       const int n, const double dt, const double dtv,
-	       struct cosmo_s *cosmo, 
+	       cosmology *cosmo, 
 	       double *tpos, double *tvel, double *kep, double *pep)
 {
     const float *endmass = inmass + n * instride/sizeof(float);
@@ -86,14 +86,11 @@ CosmoIntegrate(const float *inmass, const float *inpos, const float *invel,
     Msgf(("CosmoIntegrate tpos %g tvel %g dt %g dtv %g\n", 
 	  *tpos, *tvel, dt, dtv));
     /* Works to start leapfrog, and if dt changes */
-    CosmoPush(cosmo, *tpos);
-    Msg_flush();
-    a0 = cosmo->a;
-    dt_kick_topos = a0*a0*kick_delta(cosmo, *tvel, *tpos);
-    dt_kick = a0*a0*kick_delta(cosmo, *tvel, *tvel + dtv);
-    dt_drift = drift_delta(cosmo, *tpos, *tpos + dt);
-    CosmoPush(cosmo, *tpos+dt);
-    a1 = cosmo->a;
+    a0 = cosmo->a_at_t(cosmo, *tpos);
+    dt_kick_topos = a0*a0*cosmo->kick_t0_t1(cosmo, *tvel, *tpos);
+    dt_kick = a0*a0*cosmo->kick_t0_t1(cosmo, *tvel, *tvel + dtv);
+    dt_drift = cosmo->drift_t0_t1(cosmo, *tpos, *tpos + dt);
+    a1 = cosmo->a_at_t(cosmo, *tpos+dt);
 
     for (; inmass < endmass; inmass += instride/sizeof(float)) {
 	VVV(vcentered, = invel, + dt_kick_topos * inacc);

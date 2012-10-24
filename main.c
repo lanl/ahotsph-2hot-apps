@@ -40,18 +40,19 @@
 #include "cosmo.h"
 #include "integrate.h"
 #include "output.h"
+#include "version.h"
 
 static void SanityCheck(bodyptr btab, int nobj, int64_t gnobj, double *mtotp);
-static void set_vels(body *p, int n, float dp, struct cosmo_s *c, 
-		     double *tpos, double *tvel, int do_periodic, double vel_factor);
-static void set_displacement(body *p, int n, double dt, struct cosmo_s *c,
+static void set_vels(body *p, int n, float dp, cosmology *c, 
+		     double *tpos, double *tvel, int do_periodic);
+static void set_displacement(body *p, int n, double dt, cosmology *c,
 			     double *tpos, double *tvel, float noise, int do_periodic, ran_state *ranstate);
 static SDF *startup(int argc, char **argv);
 static void WrapPeriodic(body *bp, int n, float *rmin, float *rmax);
 static void FixCubeEwaldLE(body *b, int nobj, const float *l, float gm, int nimage);
-static void FixGlobalForce(body *bp, int n, struct cosmo_s *c, float real_time, int do_periodic);
+static void FixGlobalForce(body *bp, int n, cosmology *c, float real_time, int do_periodic);
 static void WriteLightCone(body *xptr, const int n, const double dt, const double dtv, 
-			   struct cosmo_s *c, double tpos, double tvel, char *name, char *tag,
+			   cosmology *c, double tpos, double tvel, char *name, char *tag,
 			   int iter, float *origin, float *lc_rmax);
 int maxmem(void);
 int maxheap(void);
@@ -121,7 +122,7 @@ main(int argc, char *argv[])
     double tvel;
     double tposlast;
     double dtout, dtvout;
-    int cosmology = 0;
+    int do_cosmology = 0;
     int save_first;		/* save first step (for acc testing) */
     double force[NDIM];		/* Things accumulated over all particles */
     double com[NDIM], comv[NDIM];
@@ -158,32 +159,16 @@ main(int argc, char *argv[])
     int memory_tune_MB;
     int identsort_output = 0;
     int do_test = 0;
-    struct cosmo_s cosmo;
+    cosmology cosmo;
     int n_outlist = 12;
     double *a_outlist;
     double *t_outlist;
     double default_a_outlist[12] = 
 	{0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1.0};
+    int ic_Nmesh;
+    double ic_growthfac;
 
     MPMY_Init(&argc, &argv);
-    singlPrintf("Welcome to the tree19 %sN-body integrator running on %d procs\n",
-#ifdef HEXA
-		"hexadecapole ",
-#else
-#ifdef QUAD
-		"quadrupole ",
-#else
-		"monopole ",
-#endif
-#endif
-		MPMY_Nproc());
-    singlPrintf("Compiled %s %s\n", __DATE__, __TIME__);
-#ifdef SAVE_ACC
-    singlPrintf("Saving phi and acc\n");
-#endif
-#ifdef BODY_HAS_KEY
-    singlPrintf("Bodies cache their key\n");
-#endif
     csdfp = startup(argc, argv);
     /* Attempt to get a contiguous chunk of heap */
     SDFgetintOrDefault( csdfp, "memory_tune_MB", &memory_tune_MB, 0);
@@ -204,7 +189,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_test", &do_test, 0);
     SDFgetintOrDefault(csdfp, "fix_cube_ewald", &fix_cube_ewald, 0);
     SDFgetintOrDefault(csdfp, "fix_cube_ewald_le", &fix_cube_ewald_le, 0);
-    SDFgetintOrDefault(csdfp, "cosmology", &cosmology, 0);
+    SDFgetintOrDefault(csdfp, "cosmology", &do_cosmology, 0);
     SDFgetintOrDefault(csdfp, "set_id", &set_id, 0);
     SDFgetintOrDefault(csdfp, "setpvel", &setpvel, 0);
     SDFgetintOrDefault(csdfp, "remove_hubble_flow", &remove_hubble_flow, 0);
@@ -289,7 +274,7 @@ main(int argc, char *argv[])
 	    SDFgetfloatOrDie(sdfp, "Rz",  &R[2]);
 	    /* integer factor to keep error behavior identical to periodic */
 	    Error("Need to fix this, using cosmo before it is set\n");
-	    VV(sysradius, = ((2.0+2e-6)/(1.0 + Znow(&cosmo, tpos)))*R);
+	    VV(sysradius, = ((2.0+2e-6)/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    VS(rmin, = -sysradius[NDIM-1]);
 	    VS(rmax, = sysradius[NDIM-1]);
 	    FixRsizeExact(rmin, rmax);
@@ -298,47 +283,64 @@ main(int argc, char *argv[])
 		   rmax[0], rmax[1], rmax[2]);
 	}
 
-	if (cosmology) {
-	    double Z;
+	if (do_cosmology) {
+	    int version;
+	    SDFgetintOrDefault(sdfp, "version",  &version, 1);
 	    memset(&cosmo, 0, sizeof(cosmo));
 	    cosmo.t = tpos;
 	    SDFgetdoubleOrDefault(sdfp, "H0",  &cosmo.H0, 0.0511365);
-	    SDFgetdoubleOrDefault(sdfp, "Omega0",  &cosmo.Omega0, 1.0);
-	    SDFgetdoubleOrDefault(sdfp, "Omega_r",  &cosmo.Omega_r, 0.0);
-	    SDFgetdoubleOrDefault(sdfp, "Omega_m",  &cosmo.Omega_m, cosmo.Omega0-cosmo.Omega_r);
-	    SDFgetdoubleOrDefault(sdfp, "Omega_de",  &cosmo.Omega_de, 0.0);
-	    SDFgetdoubleOrDefault(sdfp, "w0",  &cosmo.w0, 0.0);
-	    SDFgetdoubleOrDefault(sdfp, "wa",  &cosmo.wa, 0.0);
-	    SDFgetdoubleOrDefault(sdfp, "Lambda_prime",  &cosmo.Lambda, 0.0);
+	    if (version == 1) {
+		SDFgetdoubleOrDefault(sdfp, "Omega0",  &cosmo.Omega0, 1.0);
+		SDFgetdoubleOrDefault(sdfp, "Omega_r",  &cosmo.Omega0_r, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "Omega_m",  &cosmo.Omega0_m, cosmo.Omega0-cosmo.Omega0_r);
+		SDFgetdoubleOrDefault(sdfp, "Omega_de",  &cosmo.Omega0_fld, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "w0",  &cosmo.w0_fld, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "wa",  &cosmo.wa_fld, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "Lambda_prime",  &cosmo.Omega0_lambda, 0.0);
+	    } else if (version == 2) {
+		SDFgetdoubleOrDie(sdfp, "h_100",  &cosmo.h_100);
+		SDFgetdoubleOrDie(sdfp, "Omega0",  &cosmo.Omega0);
+		SDFgetdoubleOrDie(sdfp, "Omega0_r",  &cosmo.Omega0_r);
+		SDFgetdoubleOrDie(sdfp, "Omega0_m",  &cosmo.Omega0_m);
+		SDFgetdoubleOrDie(sdfp, "Omega0_lambda",  &cosmo.Omega0_lambda);
+		SDFgetdoubleOrDie(sdfp, "Omega0_cdm",  &cosmo.Omega0_cdm);
+		SDFgetdoubleOrDefault(sdfp, "Omega0_ncdm_tot",  &cosmo.Omega0_ncdm_tot, 0.0);
+		SDFgetdoubleOrDie(sdfp, "Omega0_b",  &cosmo.Omega0_b);
+		SDFgetdoubleOrDie(sdfp, "Omega0_g",  &cosmo.Omega0_g);
+		SDFgetdoubleOrDefault(sdfp, "Omega0_ur",  &cosmo.Omega0_ur, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "Omega0_fld",  &cosmo.Omega0_fld, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "w0_fld",  &cosmo.w0_fld, 0.0);
+		SDFgetdoubleOrDefault(sdfp, "wa_fld",  &cosmo.wa_fld, 0.0);
+	    } else Error("Unsupported file version\n");
 	    SDFgetdoubleOrDefault(sdfp, "Gnewt", &cosmo.Gnewt, 1.0);
-	
-    /* Now we need to get initial values for cosmo.a */
-	    if( SDFhasname("redshift", sdfp) ){
+	    /* Now we need to get initial values for cosmo.a */
+	    if (SDFhasname("redshift", sdfp)) {
+		double Z;
 		SDFgetdouble(sdfp, "redshift", &Z);
 		cosmo.a = 1.0/(1.0 + Z);
-	    }else{
-		if (cosmo.Omega0 == 1.0) {
-		    cosmo.a = pow(1.5*cosmo.t*cosmo.H0, 2./3.);
-		}else{
-		    SinglError("Sorry.  Tell me the redshift in the data file\n");
-		}
+	    } else {
+		SinglError("Sorry.  Tell me the redshift in the data file\n");
 	    }
 	    /* The Zel'dovich 'f' factor is only needed for setting initial
 	       velocities.  At this point, we don't know if we will be asked
 	       to do setpvel, though, so we read it anyway. */
-	    if( SDFhasname("velocity_fac", sdfp) ){
-		SDFgetdoubleOrDie(sdfp, "velocity_fac", &cosmo.Zel_f);
-	    }else{
-		cosmo.Zel_f = 1.0;
-	    }
-	    if (setdisplacement) {
-	      SDFgetfloatOrDie(sdfp, "unit_mass", &unit_mass);
+	    if (SDFhasname("velocity_fac", sdfp)) {
+		SDFgetdoubleOrDie(sdfp, "velocity_fac", &cosmo.velfac);
+	    } else {
+		cosmo.velfac = 1.0;
 	    }
 	}
-	SDFgetintOrDefault  (sdfp, "iter",  &iter, 0);
+	if (SDFhasname("cosmo_tbl", csdfp)) {
+	    char cosmo_tbl[256];
+	    SDFgetstring(csdfp, "cosmo_tbl", cosmo_tbl, sizeof(cosmo_tbl));
+	    tbl_init(&cosmo, cosmo_tbl);
+	}
+	if (setdisplacement) SDFgetfloatOrDie(sdfp, "unit_mass", &unit_mass);
+	SDFgetintOrDefault(sdfp, "ic_Nmesh",  &ic_Nmesh, 0);
+	SDFgetdoubleOrDefault(sdfp, "ic_growthfac",  &ic_growthfac, 0);
+	SDFgetintOrDefault(sdfp, "iter",  &iter, 0);
 	start_iter = iter;
-	if(sdfp)
-	  SDFclose(sdfp);
+	if (sdfp) SDFclose(sdfp);
     } else {
 	int cencon;
 	int64_t start;
@@ -370,14 +372,14 @@ main(int argc, char *argv[])
 	}
 
 	iter = start_iter = 0;
-	if (cosmology) {
+	if (do_cosmology) {
 	    tvel = tpos = 0.05;
 	    memset(&cosmo, 0, sizeof(cosmo));
 	    cosmo.t = tpos;
 	    cosmo.H0 = 0.0511365;
 	    cosmo.a = pow(1.5*cosmo.t*cosmo.H0, 2./3.);
 	    cosmo.Omega0 = 1.0;
-	    cosmo.Omega_m = cosmo.Omega0-cosmo.Omega_r;
+	    cosmo.Omega_m = cosmo.Omega0-cosmo.Omega0_r;
 	    cosmo.Gnewt = GNEWT;
 	    R[0] = R[1] = R[2] = 100000.0;
 	    for (p = &btab[0]; p < &btab[nobj]; p++) {
@@ -391,19 +393,19 @@ main(int argc, char *argv[])
 	    R[0] = R[1] = R[2] = 1.0;
 	}
     }
-    if (cosmology) {
+    if (do_cosmology) {
 	singlPrintf("double H0 = %g\n", cosmo.H0);
 	singlPrintf("double Omega0 = %g\n", cosmo.Omega0);
-	singlPrintf("double Omega_m = %g\n", cosmo.Omega_m);
-	singlPrintf("double Omega_r = %g\n", cosmo.Omega_r);
-	if (cosmo.Omega_de != 0.0) {
-	    singlPrintf("double Omega_de = %g\n", cosmo.Omega_de);
-	    singlPrintf("double w0 = %g\n", cosmo.w0);
-	    singlPrintf("double wa = %g\n", cosmo.wa);
+	singlPrintf("double Omega0_m = %g\n", cosmo.Omega0_m);
+	singlPrintf("double Omega0_r = %g\n", cosmo.Omega0_r);
+	if (cosmo.Omega0_fld != 0.0) {
+	    singlPrintf("double Omega0_fld = %g\n", cosmo.Omega0_fld);
+	    singlPrintf("double w0_fld = %g\n", cosmo.w0_fld);
+	    singlPrintf("double wa_fld = %g\n", cosmo.wa_fld);
 	}
-	singlPrintf("double redshift = %g\n", Znow(&cosmo, tpos));
-	singlPrintf("double Lambda = %g\n", cosmo.Lambda);
-	singlPrintf("double Zel_f = %g\n", cosmo.Zel_f);
+	singlPrintf("double redshift = %g\n", cosmo.z_at_t(&cosmo, tpos));
+	singlPrintf("double Omega0_lambda = %g\n", cosmo.Omega0_lambda);
+	singlPrintf("double velfac = %g\n", cosmo.velfac);
     }
 
     singlPrintf("Maxmem after data read is %d (%d)\n", maxmem(), maxheap());
@@ -466,9 +468,9 @@ main(int argc, char *argv[])
 
     t_outlist = Calloc(n_outlist, sizeof(double));
     for (i = 0; i < n_outlist; i++) {
-	t_outlist[i] = t_from_Z(&cosmo, 1.0/a_outlist[i]-1.0);
+	t_outlist[i] = cosmo.t_at_z(&cosmo, 1.0/a_outlist[i]-1.0);
     }
-    if (!save_first && cosmology && tpos > t_outlist[n_outlist-1]) {
+    if (!save_first && do_cosmology && tpos*1.0001 > t_outlist[n_outlist-1]) {
 	singlPrintf("Already done.\n");
 	exit(0);
     } 
@@ -550,8 +552,8 @@ main(int argc, char *argv[])
     singlPrintf("int do_periodic = %d, nimage is %d;\n", do_periodic, nimage);
     singlPrintf("int fix_cube_ewald_le = %d;\n", fix_cube_ewald_le);
 
-    if (cosmology) {
-	singlPrintf("int cosmology = %d;\n", cosmology);
+    if (do_cosmology) {
+	singlPrintf("int cosmology = %d;\n", do_cosmology);
 	singlPrintf("int light_cone = %d;\n", light_cone);
 	singlPrintf("int Ztol = %d;\n", Ztol);
 	singlPrintf("float comov_epsilon = %f;\n", comov_eps);
@@ -566,7 +568,7 @@ main(int argc, char *argv[])
 	singlPrintf("float R[2] = %f;\n", R[2]);
 	singlPrintf("Outputs at\n  a      t\n");
 	for (i = 0; i < n_outlist; i++) {
-	    if (t_outlist[i] > tpos)
+	    if (t_outlist[i]*1.0001 > tpos)
 		singlPrintf("%.3f %6.3f\n", a_outlist[i], t_outlist[i]);
 	}
     }
@@ -576,16 +578,16 @@ main(int argc, char *argv[])
 
     pqsortsetup(&sortedbtab, btab, nobj, sizeof(body), sort_tol, Realloc_f);
 
-    if (cosmology && remove_hubble_flow) {
-	double H = Hnow(&cosmo, tpos);
+    if (do_cosmology && remove_hubble_flow) {
+	double H = cosmo.H_at_t(&cosmo, tpos);
 	for (p = btab; p < btab+nobj; p++) {
 	    VV(p->vel, -= H*p->pos);
 	}
 	singlPrintf("Hubble flow removed.\n");
     }
-    if (cosmology && do_periodic && !setdisplacement) {
+    if (do_cosmology && do_periodic && !setdisplacement) {
 	/* set_displacement uses union of vel[2], so don't erase it */
-	ConvertV(&btab[0].vel[0], sizeof(body), nobj, Anow(&cosmo, tpos), 0);
+	ConvertV(&btab[0].vel[0], sizeof(body), nobj, cosmo.a_at_t(&cosmo, tvel), 0);
     }
 
     SetupTree(&thetree, NDIM, 
@@ -611,8 +613,8 @@ main(int argc, char *argv[])
 
     /* Initial conditions converted from other formats may not be wrapped */
     if (do_periodic) {
-      if (cosmology)
-	  VV(sysradius, = (1.0 / (1.0 + Znow(&cosmo, tpos)))*R);
+      if (do_cosmology)
+	  VV(sysradius, = (1.0 / (1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
       else
 	  VV(sysradius,  = R);
       VV(rmin, = -sysradius);
@@ -628,12 +630,12 @@ main(int argc, char *argv[])
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
 
-	if (cosmology) for (dt = dt_base; dt/tpos > dt_hiz_tol; dt *= 0.5) /* NULL */;
+	if (do_cosmology) for (dt = dt_base; dt/tpos > dt_hiz_tol; dt *= 0.5) /* NULL */;
 
 	if (do_periodic) {
 	    float sysradius_plus[NDIM];
-	    if (cosmology) {
-		VV(sysradius_plus,  = ((1.0+1e-6)/(1.0 + Znow(&cosmo, tpos)))*R);
+	    if (do_cosmology) {
+		VV(sysradius_plus,  = ((1.0+1e-6)/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    } else {
 		VV(sysradius_plus, = R);
 	    }
@@ -653,12 +655,12 @@ main(int argc, char *argv[])
 	
 	if (MACtype == AREL_MAC) {
 	    /* Perhaps not what you expect for high-aspect volumes */
-	    this_tol = tol*mtot*5e5/((1.0+Znow(&cosmo, tpos))*sysradius[0]*sysradius[0]*sysradius[0]);
+	    this_tol = tol*mtot*5e5/((1.0+cosmo.z_at_t(&cosmo, tpos))*sysradius[0]*sysradius[0]*sysradius[0]);
 	}
 	if (Ztol) {
-	    double fac = growthfac_from_Z(&cosmo, Znow(&cosmo, tpos))/growthfac_from_Z(&cosmo, 0.0);
-	    if (Ztol == 2 && Znow(&cosmo, tpos) > 30.0) {
-		double fac30 = growthfac_from_Z(&cosmo, Znow(&cosmo, tpos))/growthfac_from_Z(&cosmo, 30.0);
+	    double fac = cosmo.growthfac_at_t(&cosmo, tpos);
+	    if (Ztol == 2 && cosmo.z_at_t(&cosmo, tpos) > 30.0) {
+		double fac30 = cosmo.growthfac_at_t(&cosmo, tpos)/cosmo.growthfac_at_z(&cosmo, 30.0);
 		this_tol *= fac*fac30;
 	    } else this_tol *= fac;
 	}
@@ -668,9 +670,9 @@ main(int argc, char *argv[])
 	SetupCofm(MACtype, this_tol, frac_tol, frac_tol0, sysradius[0], ptol_boost, 
 		  stol_max, quad_ncut, hexa_ncut,  &thetree);
 
-	if (cosmology && !do_periodic) {
+	if (do_cosmology && !do_periodic) {
 	    /* integer factor to keep error behavior identical to periodic */
-	    VV(sysradius, = ((2.0+2e-6)/(1.0 + Znow(&cosmo, tpos)))*R);
+	    VV(sysradius, = ((2.0+2e-6)/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    VS(rmin, = -sysradius[NDIM-1]);
 	    VS(rmax, = sysradius[NDIM-1]);
 	    FixRsizeExact(rmin, rmax);
@@ -679,15 +681,16 @@ main(int argc, char *argv[])
 		   rmax[0], rmax[1], rmax[2]);
 	}
 	/* comoving smoothing */
-	if (cosmology && (comov_eps > 0.0f) && (Znow(&cosmo, tpos) > comov_eps_Zmin)) {
-	    this_eps = eps*Anow(&cosmo, tpos)*(1.0+comov_eps_Zmin);
+	if (do_cosmology && (comov_eps > 0.0f) && (cosmo.z_at_t(&cosmo, tpos) > comov_eps_Zmin)) {
+	    this_eps = eps*cosmo.a_at_t(&cosmo, tpos)*(1.0+comov_eps_Zmin);
 	} else {
 	    this_eps = eps;
 	}
 	if (setdisplacement) this_eps /= 100.0;
 	this_eps_scaled = this_eps*pow(btab[0].mass, (float)(1./3.));
 
-	SetupGrav(cosmo.Gnewt, this_eps, gnobj, DLfac, DLmax*Anow(&cosmo,tpos), quad_ncut, hexa_ncut, 
+	SetupGrav(cosmo.Gnewt, this_eps, gnobj, DLfac, 
+		  DLmax*cosmo.a_at_t(&cosmo,tpos), quad_ncut, hexa_ncut, 
 		  btab[0].mass, force_smoothing_type);
 #ifdef BODY_HAS_KEY
 	FixKeys(btab, nobj, GetKey);
@@ -727,7 +730,7 @@ main(int argc, char *argv[])
 	MPMY_Sync(); /* No sync might cause msg buffer overflow? */
 	StartTimer(&FindForcesTm);
 	if (do_n2_ewald) {
-	    EwaldSetup(2.0*R[2]*Anow(&cosmo, tpos), cosmo.Gnewt);
+	    EwaldSetup(2.0*R[2]*cosmo.a_at_t(&cosmo, tpos), cosmo.Gnewt);
 	    EwaldForces(btab, nobj, n2_sample_frac, &ranstate);
 	} else {
 	    StartTimer(&WITm);
@@ -783,30 +786,32 @@ main(int argc, char *argv[])
 	    sacc2 = Dot(p->acc, p->acc);
 	    acc2 += sacc2;
 	}
-	if (cosmology) FixGlobalForce(btab, nobj, &cosmo, tpos, do_periodic);
+	if (do_cosmology) FixGlobalForce(btab, nobj, &cosmo, tpos, do_periodic);
 	
 	if (setpvel) {
 	    if (setpvel == 2) {
-		set_vels(btab, nobj, dt, &cosmo, &tpos, &tvel, do_periodic, 0.0);
+		for (p = btab; p < btab+nobj; p++) {
+		    VS(p->vel, = 0.0f);
+		}
 		singlPrintf("Velocities erased.\n");
 	    } else {
-		set_vels(btab, nobj, dt, &cosmo, &tpos, &tvel, do_periodic, cosmo.Zel_f);
+		set_vels(btab, nobj, dt, &cosmo, &tpos, &tvel, do_periodic);
 		singlPrintf("Velocities adjusted to linear approximation.\n");
 	    }
 	    setpvel = 0;
-	    if (cosmology && do_periodic) {
-		ConvertV(&btab[0].vel[0], sizeof(body), nobj, Anow(&cosmo, tpos), 0);
+	    if (do_cosmology && do_periodic) {
+		ConvertV(&btab[0].vel[0], sizeof(body), nobj, cosmo.a_at_t(&cosmo, tvel), 0);
 	    }
 	} else if (setdisplacement) {
 	    setdisplacement = 0;
 	    set_displacement(btab, nobj, dt, &cosmo, &tpos, &tvel, noise, do_periodic, &ranstate);
 	    singlPrintf("Displacements and velocities adjusted to linear approximation.\n");
-	    if (cosmology && do_periodic) {
-		ConvertV(&btab[0].vel[0], sizeof(body), nobj, Anow(&cosmo, tpos), 0);
+	    if (do_cosmology && do_periodic) {
+		ConvertV(&btab[0].vel[0], sizeof(body), nobj, cosmo.a_at_t(&cosmo, tvel), 0);
 	    }
 	    if (do_periodic) {
-		if (cosmology) {
-		    VV(sysradius, = (1.0/(1.0 + Znow(&cosmo, tpos)))*R);
+		if (do_cosmology) {
+		    VV(sysradius, = (1.0/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 		} else {
 		    VV(sysradius, = R);
 		}
@@ -820,7 +825,7 @@ main(int argc, char *argv[])
 	dtout = dt; /* time for checkpoint, reset below for do_output */
 	dtvout = tpos + 0.5 * dt - tvel;
 	for (i = 0; i < n_outlist; i++) {
-	    if ((tpos < t_outlist[i]) && (tpos + dt >= t_outlist[i])) {
+	    if ((tpos < 1.0001*t_outlist[i]) && (tpos + dt >= t_outlist[i])) {
 		do_output = 1;
 		dtout = t_outlist[i] - tpos;
 		dtvout = t_outlist[i] - tvel;
@@ -846,9 +851,10 @@ main(int argc, char *argv[])
 
 	if (do_output || do_checkpoint) {
 	    output(outnamebase, gnobj, nobj, btab, iter, dtout, dtvout,
-		   &cosmo, tpos, tvel, cosmology, do_periodic, 
+		   &cosmo, tpos, tvel, do_cosmology, do_periodic, 
 		   eps, this_eps_scaled, force_smoothing_type, this_tol, frac_tol, frac_tol0,
-		   R, N, write_nfiles, &ke, &pe, do_output, identsort_output);
+		   R, N, write_nfiles, &ke, &pe, do_output, identsort_output,
+		   ic_Nmesh, ic_growthfac);
 	    MPMY_CheckpointFinished();
 	}
 
@@ -871,14 +877,14 @@ main(int argc, char *argv[])
 			   outnamebase, "lc111", iter, lc_origin, R);
 	}
 	
-	if ((cosmology && tpos + dt >= t_outlist[n_outlist-1]) || ForceStop() || MPMY_JobDone()) {
+	if ((do_cosmology && tpos + dt >= t_outlist[n_outlist-1]) || (do_checkpoint && ForceStop()) || MPMY_JobDone()) {
 	    singlPrintf("Stopping.\n");
 	    break;
 	} 
 
 	Msgf(("integrating positions and velocities\n"));
 	tposlast = tpos;
-	if (cosmology && do_periodic) {
+	if (do_cosmology && do_periodic) {
 	    CosmoIntegrate(&btab[0].mass, &btab[0].pos[0], &btab[0].vel[0],
 			   &btab[0].acc[0], &btab[0].phi, sizeof(body),
 			   &btab[0].pos[0], &btab[0].vel[0], sizeof(body),
@@ -890,8 +896,8 @@ main(int argc, char *argv[])
 		      nobj, dt, tpos+0.5*dt-tvel, &tpos, &tvel, &ke, &pe);
 	}
 	if (do_periodic) {
-	    if (cosmology) {
-		VV(sysradius, = (1.0 / (1.0 + Znow(&cosmo, tpos)))*R);
+	    if (do_cosmology) {
+		VV(sysradius, = (1.0 / (1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    } else {
 		VV(sysradius, = R);
 	    }
@@ -945,10 +951,10 @@ main(int argc, char *argv[])
 	StopTimer(&StepTot);
 	StopTimer(&StepTotWC);
 
-	if (cosmology) 
+	if (do_cosmology) 
 	    singlPrintf("\ntpos = %g, znow = %g, iter = %d, size = %g, eps = %g\n", 
-			tposlast, Znow(&cosmo, tposlast),
-			iter, (1.0 / (1.0 + Znow(&cosmo, tposlast)))*R[0], this_eps_scaled);
+			tposlast, cosmo.z_at_t(&cosmo, tposlast),
+			iter, (1.0 / (1.0 + cosmo.z_at_t(&cosmo, tposlast)))*R[0], this_eps_scaled);
 	else
 	    singlPrintf("\ntpos = %g, iter = %d, size = %g\n",
 			tposlast, iter, sysradius);
@@ -1043,6 +1049,7 @@ static SDF *startup(int argc, char **argv){
     char *msgbase, *lastslash;
     char cfile[256];
     int Msg_memfile;
+    char hostname[128];
 
     if (argc > 1)
  	strncpy(cfile, argv[1], sizeof(cfile));
@@ -1052,6 +1059,29 @@ static SDF *startup(int argc, char **argv){
  	SinglError("Sorry, couldn't SDFopen %s\n%s\n",
 	      cfile, SDFerrstring);
     }
+
+    singlPrintf("Welcome to the tree19 %sN-body integrator running on %d procs\n",
+#ifdef HEXA
+		"hexadecapole ",
+#else
+#ifdef QUAD
+		"quadrupole ",
+#else
+		"monopole ",
+#endif
+#endif
+		MPMY_Nproc());
+    singlPrintf("Version %s\n", Version);
+    singlPrintf("Compiled %s %s\n", Compiled_date, Compiled_time);
+#ifdef SAVE_ACC
+    singlPrintf("Saving phi and acc\n");
+#endif
+#ifdef BODY_HAS_KEY
+    singlPrintf("Bodies cache their key\n");
+#endif
+    gethostname(hostname, sizeof(hostname));
+    singlPrintf("Node 0 is %s\n", hostname);
+
     singlPrintf("cfile \"%s\" opened\n", cfile);
     SDFgetintOrDefault(csdfp, "Msg_memfile", &Msg_memfile, 0);
     if (Msg_memfile) {
@@ -1176,7 +1206,7 @@ static void SanityCheck(bodyptr btab, int nobj, int64_t gnobj, double *mtotp){
 }
 
 static void
-FixGlobalForce(body *xptr, int n, struct cosmo_s *c, float real_time, int do_periodic){
+FixGlobalForce(body *xptr, int n, cosmology *c, float real_time, int do_periodic){
     /* Make whatever corrections are necessary to the acceleration, etc.
        based on values of GNewt, Lambda, etc., etc. */
     float acc_back;
@@ -1184,7 +1214,7 @@ FixGlobalForce(body *xptr, int n, struct cosmo_s *c, float real_time, int do_per
 
     if (do_periodic) return;	/* now handled by CosmoIntegrate */
 
-    acc_back = c->Lambda*c->H0*c->H0;
+    acc_back = c->Omega0_lambda*c->H0*c->H0;
     while(n--){
 	p = xptr++;
 	VV(p->acc, += acc_back*p->pos);
@@ -1195,39 +1225,30 @@ FixGlobalForce(body *xptr, int n, struct cosmo_s *c, float real_time, int do_per
 /* according to linear theory */
 
 static void
-set_vels(body *p, int n, float dt, struct cosmo_s *c, double *tpos, double *tvel, int do_periodic, double vf)
+set_vels(body *p, int n, float dt, cosmology *c, double *tpos, double *tvel, int do_periodic)
 {
     float peculiar_acc[NDIM], proper_acc[NDIM];
     body *end = p + n;
-    double H;
     double acc_back;
     double vel_fac, pos_fac;
-    double step0_corr;
-    double a, av;
+    double a;
     double asum1, asum2;
-    double tvel2;
 
-    a = Anow(c, *tpos);
-    H = Hnow(c, *tpos);
+    a = c->a_at_t(c, *tpos);
 
     /* mean was subtraced in FixCube for do_periodic */
     /* Lambda was added in FixGlobalForce for !do_periodic */
-    acc_back = (0.5*c->Omega0/(a*a*a) - c->Lambda)*c->H0*c->H0;
+    acc_back = (0.5*c->Omega0/(a*a*a) - c->Omega0_lambda)*c->H0*c->H0;
 
     /* density */
-    pos_fac = (a*a*a)/(1.5 * c->Omega_m * c->H0 * c->H0);
-    vel_fac = pos_fac * vf * H;
+    pos_fac = (a*a*a)/(1.5 * c->Omega0_m * c->H0 * c->H0);
+    vel_fac = pos_fac * c->velfac * c->H;
 
-    /* So first step is second order */
-    tvel2 = *tpos - dt;
-    av = Anow(c, tvel2);
-    /* average v_n and v_n-1 */
-    step0_corr = 0.5 * (1.0 + a/av); 
-    *tvel = *tpos - 0.5 * dt;
+    *tvel = *tpos;
 
     singlPrintf("set_vels: tpos = %g, tvel = %g\n", *tpos, *tvel);
-    singlPrintf("set_vels: step0_corr = %.4f, Zel_f = %g, vel_fac is %.4f * t, H is %f\n", 
-		step0_corr, vf, vel_fac/(*tpos), H);
+    singlPrintf("set_vels: velfac = %g, vel_fac/t is %.4f * t, H is %f\n", 
+		c->velfac, vel_fac/(*tpos), c->H);
 
     asum1 = 0.;
     asum2 = 0.;
@@ -1242,9 +1263,9 @@ set_vels(body *p, int n, float dt, struct cosmo_s *c, double *tpos, double *tvel
 	asum1 += Dot(proper_acc, p->pos); /* diagnostic */
 	asum2 += Dot(peculiar_acc, p->pos); /* diagnostic */
 	if (do_periodic) {
-	    VV(p->vel, = step0_corr*vel_fac*p->acc);
+	    VV(p->vel, = vel_fac*p->acc);
 	} else {
-	    VVV(p->vel, = step0_corr*vel_fac*p->acc, + H*p->pos); /* pec. vel + Hubble flow */
+	    VVV(p->vel, = vel_fac*p->acc, + c->H*p->pos); /* pec. vel + Hubble flow */
 	}
     }
     singlPrintf("Mean(proper acc dot position) = %g\n", asum1/n);
@@ -1252,41 +1273,32 @@ set_vels(body *p, int n, float dt, struct cosmo_s *c, double *tpos, double *tvel
 }
 
 static void
-set_displacement(body *p, int n, double dt, struct cosmo_s *c, double *tpos, double *tvel, 
+set_displacement(body *p, int n, double dt, cosmology *c, double *tpos, double *tvel, 
 		 float noise, int do_periodic, ran_state *ranstate)
 {
     float peculiar_acc[NDIM], proper_acc[NDIM];
     body *end = p + n;
-    double H;
     double acc_back;
     double vel_fac, pos_fac;
-    double a, av;
-    double step0_corr;
+    double a;
     float mass;
     double asum1, asum2;
-    double tvel2;
     
-    a = Anow(c, *tpos);
-    H = Hnow(c, *tpos);
-
+    a = c->a_at_t(c, *tpos);
+ 
     /* mean was subtraced in FixCube for do_periodic */
     /* Lambda was added in FixGlobalForce for !do_periodic */
-    acc_back = (0.5*c->Omega0/(a*a*a) - c->Lambda)*c->H0*c->H0;
+    acc_back = (0.5*c->Omega0/(a*a*a) - c->Omega0_lambda)*c->H0*c->H0;
 
     /* density */
-    pos_fac = (a*a*a)/(1.5 * c->Omega_m * c->H0 * c->H0);
-    vel_fac = pos_fac * c->Zel_f * H;
+    pos_fac = (a*a*a)/(1.5 * c->Omega0_m * c->H0 * c->H0);
+    vel_fac = pos_fac * c->velfac * c->H;
 
-    /* So first step is second order */
-    tvel2 = *tpos - dt;
-    av = Anow(c, tvel2);
-    /* average v_n and v_n-1 */
-    step0_corr = 0.5 * (1.0 + a/av); 
-    *tvel = *tpos - 0.5 * dt;
+    *tvel = *tpos;
 
     singlPrintf("set_displacement: tpos = %g, tvel = %g\n", *tpos, *tvel);
-    singlPrintf("set_displacement: step0_corr = %g, Zel_f = %g, vel_fac = %.4f * t, H = %f\n", 
-		step0_corr, c->Zel_f, vel_fac/(*tpos), H);
+    singlPrintf("set_displacement: velfac = %g, vel_fac/t = %.4f * t, H = %f\n", 
+		c->velfac, vel_fac/(*tpos), c->H);
 
     asum1 = 0.;
     asum2 = 0.;
@@ -1308,9 +1320,9 @@ set_displacement(body *p, int n, double dt, struct cosmo_s *c, double *tpos, dou
 	p->mass = mass;
 	VVV(p->pos, = pos_fac*peculiar_acc, + p->pos);
 	if (do_periodic) {
-	    VV(p->vel, = step0_corr*vel_fac*peculiar_acc);
+	    VV(p->vel, = vel_fac*peculiar_acc);
 	} else {
-	    VVV(p->vel, = step0_corr*vel_fac*peculiar_acc, + H*p->pos); /* pec. vel + Hubble flow */
+	    VVV(p->vel, = vel_fac*peculiar_acc, + c->H*p->pos); /* pec. vel + Hubble flow */
 	}
 	if (noise != 0.0) {
 	  float vec[NDIM];
@@ -1321,6 +1333,7 @@ set_displacement(body *p, int n, double dt, struct cosmo_s *c, double *tpos, dou
     singlPrintf("Mean(proper acc dot position) = %lg\n", asum1/n);
     singlPrintf("Mean(peculiar acc dot position) = %lg\n", asum2/n);
 }
+
 
 static void
 WrapPeriodic(body *bp, int n, float *rmin, float *rmax)
@@ -1424,7 +1437,7 @@ maxmem(void)
 
 static void
 WriteLightCone(body *xptr, const int n, const double dt, const double dtv, 
-	       struct cosmo_s *c, double tpos, double tvel,
+	       cosmology *c, double tpos, double tvel,
 	       char *name, char *tag, int iter, float *lc_origin, float *rmax)
 {
     body *end = xptr + n;
@@ -1446,22 +1459,18 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     /* Write particles between tpos and tpos+dt */
     StartTimer(&LightConeTm);
     StkInitEz(&outstk);
-    CosmoPush(c, tpos);
-    a0 = c->a;
+    a0 = c->a_at_t(c, tpos);
+    hubble0 = c->H_at_z(c, 1.0/a0-1.0);
+    r0 = c->conformal_distance_at_z(c, 1.0/a0-1.0);
     tpos0 = tpos;
     tpos1 = tpos+dt;
-    dt_kick = a0*a0*kick_delta(c, tvel, tvel + dtv);
-    dt_kick0 = a0*a0*kick_delta(c, tvel, tpos0);
-    dt_kick1 = a0*a0*kick_delta(c, tvel, tpos1);
-    dt_drift1 = drift_delta(c, tpos, tpos1);
-    CosmoPush(c, tpos1);
-    a1 = c->a;
-
-    hubble0 = hubble_from_Z(c, 1.0/a0-1.0);
-    hubble1 = hubble_from_Z(c, 1.0/a1-1.0);
-
-    r0 = comoving_distance_from_Z(c, 1.0/a0-1.0);
-    r1 = comoving_distance_from_Z(c, 1.0/a1-1.0);
+    dt_kick = a0*a0*c->kick_t0_t1(c, tvel, tvel + dtv);
+    dt_kick0 = a0*a0*c->kick_t0_t1(c, tvel, tpos0);
+    dt_kick1 = a0*a0*c->kick_t0_t1(c, tvel, tpos1);
+    dt_drift1 = c->drift_t0_t1(c, tpos, tpos1);
+    a1 = c->a_at_t(c, tpos1);
+    hubble1 = c->H_at_z(c, 1.0/a1-1.0);
+    r1 = c->conformal_distance_at_z(c, 1.0/a1-1.0);
     if (r1 < 0.0) r1 = 0.0;
     
     for (; xptr < end; xptr++) {
@@ -1503,7 +1512,7 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
 	MPMY_Fclose(outfp);
     }
     singlPrintf("Wrote %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
-		gnout, outname, tpos, r0, Znow(c, tpos), 
+		gnout, outname, tpos, r0, c->z_at_t(c, tpos), 
 		lc_origin[0], lc_origin[1], lc_origin[2]);
     StkTerminate(&outstk);
     StopTimer(&LightConeTm);
