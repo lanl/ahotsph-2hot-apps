@@ -12,7 +12,9 @@ treedir=$(TREEHOME)
 appexcludes:=-name data
 
 .PHONY: version.proto
-
+	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
+	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
+	@echo char Compiled_time\[\] = __TIME__\; >> version.proto
 
 ##### End of application-specific setup
 
@@ -33,9 +35,6 @@ $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 	mv ewald_le2$(objsuf) $(objdir)
 
 version.c: version.proto
-	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
-	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
-	@echo char Compiled_time\[\] = __TIME__\; >> version.proto
 	@cmp -s $< $@ || cp -p $< $@
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
