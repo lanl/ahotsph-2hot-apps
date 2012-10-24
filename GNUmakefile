@@ -11,11 +11,6 @@ treedir=$(TREEHOME)
 
 appexcludes:=-name data
 
-.PHONY: version.proto
-	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
-	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
-	@echo char Compiled_time\[\] = __TIME__\; >> version.proto
-
 ##### End of application-specific setup
 
 include $(treedir)/Make-common/Make.$(ARCH)
@@ -33,6 +28,13 @@ $(objdir)/do_grav_sse4$(objsuf) : do_grav_sse4.c
 $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c ewald_le2.c
 	mv ewald_le2$(objsuf) $(objdir)
+
+.PHONY: version.proto
+
+version.proto:
+	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
+	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
+	@echo char Compiled_time\[\] = __TIME__\; >> version.proto
 
 version.c: version.proto
 	@cmp -s $< $@ || cp -p $< $@
