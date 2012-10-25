@@ -443,9 +443,6 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    if (first && last) {
 		int n0, n1, np;
 		if (first < Btab || last >= first+Nobj) Error("first/last out of range\n");
-		Msgf(("%5ld %5ld - %d %d\n", 
-		      first-Btab, 1+last-first, to->hcnt - to->hcnt_done, to->qcnt - to->qcnt_done));
-		
 		StartTimer(&GravTm);
 		StartTimer(&GravHFTm);
 		n0 = to->hcnt_done/NSSE;
@@ -454,6 +451,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		pHinteract(&first->mass, first->acc, np, sizeof(body)/sizeof(float),
 			   (float *)&Hvec[n0], n1-n0);
 		to->hcnt_done = n1*NSSE;
+		to->nterms += (n1-n0)*NSSE;
 		AddCounter(&BC4Int, np*(n1-n0)*NSSE);
 		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
 		StopTimer(&GravHFTm);
