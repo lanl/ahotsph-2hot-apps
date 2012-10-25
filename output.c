@@ -94,7 +94,7 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	VV(sysradius, = a*R);
 	VV(rmin, = -sysradius);
 	VV(rmax, = sysradius);
-	ConvertV(&output_btab[0].vel[0], sizeof(outbody), nobj, cosmo->a_at_t(cosmo, tpos), 1);
+	ConvertV(&output_btab[0].vel[0], sizeof(outbody), nobj, cosmo->a_at_t(cosmo, tvel), 1);
 	/* WrapPeriodic */
 	for(b=output_btab; b<&output_btab[nobj]; b++) {
 	    VVVV(if LPAREN b->pos, > rmax, RPAREN b->pos, -= 2.0*sysradius);
