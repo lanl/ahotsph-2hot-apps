@@ -4,7 +4,7 @@ treedir_sed=\.\.
 
 ARCH=amd6100
 
-programname=nln
+programname=../release/nln
 
 src = cofm.c grav.c mac.c main.c physics.c print.c output.c integrate.c ewald_le2.c do_grav_sse4.c ewald.c grav_n2.c version.c
 treedir=$(TREEHOME)
@@ -32,10 +32,12 @@ $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c ewald_le2.c
 	mv ewald_le2$(objsuf) $(objdir)
 
-version.c: version.proto
+version.proto:
 	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
 	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
 	@echo char Compiled_time\[\] = __TIME__\; >> version.proto
+
+version.c: version.proto
 	@cmp -s $< $@ || cp -p $< $@
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
