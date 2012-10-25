@@ -446,6 +446,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		Msgf(("%5ld %5ld - %d %d\n", 
 		      first-Btab, 1+last-first, to->hcnt - to->hcnt_done, to->qcnt - to->qcnt_done));
 		
+		StartTimer(&GravTm);
 		StartTimer(&GravHFTm);
 		n0 = to->hcnt_done/NSSE;
 		n1 = to->hcnt/NSSE;
@@ -456,6 +457,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		AddCounter(&BC4Int, np*(n1-n0)*NSSE);
 		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
 		StopTimer(&GravHFTm);
+		StopTimer(&GravTm);
 
 		if (!finite(first->acc[0]) || !finite(first->acc[1]) || !finite(first->acc[2]) || !finite(first->phi)) {
 		    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 

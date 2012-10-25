@@ -4,7 +4,7 @@ treedir_sed=\.\.
 
 ARCH=amd6100
 
-programname=nln
+programname=../devel/nln
 
 src = cofm.c grav.c mac.c main.c physics.c print.c output.c integrate.c ewald_le2.c do_grav_sse4.c pgrav_sse4.c ewald.c grav_n2.c version.c
 treedir=$(TREEHOME)
@@ -30,7 +30,6 @@ $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 	mv ewald_le2$(objsuf) $(objdir)
 
 .PHONY: version.proto
-
 version.proto:
 	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
 	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
