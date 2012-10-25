@@ -16,7 +16,6 @@ Counter_t CCIntRej;
 Counter_t TranslateCnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
-
 Timer_t MACTm;
 
 static int64_t GNobj, Nobj;
@@ -71,6 +70,9 @@ SetGravOffset(float *off, int n)
 #define NSSE 4 /* Number of floats in an SSE register */
 #define Arch(a) a##_sse4
 #endif
+/* costs of interaction relative to monopole */
+#define QUAD_COST 3
+#define HEXA_COST 9
 
 #define SVECSZ (5623) /* This should be dynamically extensible */
 struct {
@@ -167,9 +169,9 @@ SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max
 	} else {
 	    Error("Unknown smoothing type\n");
 	}
-	Minteract = do_grav_sse4;
-	Qinteract = do_gravq_sse4;
-	Hinteract = (amd6100) ? do_gravh_amd6100_sse4 : do_gravh_sse4;
+	Minteract = Arch(do_grav);
+	Qinteract = Arch(do_gravq);
+	Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
 }
@@ -275,18 +277,6 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	/* putting a getrusage based timer here can slow things down a lot */
 	StartTimer(&GravTm);
 #ifdef HEXA
-#ifdef DEBUG
-	if (sqrt(Dot(from->pos, from->pos)) <= 1.379e+04) {
-	    int ii;
-	    for (ii = 0; ii < from->hcnt; ii++) {
-		Msg_do("%f %f %f %f\n", 
-		       Hvec[ii/NSSE].mass[ii%NSSE],
-		       Hvec[ii/NSSE].pos[0][ii%NSSE], 
-		       Hvec[ii/NSSE].pos[1][ii%NSSE], 
-		       Hvec[ii/NSSE].pos[2][ii%NSSE]);
-	    }
-	}
-#endif
 	StartTimer(&GravHTm);
 	nn = from->hcnt;
 	while (nn % NSSE) {
@@ -392,10 +382,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	VS(bp->acc, *= GNewt);
 	bp->nterms += from->nterms + from->scnt + from->mcnt 
 #ifdef QUAD
-	    + 3*from->qcnt 
+	    + QUAD_COST*from->qcnt 
 #endif
 #ifdef HEXA
-	    + 9*from->hcnt
+	    + HEXA_COST*from->hcnt
 #endif
 	    ;
 	if (from->interactions != Nimage*GNobj)
@@ -437,7 +427,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
 #endif
-	if (to->daughters >= 128 && to->daughters <= 1024 && to->hcnt-to->hcnt_done >= 512) {
+	if (0 && to->daughters >= 128 && to->daughters <= 1024 && to->hcnt-to->hcnt_done >= 512) {
 	    body *first = FirstBody(pp);
 	    body *last = LastBody(pp);
 	    if (first && last) {
@@ -450,10 +440,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		np = 1+last-first;
 		pHinteract(&first->mass, first->acc, np, sizeof(body)/sizeof(float),
 			   (float *)&Hvec[n0], n1-n0);
-		to->hcnt_done = n1*NSSE;
-		to->nterms += np*(n1-n0)*NSSE;
-		AddCounter(&BC4Int, np*(n1-n0)*NSSE);
+		
 		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
+		to->hcnt_done = n1*NSSE;
 		StopTimer(&GravHFTm);
 		StopTimer(&GravTm);
 

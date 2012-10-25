@@ -64,7 +64,7 @@ Counter_t NbodyCnt;
 Counter_t MemCnt, Ncell, Nquadcell, Nhexacell;
 Counter_t Ncell_local, Nquadcell_local, Nhexacell_local, Ntbody, Nhcell;
 Counter_t HeapCnt_;	/* HeapCnt is in the SunOS name space?! */
-Counter_t KNtermsCnt, Scycles, Mcycles, Qcycles, Hcycles;
+Counter_t KNtermsCnt, Scycles, Mcycles, Qcycles, Hcycles, FHcycles;
 
 Timer_t WITm,WTermTm,WNTTm,WITm;
 
@@ -929,6 +929,8 @@ main(int argc, char *argv[])
 	    AddCounter(&Qcycles, 10.0*GHZ*ReadTimer(&GravQTm)/ReadCounter(&BC2Int));
 	if (ReadCounter(&BC4Int))
 	    AddCounter(&Hcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
+	if (ReadCounter(&FBC4Int))
+	    AddCounter(&FHcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&FBC4Int));
 #if 0
 	if (ReadCounter(&Qcycles) > 230) {
 	    char hostname[128];
@@ -1162,6 +1164,7 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&Mcycles, "Mono cycles");
     EnableCounter(&Qcycles, "Quad cycles");
     EnableCounter(&Hcycles, "Hexa cycles");
+    EnableCounter(&FHcycles, "HexaF cycles");
     EnableCounter(&KNtermsCnt, "KNterms");
     EnableCounter(&NbodyCnt, "Bodies");
     EnableCounter(&Ncell_local, "Local Cells");
