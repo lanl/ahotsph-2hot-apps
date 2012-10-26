@@ -510,7 +510,6 @@ main(int argc, char *argv[])
     }
 
     singlPrintf("float errtol = %g;\n", tol);
-    singlPrintf("float ptol_boost = %g;\n", ptol_boost);
     singlPrintf("float stol_max = %g;\n", stol_max);
     singlPrintf("float dt = %g;\n", dt);
     singlPrintf("double tpos = %g;\n", tpos);
@@ -529,7 +528,6 @@ main(int argc, char *argv[])
     singlPrintf("float DLmax = %g;\n", DLmax);
     singlPrintf("float frac_tol = %g;\n", frac_tol);
     singlPrintf("float frac_tol0 = %g;\n", frac_tol0);
-    singlPrintf("int identsort_output = %d;\n", identsort_output);
     singlPrintf("int quad_ncut = %d;\n", quad_ncut);
     singlPrintf("int hexa_ncut = %d;\n", hexa_ncut);
     singlPrintf("int body_size = %d;\n", sizeof(body));
@@ -561,7 +559,7 @@ main(int argc, char *argv[])
 	singlPrintf("float comov_epsilon = %f;\n", comov_eps);
 	singlPrintf("float comov_epsilon_Zmin = %f;\n", comov_eps_Zmin);
 	singlPrintf("float dt_hiz_tol = %f;\n", dt_hiz_tol);
-	singlPrintf("int remove_hubble_flow = %d;\n", remove_hubble_flow);
+	if (remove_hubble_flow) singlPrintf("int remove_hubble_flow = %d;\n", remove_hubble_flow);
 	singlPrintf("int setpvel = %d;\n", setpvel);
 	singlPrintf("int setdisplacement = %d;\n", setdisplacement);
 	singlPrintf("float noise = %f;\n", noise);
