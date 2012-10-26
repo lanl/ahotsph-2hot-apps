@@ -930,7 +930,7 @@ main(int argc, char *argv[])
 	if (ReadCounter(&BC4Int))
 	    AddCounter(&Hcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
 	if (ReadCounter(&FBC4Int))
-	    AddCounter(&FHcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&FBC4Int));
+	    AddCounter(&FHcycles, 10.0*GHZ*ReadTimer(&GravHFTm)/ReadCounter(&FBC4Int));
 #if 0
 	if (ReadCounter(&Qcycles) > 230) {
 	    char hostname[128];

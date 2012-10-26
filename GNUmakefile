@@ -29,10 +29,7 @@ $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c ewald_le2.c
 	mv ewald_le2$(objsuf) $(objdir)
 
-<<<<<<< HEAD
 .PHONY: version.proto
-=======
->>>>>>> master
 version.proto:
 	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
 	@echo char Compiled_date\[\] = __DATE__\; >> version.proto

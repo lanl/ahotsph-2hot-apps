@@ -11,7 +11,7 @@
 #include "timers.h"
 
 /* #define SAVE_ACC */
-#define BODY_HAS_KEY
+/* #define BODY_HAS_KEY */
 
 #ifdef USE_PH
 /* An ugly hack! */

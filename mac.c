@@ -427,10 +427,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
 #endif
-	if (0 && to->daughters >= 128 && to->daughters <= 1024 && to->hcnt-to->hcnt_done >= 512) {
-	    body *first = FirstBody(pp);
-	    body *last = LastBody(pp);
+	if (to->daughters >= 256 && to->hcnt-to->hcnt_done >= 1024) {
+	    body *p, *first = FirstBody(pp), *last = LastBody(pp);
 	    if (first && last) {
+		int block = 4;
 		int n0, n1, np;
 		if (first < Btab || last >= first+Nobj) Error("first/last out of range\n");
 		StartTimer(&GravTm);
@@ -438,9 +438,12 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		n0 = to->hcnt_done/NSSE;
 		n1 = to->hcnt/NSSE;
 		np = 1+last-first;
-		pHinteract(&first->mass, first->acc, np, sizeof(body)/sizeof(float),
-			   (float *)&Hvec[n0], n1-n0);
-		
+		for (p = first; p < last; p += block) {
+		    int n = (last-p > block) ? block : last-p;
+		    pHinteract(&p->mass, p->acc, n, sizeof(body)/sizeof(float),
+			       (float *)&Hvec[n0], n1-n0);
+		    WalkPoll();
+		}
 		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
 		to->hcnt_done = n1*NSSE;
 		StopTimer(&GravHFTm);

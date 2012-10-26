@@ -4,9 +4,6 @@
 #ifndef __AVX__
 typedef float v4sf __attribute__ ((vector_size (16)));
 
-#include <math.h>
-#include "error.h"
-
 #define massp f[j+0]
 #define xp f[j+1]
 #define yp f[j+2]
@@ -34,6 +31,8 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 #define qxyyz f[j+24]
 #define qyyyz f[j+25]
 
+extern void WalkPoll(void);
+
 void
 pHinteract(const float *p, float *accp, const int n, const int stride, 
 	   const v4sf *f, const int source_n)
@@ -45,7 +44,7 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
     v4sf xx, xy, yy, xz, yz, zz;
     v4sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
     v4sf eqe, eq0, eq1, eq2;
-    v4sf a0, a1, a2, phi, mass;
+    v4sf a0, a1, a2, phi;
     const v4sf zero = {0.0f, 0.0f, 0.0f, 0.0f};
     const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
     const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
@@ -57,24 +56,24 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 
     /* 217 flops, 104 bytes per interaction*/
     for (i = 0; i < n*stride; i += stride) {
-	a0 = a1 = a2 = phi = mass = zero;
+	a0 = a1 = a2 = phi = zero;
 	ppos0[0] = ppos0[1] = ppos0[2] = ppos0[3] = p[i+1];
 	ppos1[0] = ppos1[1] = ppos1[2] = ppos1[3] = p[i+2];
 	ppos2[0] = ppos2[1] = ppos2[2] = ppos2[3] = p[i+3];
 
 	for (j = 0; j < source_n*26; j += 26) {
-	    mass += massp;
 	    x = ppos0 - xp;
 	    y = ppos1 - yp;
 	    z = ppos2 - zp;
-	    
+
 	    r2 = x*x + y*y + z*z;
-	    
+
 	    /* Prefetching improves uncached performance by 10-20% */
-	    asm("prefetcht0 512(%rdi)");
+	    /* __builtin_prefetch(f+j+32, 0, 3); */
+	    asm("prefetcht0 512(%rax)");
 	    rinv = __builtin_ia32_rsqrtps(r2);
-	    
-	    asm("prefetcht0 576(%rdi)");
+
+	    asm("prefetcht0 576(%rax)");
 	    /* Newton-Raphson */
 	    t = rinv;
 	    r2 *= rinv;
@@ -83,8 +82,8 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    rinv *= t;
 	    rinv *= half;		/* flips sign to avoid storing -0.5 */
 	    /* end Newton-Raphson */
-	    
-	    asm("prefetcht0 640(%rdi)");
+	
+	    asm("prefetcht0 640(%rax)");
 	    t = rinv;
 	    eqe = t*massp;
 	    rinv2 = t*t;
@@ -94,21 +93,41 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    a0 += x*eqe;
 	    a1 += y*eqe;
 	    a2 += z*eqe;
-	    
-	    asm("prefetcht0 704(%rdi)");
-	    t *= three*rinv2*R*R;
-	    eq0 = t*(qxx*x + qxy*y + qxz*z);
-	    eq1 = t*(qyy*y + qxy*x + qyz*z);
-	    eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
-	    eqe = half*(eq0*x + eq1*y + eq2*z);
+
+	    asm("prefetcht0 704(%rax)");
+	    t *= three;
+	    t *= rinv2;
+	    t *= R;
+	    t *= R;
+	    eq0 = qxx*x;
+	    eq1 = qyy*y;
+	    eq2 = -qxx;
+	    eq2 -= qyy;
+	    eq2 *= z;
+	    eq0 += qxy*y;
+	    eq1 += qxy*x;
+	    eq2 += qxz*x;
+	    eq0 += qxz*z;
+	    eq1 += qyz*z;
+	    eq2 += qyz*y;
+	    eq0 *= t;
+	    eq1 *= t;
+	    eq2 *= t;
+	    eqe = eq0*x;
+	    eqe += eq1*y;
+	    eqe += eq2*z;
+	    eqe *= half;
 	    phi += eqe;
-	    eqe *= five*rinv2;
+	    eqe *= five;
+	    eqe *= rinv2;
 	    a0 += x*eqe - eq0;
 	    a1 += y*eqe - eq1;
 	    a2 += z*eqe - eq2;
-	    
-	    asm("prefetcht0 768(%rdi)");
-	    t *= five*rinv2*R;
+
+	    asm("prefetcht0 768(%rax)");
+	    t *= five;
+	    t *= rinv2;
+	    t *= R;
 	    xx = half*x*x;
 	    xy = x*y;
 	    xz = x*z;
@@ -121,27 +140,70 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    yyz = z*(yy - third*zz);
 	    xx -= zz;
 	    yy -= zz;
-	    
-	    asm("prefetcht0 832(%rdi)");
-	    eq0 = t*(qxxx*xx + qxyy*yy + qxxy*xy + qxxz*xz + qxyz*yz);
-	    eq1 = t*(qxyy*xy + qxxy*xx + qyyy*yy + qyyz*yz + qxyz*xz);
-	    eq2 = t*(-(qxxx + qxyy)*xz - (qxxy + qyyy)*yz + qxxz*xx + qyyz*yy + qxyz*xy);
-	    eqe = third*(eq0*x + eq1*y + eq2*z);
+
+	    asm("prefetcht0 832(%rax)");
+	    eq0 = qxxx*xx;
+	    eq1 = qxyy*xy;
+	    eq2 = -(qxxx + qxyy);
+	    eq2 *= xz;
+	    eq0 += qxyy*yy;
+	    eq1 += qxxy*xx;
+	    eq2 -= (qxxy + qyyy)*yz;
+	    eq0 += qxxy*xy;
+	    eq1 += qyyy*yy;
+	    eq2 += qxxz*xx;
+	    eq0 += qxxz*xz;
+	    eq1 += qyyz*yz;
+	    eq2 += qyyz*yy;
+	    eq0 += qxyz*yz;
+	    eq1 += qxyz*xz;
+	    eq2 += qxyz*xy;
+	    eq0 *= t;
+	    eq1 *= t;
+	    eq2 *= t;
+	    eqe = eq0*x;
+	    eqe += eq1*y;
+	    eqe += eq2*z;
+	    eqe *= third;
 	    phi += eqe;
 	    eqe *= seven*rinv2;
 	    a0 += x*eqe - eq0;
 	    a1 += y*eqe - eq1;
 	    a2 += z*eqe - eq2;
-	    
-	    asm("prefetcht0 896(%rdi)");
+
+	    asm("prefetcht0 896(%rax)");
 	    t *= seven*rinv2*R;
 	    xxy = y*xx;
 	    xyy = x*yy;
 	    xyz = xy*z;
-	    eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
-	    eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
-	    eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
-	    eqe = quarter*(eq0*x + eq1*y + eq2*z);
+	    eq0 = qxxxx*xxx;
+	    eq1 = qxyyy*xyy;
+	    eq2 = -qxxxx*xxz;
+	    eq0 += qxyyy*yyy;
+	    eq1 += qxxxy*xxx;
+	    eq2 -= (qxyyy + qxxxy)*xyz;
+	    eq0 += qxxxy*xxy;
+	    eq1 += qyyyy*yyy;
+	    eq2 -= qyyyy*yyz;
+	    eq0 += qxxxz*xxz;
+	    eq1 += qyyyz*yyz;
+	    eq2 += qxxxz*xxx;
+	    eq0 += qxxyy*xyy;
+	    eq1 += qxxyy*xxy;
+	    eq2 += qyyyz*yyy;
+	    eq0 += qxxyz*xyz;
+	    eq1 += qxxyz*xxz;
+	    eq2 -= qxxyy*(xxz + yyz);
+	    eq0 += qxyyz*yyz;
+	    eq1 += qxyyz*xyz;
+	    eq2 += qxyyz*xyy;
+	    eq0 *= t;
+	    eq1 *= t;
+	    eq2 *= t;
+	    eqe = eq0*x;
+	    eqe += eq1*y;
+	    eqe += eq2*z;
+	    eqe *= quarter;
 	    phi += eqe;
 	    eqe *= nine*rinv2;
 	    a0 += x*eqe - eq0;
@@ -189,10 +251,10 @@ pQinteract(const float *p, float *accp, const int n, const int stride,
 
 	    r2 = x*x + y*y + z*z;
 
-	    asm("prefetcht0 512(%rdi)");
+	    asm("prefetcht0 512(%rax)");
 	    rinv = __builtin_ia32_rsqrtps(r2);
 	
-	    asm("prefetcht0 576(%rdi)");
+	    asm("prefetcht0 576(%rax)");
 	    /* Newton-Raphson */
 	    t = rinv;
 	    r2 *= rinv;
@@ -202,7 +264,7 @@ pQinteract(const float *p, float *accp, const int n, const int stride,
 	    rinv *= half;		/* flips sign to avoid storing -0.5 */
 	    /* end Newton-Raphson */
 	    
-	    asm("prefetcht0 640(%rdi)");
+	    asm("prefetcht0 640(%rax)");
 	    t = rinv;
 	    eqe = t*massp;
 	    rinv2 = t*t;
