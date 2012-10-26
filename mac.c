@@ -438,12 +438,24 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		n0 = to->hcnt_done/NSSE;
 		n1 = to->hcnt/NSSE;
 		np = 1+last-first;
+#if 0
 		for (p = first; p < last; p += block) {
 		    int n = (last-p > block) ? block : last-p;
 		    pHinteract(&p->mass, p->acc, n, sizeof(body)/sizeof(float),
 			       (float *)&Hvec[n0], n1-n0);
 		    WalkPoll();
 		}
+#else
+		for (p = first; p < last; p++) {
+		    float mtot = 0.0f;
+		    float e = 0.0f;
+		    int ijunk = 0;
+		
+		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
+			      p->pos, &mtot, p->acc, &p->phi, &e, &ijunk);
+		    if (((p-last) & (block-1)) == (block-1)) WalkPoll();
+		}
+#endif
 		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
 		to->hcnt_done = n1*NSSE;
 		StopTimer(&GravHFTm);
