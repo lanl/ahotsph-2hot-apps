@@ -106,7 +106,7 @@ main(int argc, char *argv[])
     float CWfac, DLfac, DLmax;
     float ptol_boost;
     float stol_max;
-    int quad_ncut, hexa_ncut;
+    int quad_ncut, hexa_ncut, mxn_hblock;
     int ntimer_detail;
     int light_cone = 0;
     float lc_origin[NDIM] = {0.0f, 0.0f, 0.0f};
@@ -441,6 +441,7 @@ main(int argc, char *argv[])
     SDFgetfloatOrDefault(csdfp, "stol_max", &stol_max, 0.0);
     SDFgetintOrDefault(csdfp, "quad_ncut", &quad_ncut, 7);
     SDFgetintOrDefault(csdfp, "hexa_ncut", &hexa_ncut, 20);
+    SDFgetintOrDefault(csdfp, "mxn_hblock", &mxn_hblock, 4*1024);
     SDFgetfloatOrDie(csdfp, "dt", &dt_base); dt = dt_base;
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
     SDFgetintOrDefault(csdfp, "Ztol", &Ztol, 0);
@@ -530,6 +531,7 @@ main(int argc, char *argv[])
     singlPrintf("float frac_tol0 = %g;\n", frac_tol0);
     singlPrintf("int quad_ncut = %d;\n", quad_ncut);
     singlPrintf("int hexa_ncut = %d;\n", hexa_ncut);
+    singlPrintf("int mxn_hblock = %d;\n", mxn_hblock);
     singlPrintf("int body_size = %d;\n", sizeof(body));
     singlPrintf("int outbody_size = %d;\n", sizeof(outbody));
     singlPrintf("int cell_size = %d;\n", sizeof(cell));
@@ -734,7 +736,7 @@ main(int argc, char *argv[])
 	    EwaldForces(btab, nobj, n2_sample_frac, &ranstate);
 	} else {
 	    StartTimer(&WITm);
-	    WalkInitSink(&thetree, btab, nobj);
+	    WalkInitSink(&thetree, btab, nobj, mxn_hblock);
 	    WalkInit(&thetree, &thetree, sizeof(Sink), walk_init_src, mac, walk_inherit);
 	    StopTimer(&WITm);
 

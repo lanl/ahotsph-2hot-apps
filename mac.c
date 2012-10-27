@@ -31,6 +31,12 @@ static float offset_array[MAX_IMAGE][NDIM];
 static tree_t *SinkTree;
 static body *Btab;
 
+static void mxn_hexa(Sink *to, hcell *pp);
+static int MxN_hblock = 4*1024;
+static int MxN_min_sink = 256;
+static int MxN_min_hsrc = 512;
+static int MxN_do_pH = 0;
+
 static grav_t Sinteract;
 static grav_t Minteract;
 static grav_t Qinteract;
@@ -179,11 +185,12 @@ SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max
 void Nlognmacv(Sink *sink, const hcell **source_vec, int *result, int);
 
 void
-WalkInitSink(tree_t *tp, body *btab, int64_t nobj)
+WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock)
 {
     SinkTree = tp;
     Btab = btab;
     Nobj = nobj;
+    MxN_hblock = mxn_hblock;
 }
 
 void
@@ -427,46 +434,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
 #endif
-	if (to->daughters >= 256 && to->hcnt-to->hcnt_done >= 1024) {
-	    body *p, *first = FirstBody(pp), *last = LastBody(pp);
-	    if (first && last) {
-		int block = 4;
-		int n0, n1, np;
-		if (first < Btab || last >= first+Nobj) Error("first/last out of range\n");
-		StartTimer(&GravTm);
-		StartTimer(&GravHFTm);
-		n0 = to->hcnt_done/NSSE;
-		n1 = to->hcnt/NSSE;
-		np = 1+last-first;
-#if 0
-		for (p = first; p < last; p += block) {
-		    int n = (last-p > block) ? block : last-p;
-		    pHinteract(&p->mass, p->acc, n, sizeof(body)/sizeof(float),
-			       (float *)&Hvec[n0], n1-n0);
-		    WalkPoll();
-		}
-#else
-		for (p = first; p < last; p++) {
-		    float mtot = 0.0f;
-		    float e = 0.0f;
-		    int ijunk = 0;
-		
-		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
-			      p->pos, &mtot, p->acc, &p->phi, &e, &ijunk);
-		    if (((p-last) & (block-1)) == (block-1)) WalkPoll();
-		}
-#endif
-		AddCounter(&FBC4Int, np*(n1-n0)*NSSE);
-		to->hcnt_done = n1*NSSE;
-		StopTimer(&GravHFTm);
-		StopTimer(&GravTm);
-
-		if (!finite(first->acc[0]) || !finite(first->acc[1]) || !finite(first->acc[2]) || !finite(first->phi)) {
-		    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
-			  first->pos[0], first->pos[1], first->pos[2],
-			  first->acc[0], first->acc[1], first->acc[2], first->phi);
-		}
-	    }
+	if (MxN_hblock && to->daughters >= MxN_min_sink && 
+	    to->hcnt-to->hcnt_done >= MxN_min_hsrc) {
+	    mxn_hexa(to, pp);
 	}
     } else {
 	to->interactions = 0;
@@ -482,6 +452,54 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt = to->hcnt_done = 0;
 #endif
     }
+}
+
+static void
+mxn_hexa(Sink *to, hcell *pp)
+{
+    body *p;
+    body *first = FirstBody(pp);
+    body *last = LastBody(pp)+1;
+    int i, n0, n1, m_block, block;
+
+    if (!first || !last) return;
+    if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
+    StartTimer(&GravTm);
+    StartTimer(&GravHFTm);
+    n0 = to->hcnt_done/NSSE;
+    n1 = to->hcnt/NSSE;
+    /* Size MxN_hblock for appropriate WalkPoll() latency */
+    /* If Walk Defer timer is large, make MxN_hblock smaller */
+    if (n1-n0 > MxN_hblock) m_block = 1;
+    else if (n1 == n0) Error("mxn_hexa called with n == 0\n");
+    else m_block = MxN_hblock / (n1-n0);
+    block = m_block;
+    for (p = first; p < last; p += m_block) {
+	if (p + block > last) block = last-p;
+	if (MxN_do_pH) {
+	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+		       (float *)&Hvec[n0], n1-n0);
+	} else {
+	    float mtot = 0.0f;
+	    float e = 0.0f;
+	    int ijunk = 0;
+	    for (i = 0; i < block; i++) {
+		Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
+			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+	    }
+	}
+	WalkPoll();
+    }
+    AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
+    to->hcnt_done = n1*NSSE;
+
+    if (!finite(first->acc[0]) || !finite(first->acc[1]) || !finite(first->acc[2]) || !finite(first->phi)) {
+	Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
+	      first->pos[0], first->pos[1], first->pos[2],
+	      first->acc[0], first->acc[1], first->acc[2], first->phi);
+    }
+    StopTimer(&GravHFTm);
+    StopTimer(&GravTm);
 }
 
 void

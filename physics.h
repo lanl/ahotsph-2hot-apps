@@ -226,7 +226,7 @@ void InheritSink(const Sink *from, Sink *to, hcell *pp);
 void DLRcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
 void SetGravOffset(float *off, int nimage);
-void WalkInitSink(tree_t *tp, body *btab, int64_t nobj);
+void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
 void WalkInitSrcPeriodic(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
