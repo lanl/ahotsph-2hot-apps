@@ -134,7 +134,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    continue;
 	if (Sub_Flags(daughters[i]) == 0) {
 	    bp = daughters[i]->ptr;
-	    VVV(tmp, = cmp->pos, - bp->pos);
+	    VVV(tmp, = bp->pos, - cmp->pos);
 	    newbmax = (float)0.;
 	    tmpsq = Dot(tmp, tmp);
 	    if (tmpsq != 0.F) {
@@ -146,7 +146,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    }
 	} else {
 	    dp = daughters[i]->ptr;
-	    VVV(tmp, = cmp->pos, - dp->pos);
+	    VVV(tmp, = dp->pos, -cmp->pos);
 	    newbmax = dp->bmax;
 	    tmpsq = Dot(tmp, tmp);
 	    cmp->B2 += dp->B2;
