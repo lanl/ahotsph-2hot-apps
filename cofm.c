@@ -230,7 +230,7 @@ void *CellFromCofm(cofmdata *cmp)
 	float B3, bmaxhalf, rcritmax;
 	float B2 = cmp->B2;
 #if defined(QUAD) || defined(HEXA)
-	double R2, R4, B4, B5;
+	double R2, R4, B4, B5, B6;
 #endif
 	float ptol;
 
@@ -294,7 +294,7 @@ void *CellFromCofm(cofmdata *cmp)
 	    R2 = 0.25*cmp->sz*cmp->sz;
 	    R4 = R2*R2;
 	    B3 = cmp->bmax*(cmp->x2+cmp->y2+cmp->z2)*R2; 	/* upper bound */
-	    B4 = (cmp->x4 + cmp->y4 + cmp->z4)*R4;
+	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2)*R4;
 	    if (!finite(B4) || !finite(B3))
 		Error("Bad B3 or B4, B2 = %g, massinv = %g\n", B2, cmp->massinv);
 	    rcritmax = abs_rcrit;
@@ -344,11 +344,12 @@ void *CellFromCofm(cofmdata *cmp)
 	if (Hexa_Ncut && (cmp->ndaughters >= Hexa_Ncut)) {
 	    R2 = 0.25*cmp->sz*cmp->sz;
 	    R4 = R2*R2;
-	    B5 = cmp->bmax*(cmp->x4+cmp->y4+cmp->z4)*R4; /* upper bound */
-	    if (!finite(B5) || !finite(cmp->B6))
+	    B5 = cmp->bmax*(cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2)*R4; /* upper bound */
+	    B6 = (cmp->B6+3*cmp->x4y2+3*cmp->x2y4+3*cmp->x4z2+6*cmp->x2y2z2+3*cmp->y4z2+3*cmp->x2z4+3*cmp->y2z4)*R4*R2;
+	    if (!finite(B5) || !finite(B6))
 		Error("Bad B5 or B6, B2 = %g, massinv = %g\n", B2, cmp->massinv);
 	    rcritmax = abs_rcrit;
-	    a[0] = 5.*cmp->B6*R4*R2;
+	    a[0] = 5.*B6;
 	    a[1] = -6.*B5;
 	    a[2] = 0.;
 	    a[3] = 0.;
@@ -361,7 +362,7 @@ void *CellFromCofm(cofmdata *cmp)
 	    abs_rcrit += 0.001*rcritmax;
 
 	    rcritmax = rel_rcrit0;
-	    a[0] = 5.*cmp->B6*R4*R2;
+	    a[0] = 5.*B6;
 	    a[1] = -6.*B5;
 	    a[2] = 0.;
 	    a[3] = 0.;
@@ -372,7 +373,7 @@ void *CellFromCofm(cofmdata *cmp)
 	    rel_rcrit0 += 0.001*rcritmax;
 
 	    rcritmax = rel_rcrit;
-	    a[0] = 5.*cmp->B6*R4*R2;
+	    a[0] = 5.*B6;
 	    a[1] = -6.*B5;
 	    a[2] = 0.;
 	    a[3] = 0.;
