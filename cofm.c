@@ -345,7 +345,8 @@ void *CellFromCofm(cofmdata *cmp)
 	    R2 = 0.25*cmp->sz*cmp->sz;
 	    R4 = R2*R2;
 	    B5 = cmp->bmax*(cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2)*R4; /* upper bound */
-	    B6 = (cmp->B6+3*cmp->x4y2+3*cmp->x2y4+3*cmp->x4z2+6*cmp->x2y2z2+3*cmp->y4z2+3*cmp->x2z4+3*cmp->y2z4)*R4*R2;
+	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2)*R4;
+	    B6 = B4*B4/cmp->B2;	/* lower bound */
 	    if (!finite(B5) || !finite(B6))
 		Error("Bad B5 or B6, B2 = %g, massinv = %g\n", B2, cmp->massinv);
 	    rcritmax = abs_rcrit;
@@ -480,8 +481,6 @@ mpole_add_mono(cofmdata *cmp, float m, float x, float y, float z, float Rinv)
     float x2, y2, z2;
     float x3, y3, z3;
     float x4, y4, z4;
-    float x5, y5, z5;
-    float x6, y6, z6;
 
     x *= Rinv;
     y *= Rinv;
@@ -523,16 +522,6 @@ mpole_add_mono(cofmdata *cmp, float m, float x, float y, float z, float Rinv)
     cmp->xz3 += m*x*z3;
     cmp->yz3 += m*y*z3;
     cmp->z4 += m*z4;
-
-    x5 = x4*x; y5 = y4*y; z5 = z4*z;
-
-    cmp->x5 += m*x5;
-    cmp->y5 += m*y5;
-    cmp->z5 += m*z5;
-
-    x6 = x5*x; y6 = y5*y; z6 = z5*z;
-
-    cmp->B6 += m * (x6 + y6 + z6);
 }
 
 static void
@@ -541,8 +530,6 @@ mpole_add_shift(cofmdata *cmp, float m, float x, float y, float z, float Rinv, c
     float x2, y2, z2;
     float x3, y3, z3;
     float x4, y4, z4;
-    float x5, y5, z5;
-    float x6, y6, z6;
 
     x *= Rinv;
     y *= Rinv;
@@ -584,16 +571,5 @@ mpole_add_shift(cofmdata *cmp, float m, float x, float y, float z, float Rinv, c
     cmp->xz3 += 0.0625f*dp->xz3 + 0.125f*dp->z3*x + 0.375f*dp->xz2*z + 0.75f*dp->z2*x*z + 0.75f*dp->xz*z2 + m*x*z3;
     cmp->yz3 += 0.0625f*dp->yz3 + 0.125f*dp->z3*y + 0.375f*dp->yz2*z + 0.75f*dp->z2*y*z + 0.75f*dp->yz*z2 + m*y*z3;
     cmp->z4 += 0.0625f*dp->z4 + 0.5f*dp->z3*z + 1.5f*dp->z2*z2 + m*z4;
-    
-    x5 = x4*x; y5 = y4*y; z5 = z4*z;
-    cmp->x5 += 0.03125f*dp->x5 + 0.3125f*dp->x4*x + 1.25f*dp->x3*x2 + 2.5f*dp->x2*x3 + m*x5;
-    cmp->y5 += 0.03125f*dp->y5 + 0.3125f*dp->y4*y + 1.25f*dp->y3*y2 + 2.5f*dp->y2*y3 + m*y5;
-    cmp->z5 += 0.03125f*dp->z5 + 0.3125f*dp->z4*z + 1.25f*dp->z3*z2 + 2.5f*dp->z2*z3 + m*z5;
-
-    x6 = x5*x; y6 = y5*y; z6 = z5*z;
-    cmp->B6 += 0.015625f*dp->B6;
-    cmp->B6 += 0.1875f*dp->x5*x + 0.9375f*dp->x4*x2 + 2.5f*dp->x3*x3 + 3.75f*dp->x2*x4 + m*x6;
-    cmp->B6 += 0.1875f*dp->y5*y + 0.9375f*dp->y4*y2 + 2.5f*dp->y3*y3 + 3.75f*dp->y2*y4 + m*y6;
-    cmp->B6 += 0.1875f*dp->z5*z + 0.9375f*dp->z4*z2 + 2.5f*dp->z3*z3 + 3.75f*dp->z2*z4 + m*z6;
 }
 #endif
