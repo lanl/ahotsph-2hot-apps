@@ -107,7 +107,7 @@ struct {
 #endif
 
 #ifdef HEXA
-#define HVECSZ (24576)
+#define HVECSZ (24576*2)
 struct {
     float mass[NSSE];
     float pos[NDIM][NSSE];

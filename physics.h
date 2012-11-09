@@ -154,6 +154,8 @@ typedef struct{
     double x2, xy, y2, xz, yz, z2;
     double x3, x2y, xy2, y3, x2z, xyz, y2z, xz2, yz2, z3;
     double x4, x3y, x2y2, xy3, y4, x3z, x2yz, xy2z, y3z, x2z2, xyz2, y2z2, xz3, yz3, z4;
+    double x5, x4y, x3y2, x2y3, xy4, y5, x4z, x3yz, x2y2z, xy3z, y4z, x3z2, x2yz2, xy2z2, y3z2, x2z3, xyz3, y2z3, xz4, yz4, z5;
+    double x6, x4y2, x2y4, y6, x4z2, x2y2z2, y4z2, x2z4, y2z4, z6;
 #endif
 } cofmdata;
 

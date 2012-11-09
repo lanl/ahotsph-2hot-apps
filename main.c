@@ -719,8 +719,8 @@ main(int argc, char *argv[])
 	}
 	AddCounter(&NbodyCnt, nobj);
 	AddCounter(&Ncell_local, ChnAllocCnt(&thetree.cellchn));
-	AddCounter(&Nquadcell_local, ChnAllocCnt(&thetree.quadcellchn));
-	AddCounter(&Nhexacell_local, ChnAllocCnt(&thetree.hexacellchn));
+	AddCounter(&Nquadcell_local, ChnAllocCnt(&thetree.cell2chn));
+	AddCounter(&Nhexacell_local, ChnAllocCnt(&thetree.cell4chn));
 
 	/* Could init in Inherit? */
 	for (p = btab; p < btab+nobj; p++) {
@@ -757,8 +757,8 @@ main(int argc, char *argv[])
 	/* This should be the high-water mark for memory use */
 	AddCounter(&MemCnt, malloc_used()/(1024*1024));
 	AddCounter(&Ncell, ChnAllocCnt(&thetree.cellchn));
-	AddCounter(&Nquadcell, ChnAllocCnt(&thetree.quadcellchn));
-	AddCounter(&Nhexacell, ChnAllocCnt(&thetree.hexacellchn));
+	AddCounter(&Nquadcell, ChnAllocCnt(&thetree.cell2chn));
+	AddCounter(&Nhexacell, ChnAllocCnt(&thetree.cell4chn));
 	AddCounter(&Ntbody, ChnAllocCnt(&thetree.tbodychn));
 	AddCounter(&Nhcell, ChnAllocCnt(&thetree.hcellchn));
 
