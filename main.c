@@ -512,6 +512,7 @@ main(int argc, char *argv[])
 
     singlPrintf("float errtol = %g;\n", tol);
     singlPrintf("float stol_max = %g;\n", stol_max);
+    singlPrintf("float ptol_boost = %g;\n", ptol_boost);
     singlPrintf("float dt = %g;\n", dt);
     singlPrintf("double tpos = %g;\n", tpos);
     singlPrintf("double tvel = %g;\n", tvel);

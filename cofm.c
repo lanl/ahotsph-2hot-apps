@@ -421,6 +421,7 @@ void *CellFromCofm(cofmdata *cmp)
 		cp->qxyyz = cmp->xy2z - txz;
 		cp->qyyyz = cmp->y3z - 3.0*tyz;
 	    }
+	    Msgf(("Cell4: %s\n", PrintCellContents4(cp)));
 	}
 #endif
     } else if(MACtype == BH_MAC) cp->rcrit = cmp->sz*invTol;
@@ -428,7 +429,6 @@ void *CellFromCofm(cofmdata *cmp)
     else Error("Bad MAC type (%d)\n", MACtype);
 
     cp->daughters = cmp->ndaughters;
-    Msgf(("Cell: %s\n", PrintCellContents(cp)));
     return cp;
 }
 

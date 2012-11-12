@@ -21,6 +21,24 @@ PrintCellContents(const hexacell *p)
 }
 
 char *
+PrintCellContents4(const hexacell *p)
+{
+    static char contents_string[256];
+
+    if( p == NULL){
+	sprintf(contents_string, "\t(null)");
+    }else{
+	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.4g %.4g %.4g\n"
+		"\t" Sinfix("%.4f", " "), 
+		Mass(p), p->daughters, p->bmax, p->rcrit, 
+		p->rcrit_q, p->rcrit_h,
+		Vinfix(Pos(p), COMMA));
+    }
+    return contents_string;
+}
+
+
+char *
 PrintBodyContents(const body *p)
 {
     static char contents_string[256];

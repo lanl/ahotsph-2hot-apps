@@ -209,6 +209,7 @@ void *CellFromCofm(cofmdata *cmp);
 
 /* In print.c */
 char *PrintCellContents(const hexacell *cp);
+char *PrintCellContents4(const hexacell *cp);
 char *PrintBodyContents(const body *bp);
 char *PrintBodyContentsLong(const body *vp);
 char *PrintBranch(const cofmdata *cmp);
