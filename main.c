@@ -709,6 +709,11 @@ main(int argc, char *argv[])
 	singlPrintf("BuildTree %d (%d), tol=%g\n", maxmem(), maxheap(), this_tol);
 
 	StartTimer(&BuildTot);
+        if (iter == 0) {	/* avoid poor load balance on first step */
+	    singlPrintf("preliminary BuildTree\n");
+            BuildTree(&thetree, &sortedbtab);
+            FreeTree(&thetree);
+        }
 	BuildTree(&thetree, &sortedbtab);
 	btab = sortedbtab.data;
 	nobj = sortedbtab.nobj;
@@ -1396,7 +1401,7 @@ FixCubeEwaldLE(body *btab, int nobj, const float *l, float gm, int nimage)
 	}
     }
 
-    calculate_cartesian_moments(btab, nobj, l[0]*2.0, Q);
+    calculate_cartesian_moments(btab, nobj, l[0]*2.0, Q, 0);
 
     Msgf(("grho %g 2*L*grho %g\n", grho, l[0]*2.0f*grho));
 

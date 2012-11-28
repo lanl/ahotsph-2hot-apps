@@ -145,7 +145,7 @@ ewald_le(const float xx[NDIM], double acc[NDIM], double *phi, float *Q, int nima
 }
 
 void
-calculate_cartesian_moments(body *btab, int nobj, double L, float *Q)
+calculate_cartesian_moments(body *btab, int nobj, double L, float *Q, int msb)
 {
     body *p;
     double m;
