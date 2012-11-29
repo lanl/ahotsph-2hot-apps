@@ -864,7 +864,7 @@ main(int argc, char *argv[])
 		   eps, this_eps_scaled, force_smoothing_type, this_tol, frac_tol, frac_tol0,
 		   R, N, write_nfiles, &ke, &pe, do_output, identsort_output,
 		   ic_Nmesh, ic_growthfac);
-	    MPMY_CheckpointFinished();
+	    if (do_checkpoint) MPMY_CheckpointFinished();
 	}
 
 	if (light_cone && do_output) {
