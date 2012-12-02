@@ -43,4 +43,17 @@ void FixNterms(body *btab, int nobj);
 #define CHUBITS ((KEYBITS-1)/NDIM)
 #define MAXCHU ((long long)1<<CHUBITS)
 
+/* Should go somewhere else */
+#define Square(x) ({ __typeof__ (x) _x = (x); _x*_x; })
+
+#define Max(a,b) \
+    ({ __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b; })
+
+#define Min(a,b) \
+    ({ __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b; })
+
 #endif

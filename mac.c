@@ -16,7 +16,9 @@ Counter_t CCIntRej;
 Counter_t TranslateCnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
-Timer_t MACTm;
+Timer_t MACTm, MACswzlTm;
+
+typedef float v4sf __attribute__ ((vector_size (16)));
 
 static int64_t GNobj, Nobj;
 static float Eps2, Eps;
@@ -82,57 +84,37 @@ SetGravOffset(float *off, int n)
 
 #define SVECSZ (5623) /* This should be dynamically extensible */
 struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
+    v4sf mass, x, y, z;
 } Svec[SVECSZ];
 
 #define MVECSZ (180073) /* This should be dynamically extensible */
 struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
+    v4sf mass, x, y, z;
 } Mvec[MVECSZ];
 
 #ifdef QUAD
 #define QVECSZ (7919)
-struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
-    float R[NSSE];
-    float qxx[NSSE];
-    float qxy[NSSE];
-    float qyy[NSSE];
-    float qxz[NSSE];
-    float qyz[NSSE];
+struct Qvec {
+    v4sf mass, x, y, z;
+    v4sf R;
+#ifdef DIPOLE
+    v4sf qx, qy, qz;
+#endif
+    v4sf qxx, qxy, qyy, qxz, qyz;
 } Qvec[QVECSZ];
 #endif
 
 #ifdef HEXA
 #define HVECSZ (24576*2)
-struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
-    float R[NSSE];
-    float qxx[NSSE];
-    float qxy[NSSE];
-    float qyy[NSSE];
-    float qxz[NSSE];
-    float qyz[NSSE];
-    float qxxx[NSSE];
-    float qxxy[NSSE];
-    float qxyy[NSSE];
-    float qyyy[NSSE];
-    float qxxz[NSSE];
-    float qxyz[NSSE];
-    float qyyz[NSSE];
-    float qxxxx[NSSE];
-    float qxxxy[NSSE];
-    float qxxyy[NSSE];
-    float qxyyy[NSSE];
-    float qyyyy[NSSE];
-    float qxxxz[NSSE];
-    float qxxyz[NSSE];
-    float qxyyz[NSSE];
-    float qyyyz[NSSE];
+struct Hvec {
+    v4sf mass, x, y, z;
+    v4sf R;
+#ifdef DIPOLE
+    v4sf qx, qy, qz;
+#endif
+    v4sf qxx, qxy, qyy, qxz, qyz;
+    v4sf qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
+    v4sf qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
 } Hvec[HVECSZ];
 #endif
 
@@ -288,8 +270,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	nn = from->hcnt;
 	while (nn % NSSE) {
 	    Hvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Hvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Hvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    Hvec[nn/NSSE].R[nn%NSSE] = 0.0f;
+#ifdef DIPOLE
+	    Hvec[nn/NSSE].qx[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].qy[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].qz[nn%NSSE] = 0.0f;
+#endif
 	    Hvec[nn/NSSE].qxx[nn%NSSE] = 0.0f;
 	    Hvec[nn/NSSE].qxy[nn%NSSE] = 0.0f;
 	    Hvec[nn/NSSE].qyy[nn%NSSE] = 0.0f;
@@ -325,8 +314,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	nn = from->qcnt;
 	while (nn % NSSE) {
 	    Qvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Qvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Qvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    Qvec[nn/NSSE].R[nn%NSSE] = 0.0f;
+#ifdef DIPOLE
+	    Qvec[nn/NSSE].qx[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].qy[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].qz[nn%NSSE] = 0.0f;
+#endif
 	    Qvec[nn/NSSE].qxx[nn%NSSE] = 0.0f;
 	    Qvec[nn/NSSE].qxy[nn%NSSE] = 0.0f;
 	    Qvec[nn/NSSE].qyy[nn%NSSE] = 0.0f;
@@ -345,7 +341,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	nn = from->mcnt;
 	while (nn % NSSE) {
 	    Mvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Mvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Mvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    nn++;
 	}
 	if ((long long)&Mvec[0] & 0xF || (long long)&Mvec[1] & 0xF)
@@ -359,7 +357,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
 	while (nn % NSSE) {
 	    Svec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Svec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Svec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Svec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Svec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    nn++;
 	}
 	if ((long long)&Svec[0] & 0xF || (long long)&Svec[1] & 0xF)
@@ -369,7 +369,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	AddCounter(&BSInt, from->scnt);
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
-	if (!finite(acc[0]) || !finite(acc[1]) || !finite(acc[2]) || !finite(phi)) {
+	if (!isfinite(acc[0]) || !isfinite(acc[1]) || !isfinite(acc[2]) || !isfinite(phi)) {
 	    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", from->pos[0], from->pos[1], from->pos[2],
 		  acc[0], acc[1], acc[2], phi);
 	}
@@ -493,7 +493,7 @@ mxn_hexa(Sink *to, hcell *pp)
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
     to->hcnt_done = n1*NSSE;
 
-    if (!finite(first->acc[0]) || !finite(first->acc[1]) || !finite(first->acc[2]) || !finite(first->phi)) {
+    if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
 	Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
 	      first->pos[0], first->pos[1], first->pos[2],
 	      first->acc[0], first->acc[1], first->acc[2], first->phi);
@@ -542,12 +542,16 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 	    dr2 = Dotx(dx, dx);
 	    if (dr2 > Eps2) {
 		Mvec[mcnt/NSSE].mass[mcnt%NSSE] = bp->mass;
-		VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
+		Mvec[mcnt/NSSE].x[mcnt%NSSE] = r0;
+		Mvec[mcnt/NSSE].y[mcnt%NSSE] = r1;
+		Mvec[mcnt/NSSE].z[mcnt%NSSE] = r2;
 		mcnt++;
 		if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
 	    } else if (dr2 > 0.0f) {
 		Svec[scnt/NSSE].mass[scnt%NSSE] = bp->mass;
-		VVx(Svec[scnt/NSSE].pos,[scnt%NSSE] = r);
+		Svec[scnt/NSSE].x[scnt%NSSE] = r0;
+		Svec[scnt/NSSE].y[scnt%NSSE] = r1;
+		Svec[scnt/NSSE].z[scnt%NSSE] = r2;
 		scnt++;
 		if (scnt/NSSE >= SVECSZ) Error("svec overflow\n");
 	    }
@@ -562,7 +566,9 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 
 	if (dr2 >= cp->rcrit*cp->rcrit) {
 	    Mvec[mcnt/NSSE].mass[mcnt%NSSE] = cp->mass;
-	    VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
+	    Mvec[mcnt/NSSE].x[mcnt%NSSE] = r0;
+	    Mvec[mcnt/NSSE].y[mcnt%NSSE] = r1;
+	    Mvec[mcnt/NSSE].z[mcnt%NSSE] = r2;
 	    mcnt++;
 	    if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
 	    interactions += cp->daughters;
@@ -571,8 +577,15 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 	} else if (Quad_Ncut && (cp->daughters >= Quad_Ncut) &&
 		   (dr2 > qcp->rcrit_q*qcp->rcrit_q)) {
 	    Qvec[qcnt/NSSE].mass[qcnt%NSSE] = qcp->mass;
-	    VVx(Qvec[qcnt/NSSE].pos,[qcnt%NSSE] = r);
-	    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->R;
+	    Qvec[qcnt/NSSE].x[qcnt%NSSE] = r0;
+	    Qvec[qcnt/NSSE].y[qcnt%NSSE] = r1;
+	    Qvec[qcnt/NSSE].z[qcnt%NSSE] = r2;
+	    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->bmax;
+#ifdef DIPOLE
+	    Qvec[qcnt/NSSE].qx[qcnt%NSSE] = qcp->qx;
+	    Qvec[qcnt/NSSE].qy[qcnt%NSSE] = qcp->qy;
+	    Qvec[qcnt/NSSE].qz[qcnt%NSSE] = qcp->qz;
+#endif
 	    Qvec[qcnt/NSSE].qxx[qcnt%NSSE] = qcp->qxx;
 	    Qvec[qcnt/NSSE].qxy[qcnt%NSSE] = qcp->qxy;
 	    Qvec[qcnt/NSSE].qyy[qcnt%NSSE] = qcp->qyy;
@@ -586,8 +599,15 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 	} else if (Hexa_Ncut && (cp->daughters >= Hexa_Ncut)
 		   && (dr2 > hcp->rcrit_h*hcp->rcrit_h)) {
 	    Hvec[hcnt/NSSE].mass[hcnt%NSSE] = hcp->mass;
-	    VVx(Hvec[hcnt/NSSE].pos,[hcnt%NSSE] = r);
-	    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->R;
+	    Hvec[hcnt/NSSE].x[hcnt%NSSE] = r0;
+	    Hvec[hcnt/NSSE].y[hcnt%NSSE] = r1;
+	    Hvec[hcnt/NSSE].z[hcnt%NSSE] = r2;
+	    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->bmax;
+#ifdef DIPOLE
+	    Hvec[hcnt/NSSE].qx[hcnt%NSSE] = hcp->qx;
+	    Hvec[hcnt/NSSE].qy[hcnt%NSSE] = hcp->qy;
+	    Hvec[hcnt/NSSE].qz[hcnt%NSSE] = hcp->qz;
+#endif
 	    Hvec[hcnt/NSSE].qxx[hcnt%NSSE] = hcp->qxx;
 	    Hvec[hcnt/NSSE].qxy[hcnt%NSSE] = hcp->qxy;
 	    Hvec[hcnt/NSSE].qyy[hcnt%NSSE] = hcp->qyy;
@@ -630,6 +650,7 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 }
 
 
+#if 0
 /* RcritMAC with Don't Laugh-like traversal */
 void
 DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
@@ -666,7 +687,9 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	    if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
 		/* cell-cell or body-cell */
 		Mvec[mcnt/NSSE].mass[mcnt%NSSE] = cp->mass;
-		VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
+		Mvec[mcnt/NSSE].x[mcnt%NSSE] = r0;
+		Mvec[mcnt/NSSE].y[mcnt%NSSE] = r1;
+		Mvec[mcnt/NSSE].z[mcnt%NSSE] = r2;
 		mcnt++;
 		if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
 		interactions += daughters;
@@ -678,14 +701,23 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		const quadcell *qcp = source_vec[i]->ptr;
 		rcrit = qcp->rcrit_q;
 		if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
+		    StartTimer(&MACswzlTm);
 		    Qvec[qcnt/NSSE].mass[qcnt%NSSE] = qcp->mass;
-		    VVx(Qvec[qcnt/NSSE].pos,[qcnt%NSSE] = r);
-		    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->R;
+		    Qvec[qcnt/NSSE].x[qcnt%NSSE] = r0;
+		    Qvec[qcnt/NSSE].y[qcnt%NSSE] = r1;
+		    Qvec[qcnt/NSSE].z[qcnt%NSSE] = r2;
+		    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->bmax;
+#ifdef DIPOLE
+		    Qvec[qcnt/NSSE].qx[qcnt%NSSE] = qcp->qx;
+		    Qvec[qcnt/NSSE].qy[qcnt%NSSE] = qcp->qy;
+		    Qvec[qcnt/NSSE].qz[qcnt%NSSE] = qcp->qz;
+#endif
 		    Qvec[qcnt/NSSE].qxx[qcnt%NSSE] = qcp->qxx;
 		    Qvec[qcnt/NSSE].qxy[qcnt%NSSE] = qcp->qxy;
 		    Qvec[qcnt/NSSE].qyy[qcnt%NSSE] = qcp->qyy;
 		    Qvec[qcnt/NSSE].qxz[qcnt%NSSE] = qcp->qxz;
 		    Qvec[qcnt/NSSE].qyz[qcnt%NSSE] = qcp->qyz;
+		    StopTimer(&MACswzlTm);
 		    qcnt++;
 		    if (qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
 		    interactions += daughters;
@@ -699,9 +731,17 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		const hexacell *hcp = source_vec[i]->ptr;
 		rcrit = hcp->rcrit_h;
 		if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
+		    StartTimer(&MACswzlTm);
 		    Hvec[hcnt/NSSE].mass[hcnt%NSSE] = hcp->mass;
-		    VVx(Hvec[hcnt/NSSE].pos,[hcnt%NSSE] = r);
-		    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->R;
+		    Hvec[hcnt/NSSE].x[hcnt%NSSE] = r0;
+		    Hvec[hcnt/NSSE].y[hcnt%NSSE] = r1;
+		    Hvec[hcnt/NSSE].z[hcnt%NSSE] = r2;
+		    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->bmax;
+#ifdef DIPOLE
+		    Hvec[hcnt/NSSE].qx[hcnt%NSSE] = hcp->qx;
+		    Hvec[hcnt/NSSE].qy[hcnt%NSSE] = hcp->qy;
+		    Hvec[hcnt/NSSE].qz[hcnt%NSSE] = hcp->qz;
+#endif
 		    Hvec[hcnt/NSSE].qxx[hcnt%NSSE] = hcp->qxx;
 		    Hvec[hcnt/NSSE].qxy[hcnt%NSSE] = hcp->qxy;
 		    Hvec[hcnt/NSSE].qyy[hcnt%NSSE] = hcp->qyy;
@@ -723,6 +763,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		    Hvec[hcnt/NSSE].qxxyz[hcnt%NSSE] = hcp->qxxyz;
 		    Hvec[hcnt/NSSE].qxyyz[hcnt%NSSE] = hcp->qxyyz;
 		    Hvec[hcnt/NSSE].qyyyz[hcnt%NSSE] = hcp->qyyyz;
+		    StopTimer(&MACswzlTm);
 		    hcnt++;
 		    if (hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 		    interactions += daughters;
@@ -745,12 +786,16 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	    dr2 = Dotx(dx, dx);
 	    if (dr2 > Eps2) {
 		Mvec[mcnt/NSSE].mass[mcnt%NSSE] = bp->mass;
-		VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
+		Mvec[mcnt/NSSE].x[mcnt%NSSE] = r0;
+		Mvec[mcnt/NSSE].y[mcnt%NSSE] = r1;
+		Mvec[mcnt/NSSE].z[mcnt%NSSE] = r2;
 		mcnt++;
 		if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
 	    } else if (dr2 > 0.0f) {
 		Svec[scnt/NSSE].mass[scnt%NSSE] = bp->mass;
-		VVx(Svec[scnt/NSSE].pos,[scnt%NSSE] = r);
+		Svec[scnt/NSSE].x[scnt%NSSE] = r0;
+		Svec[scnt/NSSE].y[scnt%NSSE] = r1;
+		Svec[scnt/NSSE].z[scnt%NSSE] = r2;
 		scnt++;
 		if (scnt/NSSE >= SVECSZ) Error("svec overflow\n");
 	    }
@@ -774,3 +819,438 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 #endif
     StopTimer(&MACTm);
 }
+
+/* Transpose the 4x4 matrix composed of row[0-3].  */
+#define _MM_TRANSPOSE4_PS(row0, row1, row2, row3)			\
+do {									\
+  v4sf __r0 = (row0), __r1 = (row1), __r2 = (row2), __r3 = (row3);	\
+  v4sf __t0 = __builtin_ia32_unpcklps (__r0, __r1);			\
+  v4sf __t1 = __builtin_ia32_unpcklps (__r2, __r3);			\
+  v4sf __t2 = __builtin_ia32_unpckhps (__r0, __r1);			\
+  v4sf __t3 = __builtin_ia32_unpckhps (__r2, __r3);			\
+  (row0) = __builtin_ia32_movlhps (__t0, __t1);				\
+  (row1) = __builtin_ia32_movhlps (__t1, __t0);				\
+  (row2) = __builtin_ia32_movlhps (__t2, __t3);				\
+  (row3) = __builtin_ia32_movhlps (__t3, __t2);				\
+} while (0)
+
+/* RcritMAC with Don't Laugh-like traversal */
+void
+DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+{
+    float dr2;
+    Vxd(float r);
+    Vxd(float dx);
+    int nh = 0, nq = 0, nm = 0, ns = 0;
+    const hexacell *hptr[n+NSSE]; /* could use struct, but would have padding */
+    const quadcell *qptr[n+NSSE];
+    v4sf hbuf[n+NSSE];
+    v4sf qbuf[n+NSSE];
+    v4sf mbuf[n+NSSE];
+    v4sf sbuf[n+NSSE];
+
+    StartTimer(&MACTm);
+    for (int i = 0; i < n; i++) {
+	if (Sub_Flags(source_vec[i])) {
+	    const cell *cp = source_vec[i]->ptr;
+	    const quadcell *qcp = source_vec[i]->ptr;
+	    const hexacell *hcp = source_vec[i]->ptr;
+	    VxVV(r, = cp->pos, + offset_vec[i]);
+	    VxVxV(dx, = r, - sink->pos);
+	    dr2 = Dotx(dx, dx);
+
+	    int isquad = Quad_Ncut && (cp->daughters >= Quad_Ncut);
+	    int ishexa = Hexa_Ncut && (cp->daughters >= Hexa_Ncut);
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    
+	    /* bmax is 0 if sink is a body */
+	    if (dr2 > Square(cp->rcrit + sink->bmax)) {
+		/* cell-cell or body-cell */
+		mbuf[nm++] = (v4sf){cp->mass, r0, r1, r2};
+		sink->interactions += cp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (isquad && dr2 > Square(qcp->rcrit_q + sink->bmax)) {
+		qptr[nq] = qcp;
+		qbuf[nq++] = (v4sf){cp->mass, r0, r1, r2};
+		sink->interactions += cp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + sink->bmax)) {
+		hptr[nh] = hcp;
+		hbuf[nh++] = (v4sf){cp->mass, r0, r1, r2};
+		sink->interactions += cp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if ((sink->bmax > DLmax) || (DLfac * sink->bmax > smallest_rcrit)) {
+		result[i] = sink->isbody ? MAC_ERROR : MAC_SPLIT_SINK;
+	    } else {
+		result[i] = MAC_SPLIT_SRC;
+	    }
+	} else if (sink->isbody) {
+	    /* body-body */
+	    const body *bp = source_vec[i]->ptr;
+	    VxVV(r, = bp->pos, + offset_vec[i]);
+	    VxVxV(dx, = r, - sink->pos);
+	    dr2 = Dotx(dx, dx);
+
+	    if (dr2 > Eps2) mbuf[nm++] = (v4sf){bp->mass, r0, r1, r2};
+	    else if (dr2 > 0.0f) sbuf[ns++] = (v4sf){bp->mass, r0, r1, r2};
+	    sink->interactions++;
+	    result[i] = MAC_ACCEPT;
+	} else {
+	    /* cell-body */
+	    /* Comparing dr2 with Eps2 only works for body-body interactions */
+	    result[i] = MAC_SPLIT_SINK;
+	}
+    }
+
+    StartTimer(&MACswzlTm);
+    hexacell hzero = {};
+    quadcell qzero = {};
+    int i, j, k, m;
+
+    j = sink->hcnt / NSSE;
+    k = sink->hcnt % NSSE;
+    m = k ? Min(NSSE-k, nh) : 0;
+    sink->hcnt += nh;
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n"); 
+    if (m) {
+	for (i = 0; i < m; i++) Hvec[j].mass[i+k] = hbuf[i][0];
+	for (i = 0; i < m; i++) Hvec[j].x[i+k] = hbuf[i][1];
+	for (i = 0; i < m; i++) Hvec[j].y[i+k] = hbuf[i][2];
+	for (i = 0; i < m; i++) Hvec[j].z[i+k] = hbuf[i][3];
+	for (i = 0; i < m; i++) Hvec[j].R[i+k] = hptr[i]->bmax;
+	for (i = 0; i < m; i++) Hvec[j].qx[i+k] = hptr[i]->qx;
+	for (i = 0; i < m; i++) Hvec[j].qy[i+k] = hptr[i]->qy;
+	for (i = 0; i < m; i++) Hvec[j].qz[i+k] = hptr[i]->qz;
+	for (i = 0; i < m; i++) Hvec[j].qxx[i+k] = hptr[i]->qxx;
+	for (i = 0; i < m; i++) Hvec[j].qxy[i+k] = hptr[i]->qxy;
+	for (i = 0; i < m; i++) Hvec[j].qyy[i+k] = hptr[i]->qyy;
+	for (i = 0; i < m; i++) Hvec[j].qxz[i+k] = hptr[i]->qxz;
+	for (i = 0; i < m; i++) Hvec[j].qyz[i+k] = hptr[i]->qyz;
+	for (i = 0; i < m; i++) Hvec[j].qxxx[i+k] = hptr[i]->qxxx;
+	for (i = 0; i < m; i++) Hvec[j].qxxy[i+k] = hptr[i]->qxxy;
+	for (i = 0; i < m; i++) Hvec[j].qxyy[i+k] = hptr[i]->qxyy;
+	for (i = 0; i < m; i++) Hvec[j].qyyy[i+k] = hptr[i]->qyyy;
+	for (i = 0; i < m; i++) Hvec[j].qxxz[i+k] = hptr[i]->qxxz;
+	for (i = 0; i < m; i++) Hvec[j].qxyz[i+k] = hptr[i]->qxyz;
+	for (i = 0; i < m; i++) Hvec[j].qyyz[i+k] = hptr[i]->qyyz;
+	for (i = 0; i < m; i++) Hvec[j].qxxxx[i+k] = hptr[i]->qxxxx;
+	for (i = 0; i < m; i++) Hvec[j].qxxxy[i+k] = hptr[i]->qxxxy;
+	for (i = 0; i < m; i++) Hvec[j].qxxyy[i+k] = hptr[i]->qxxyy;
+	for (i = 0; i < m; i++) Hvec[j].qxyyy[i+k] = hptr[i]->qxyyy;
+	for (i = 0; i < m; i++) Hvec[j].qyyyy[i+k] = hptr[i]->qyyyy;
+	for (i = 0; i < m; i++) Hvec[j].qxxxz[i+k] = hptr[i]->qxxxz;
+	for (i = 0; i < m; i++) Hvec[j].qxxyz[i+k] = hptr[i]->qxxyz;
+	for (i = 0; i < m; i++) Hvec[j].qxyyz[i+k] = hptr[i]->qxyyz;
+	for (i = 0; i < m; i++) Hvec[j].qyyyz[i+k] = hptr[i]->qyyyz;
+	j++;
+    }
+    for (i = nh; i < nh + NSSE; i++) {
+	hptr[i] = &hzero;
+	hbuf[i] = (v4sf){0.0f, 0.0f, 0.0f, 0.0f};
+    }
+    for (i = m; i < nh; i += NSSE, j++) {
+	v4sf r0 = hbuf[i+0];
+	v4sf r1 = hbuf[i+1];
+	v4sf r2 = hbuf[i+2];
+	v4sf r3 = hbuf[i+3];
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].mass = r0;
+	Hvec[j].x = r1;
+	Hvec[j].y = r2;
+	Hvec[j].z = r3;
+	r0 = __builtin_ia32_loadups(&hptr[i+0]->bmax);
+	r1 = __builtin_ia32_loadups(&hptr[i+1]->bmax);
+	r2 = __builtin_ia32_loadups(&hptr[i+2]->bmax);
+	r3 = __builtin_ia32_loadups(&hptr[i+3]->bmax);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].R = r0;
+	Hvec[j].qx = r1;
+	Hvec[j].qy = r2;
+	Hvec[j].qz = r3;
+	r0 = __builtin_ia32_loadups(&hptr[i+0]->qxx);
+	r1 = __builtin_ia32_loadups(&hptr[i+1]->qxx);
+	r2 = __builtin_ia32_loadups(&hptr[i+2]->qxx);
+	r3 = __builtin_ia32_loadups(&hptr[i+3]->qxx);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].qxx = r0;
+	Hvec[j].qxy = r1;
+	Hvec[j].qyy = r2;
+	Hvec[j].qxz = r3;
+	r0 = __builtin_ia32_loadups(&hptr[i+0]->qyz);
+	r1 = __builtin_ia32_loadups(&hptr[i+1]->qyz);
+	r2 = __builtin_ia32_loadups(&hptr[i+2]->qyz);
+	r3 = __builtin_ia32_loadups(&hptr[i+3]->qyz);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].qyz = r0;
+	Hvec[j].qxxx = r1;
+	Hvec[j].qxxy = r2;
+	Hvec[j].qxyy = r3;
+	r0 = __builtin_ia32_loadups(&hptr[i+0]->qyyy);
+	r1 = __builtin_ia32_loadups(&hptr[i+1]->qyyy);
+	r2 = __builtin_ia32_loadups(&hptr[i+2]->qyyy);
+	r3 = __builtin_ia32_loadups(&hptr[i+3]->qyyy);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].qyyy = r0;
+	Hvec[j].qxxz = r1;
+	Hvec[j].qxyz = r2;
+	Hvec[j].qyyz = r3;
+	r0 = __builtin_ia32_loadups(&hptr[i+0]->qxxxx);
+	r1 = __builtin_ia32_loadups(&hptr[i+1]->qxxxx);
+	r2 = __builtin_ia32_loadups(&hptr[i+2]->qxxxx);
+	r3 = __builtin_ia32_loadups(&hptr[i+3]->qxxxx);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].qxxxx = r0;
+	Hvec[j].qxxxy = r1;
+	Hvec[j].qxxyy = r2;
+	Hvec[j].qxyyy = r3;
+	r0 = __builtin_ia32_loadups(&hptr[i+0]->qyyyy);
+	r1 = __builtin_ia32_loadups(&hptr[i+1]->qyyyy);
+	r2 = __builtin_ia32_loadups(&hptr[i+2]->qyyyy);
+	r3 = __builtin_ia32_loadups(&hptr[i+3]->qyyyy);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Hvec[j].qyyyy = r0;
+	Hvec[j].qxxxz = r1;
+	Hvec[j].qxxyz = r2;
+	Hvec[j].qxyyz = r3;
+	Hvec[j].qyyyz = (v4sf){hptr[i]->qyyyz, hptr[i+1]->qyyyz, hptr[i+2]->qyyyz, hptr[i+3]->qyyyz};
+    }
+
+    j = sink->qcnt / NSSE;
+    k = sink->qcnt % NSSE;
+    m = k ? Min(NSSE-k, nq) : 0;
+    sink->qcnt += nq;
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n"); 
+    if (m) {
+	for (i = 0; i < m; i++) Qvec[j].mass[i+k] = qbuf[i][0];
+	for (i = 0; i < m; i++) Qvec[j].x[i+k] = qbuf[i][1];
+	for (i = 0; i < m; i++) Qvec[j].y[i+k] = qbuf[i][2];
+	for (i = 0; i < m; i++) Qvec[j].z[i+k] = qbuf[i][3];
+	for (i = 0; i < m; i++) Qvec[j].R[i+k] = qptr[i]->bmax;
+	for (i = 0; i < m; i++) Qvec[j].qx[i+k] = qptr[i]->qx;
+	for (i = 0; i < m; i++) Qvec[j].qy[i+k] = qptr[i]->qy;
+	for (i = 0; i < m; i++) Qvec[j].qz[i+k] = qptr[i]->qz;
+	for (i = 0; i < m; i++) Qvec[j].qxx[i+k] = qptr[i]->qxx;
+	for (i = 0; i < m; i++) Qvec[j].qxy[i+k] = qptr[i]->qxy;
+	for (i = 0; i < m; i++) Qvec[j].qyy[i+k] = qptr[i]->qyy;
+	for (i = 0; i < m; i++) Qvec[j].qxz[i+k] = qptr[i]->qxz;
+	for (i = 0; i < m; i++) Qvec[j].qyz[i+k] = qptr[i]->qyz;
+	j++;
+    }
+    for (i = nq; i < nq + NSSE; i++) {
+	qptr[i] = &qzero;
+	qbuf[i] = (v4sf){0.0f, 0.0f, 0.0f, 0.0f};
+    }
+    for (i = m; i < nq; i += NSSE, j++) {
+	v4sf r0 = qbuf[i+0];
+	v4sf r1 = qbuf[i+1];
+	v4sf r2 = qbuf[i+2];
+	v4sf r3 = qbuf[i+3];
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Qvec[j].mass = r0;
+	Qvec[j].x = r1;
+	Qvec[j].y = r2;
+	Qvec[j].z = r3;
+	r0 = __builtin_ia32_loadups(&qptr[i+0]->bmax);
+	r1 = __builtin_ia32_loadups(&qptr[i+1]->bmax);
+	r2 = __builtin_ia32_loadups(&qptr[i+2]->bmax);
+	r3 = __builtin_ia32_loadups(&qptr[i+3]->bmax);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Qvec[j].R = r0;
+	Qvec[j].qx = r1;
+	Qvec[j].qy = r2;
+	Qvec[j].qz = r3;
+	r0 = __builtin_ia32_loadups(&qptr[i+0]->qxx);
+	r1 = __builtin_ia32_loadups(&qptr[i+1]->qxx);
+	r2 = __builtin_ia32_loadups(&qptr[i+2]->qxx);
+	r3 = __builtin_ia32_loadups(&qptr[i+3]->qxx);
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Qvec[j].qxx = r0;
+	Qvec[j].qxy = r1;
+	Qvec[j].qyy = r2;
+	Qvec[j].qxz = r3;
+	Qvec[j].qyz = (v4sf){qptr[i]->qyz, qptr[i+1]->qyz, qptr[i+2]->qyz, qptr[i+3]->qyz};
+    }
+
+    j = sink->mcnt / NSSE;
+    k = sink->mcnt % NSSE;
+    m = k ? Min(NSSE-k, nm) : 0;
+    sink->mcnt += nm;
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n"); 
+    if (m) {
+	for (i = 0; i < m; i++) Mvec[j].mass[i+k] = mbuf[i][0];
+	for (i = 0; i < m; i++) Mvec[j].x[i+k] = mbuf[i][1];
+	for (i = 0; i < m; i++) Mvec[j].y[i+k] = mbuf[i][2];
+	for (i = 0; i < m; i++) Mvec[j].z[i+k] = mbuf[i][3];
+	j++;
+    }
+    for (i = nm; i < nm + NSSE; i++) {
+	mbuf[i] = (v4sf){0.0f, 0.0f, 0.0f, 0.0f};
+    }
+    for (i = m; i < nm; i += NSSE, j++) {
+	v4sf r0 = mbuf[i+0];
+	v4sf r1 = mbuf[i+1];
+	v4sf r2 = mbuf[i+2];
+	v4sf r3 = mbuf[i+3];
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Mvec[j].mass = r0;
+	Mvec[j].x = r1;
+	Mvec[j].y = r2;
+	Mvec[j].z = r3;
+    }
+
+    j = sink->scnt / NSSE;
+    k = sink->scnt % NSSE;
+    m = k ? Min(NSSE-k, ns) : 0;
+    sink->scnt += ns;
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n"); 
+    if (m) {
+	for (i = 0; i < m; i++) Svec[j].mass[i+k] = sbuf[i][0];
+	for (i = 0; i < m; i++) Svec[j].x[i+k] = sbuf[i][1];
+	for (i = 0; i < m; i++) Svec[j].y[i+k] = sbuf[i][2];
+	for (i = 0; i < m; i++) Svec[j].z[i+k] = sbuf[i][3];
+	j++;
+    }
+    for (i = ns; i < ns + NSSE; i++) {
+	sbuf[i] = (v4sf){0.0f, 0.0f, 0.0f, 0.0f};
+    }
+    for (i = m; i < ns; i += NSSE, j++) {
+	v4sf r0 = sbuf[i+0];
+	v4sf r1 = sbuf[i+1];
+	v4sf r2 = sbuf[i+2];
+	v4sf r3 = sbuf[i+3];
+	_MM_TRANSPOSE4_PS(r0, r1, r2, r3);
+	Svec[j].mass = r0;
+	Svec[j].x = r1;
+	Svec[j].y = r2;
+	Svec[j].z = r3;
+    }
+    StopTimer(&MACswzlTm);
+    StopTimer(&MACTm);
+}
+
+#else
+
+/* RcritMAC with Don't Laugh-like traversal */
+void
+DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+{
+    float dr2;
+    Vxd(float r);
+    Vxd(float dx);
+
+    StartTimer(&MACTm);
+    for (int i = 0; i < n; i++) {
+	if (Sub_Flags(source_vec[i])) {
+	    const cell *cp = source_vec[i]->ptr;
+	    const quadcell *qcp = source_vec[i]->ptr;
+	    const hexacell *hcp = source_vec[i]->ptr;
+	    VxVV(r, = cp->pos, + offset_vec[i]);
+	    VxVxV(dx, = r, - sink->pos);
+	    dr2 = Dotx(dx, dx);
+
+	    int isquad = Quad_Ncut && (cp->daughters >= Quad_Ncut);
+	    int ishexa = Hexa_Ncut && (cp->daughters >= Hexa_Ncut);
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    
+	    /* bmax is 0 if sink is a body */
+	    if (dr2 > Square(cp->rcrit + sink->bmax)) {
+		/* cell-cell or body-cell */
+		Mvec[sink->mcnt/NSSE].mass[sink->mcnt%NSSE] = cp->mass;
+		Mvec[sink->mcnt/NSSE].x[sink->mcnt%NSSE] = r0;
+		Mvec[sink->mcnt/NSSE].y[sink->mcnt%NSSE] = r1;
+		Mvec[sink->mcnt/NSSE].z[sink->mcnt%NSSE] = r2;
+		sink->mcnt++;
+		sink->interactions += cp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (isquad && dr2 > Square(qcp->rcrit_q + sink->bmax)) {
+		Qvec[sink->qcnt/NSSE].mass[sink->qcnt%NSSE] = qcp->mass;
+		Qvec[sink->qcnt/NSSE].x[sink->qcnt%NSSE] = r0;
+		Qvec[sink->qcnt/NSSE].y[sink->qcnt%NSSE] = r1;
+		Qvec[sink->qcnt/NSSE].z[sink->qcnt%NSSE] = r2;
+		Qvec[sink->qcnt/NSSE].R[sink->qcnt%NSSE] = qcp->bmax;
+		Qvec[sink->qcnt/NSSE].qx[sink->qcnt%NSSE] = qcp->qx;
+		Qvec[sink->qcnt/NSSE].qy[sink->qcnt%NSSE] = qcp->qy;
+		Qvec[sink->qcnt/NSSE].qz[sink->qcnt%NSSE] = qcp->qz;
+		Qvec[sink->qcnt/NSSE].qxx[sink->qcnt%NSSE] = qcp->qxx;
+		Qvec[sink->qcnt/NSSE].qxy[sink->qcnt%NSSE] = qcp->qxy;
+		Qvec[sink->qcnt/NSSE].qyy[sink->qcnt%NSSE] = qcp->qyy;
+		Qvec[sink->qcnt/NSSE].qxz[sink->qcnt%NSSE] = qcp->qxz;
+		Qvec[sink->qcnt/NSSE].qyz[sink->qcnt%NSSE] = qcp->qyz;
+		sink->qcnt++;
+		sink->interactions += qcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + sink->bmax)) {
+		Hvec[sink->hcnt/NSSE].mass[sink->hcnt%NSSE] = hcp->mass;
+		Hvec[sink->hcnt/NSSE].x[sink->hcnt%NSSE] = r0;
+		Hvec[sink->hcnt/NSSE].y[sink->hcnt%NSSE] = r1;
+		Hvec[sink->hcnt/NSSE].z[sink->hcnt%NSSE] = r2;
+		Hvec[sink->hcnt/NSSE].R[sink->hcnt%NSSE] = hcp->bmax;
+		Hvec[sink->hcnt/NSSE].qx[sink->hcnt%NSSE] = hcp->qx;
+		Hvec[sink->hcnt/NSSE].qy[sink->hcnt%NSSE] = hcp->qy;
+		Hvec[sink->hcnt/NSSE].qz[sink->hcnt%NSSE] = hcp->qz;
+		Hvec[sink->hcnt/NSSE].qxx[sink->hcnt%NSSE] = hcp->qxx;
+		Hvec[sink->hcnt/NSSE].qxy[sink->hcnt%NSSE] = hcp->qxy;
+		Hvec[sink->hcnt/NSSE].qyy[sink->hcnt%NSSE] = hcp->qyy;
+		Hvec[sink->hcnt/NSSE].qxz[sink->hcnt%NSSE] = hcp->qxz;
+		Hvec[sink->hcnt/NSSE].qyz[sink->hcnt%NSSE] = hcp->qyz;
+		Hvec[sink->hcnt/NSSE].qxxx[sink->hcnt%NSSE] = hcp->qxxx;
+		Hvec[sink->hcnt/NSSE].qxxy[sink->hcnt%NSSE] = hcp->qxxy;
+		Hvec[sink->hcnt/NSSE].qxyy[sink->hcnt%NSSE] = hcp->qxyy;
+		Hvec[sink->hcnt/NSSE].qyyy[sink->hcnt%NSSE] = hcp->qyyy;
+		Hvec[sink->hcnt/NSSE].qxxz[sink->hcnt%NSSE] = hcp->qxxz;
+		Hvec[sink->hcnt/NSSE].qxyz[sink->hcnt%NSSE] = hcp->qxyz;
+		Hvec[sink->hcnt/NSSE].qyyz[sink->hcnt%NSSE] = hcp->qyyz;
+		Hvec[sink->hcnt/NSSE].qxxxx[sink->hcnt%NSSE] = hcp->qxxxx;
+		Hvec[sink->hcnt/NSSE].qxxxy[sink->hcnt%NSSE] = hcp->qxxxy;
+		Hvec[sink->hcnt/NSSE].qxxyy[sink->hcnt%NSSE] = hcp->qxxyy;
+		Hvec[sink->hcnt/NSSE].qxyyy[sink->hcnt%NSSE] = hcp->qxyyy;
+		Hvec[sink->hcnt/NSSE].qyyyy[sink->hcnt%NSSE] = hcp->qyyyy;
+		Hvec[sink->hcnt/NSSE].qxxxz[sink->hcnt%NSSE] = hcp->qxxxz;
+		Hvec[sink->hcnt/NSSE].qxxyz[sink->hcnt%NSSE] = hcp->qxxyz;
+		Hvec[sink->hcnt/NSSE].qxyyz[sink->hcnt%NSSE] = hcp->qxyyz;
+		Hvec[sink->hcnt/NSSE].qyyyz[sink->hcnt%NSSE] = hcp->qyyyz;
+		sink->hcnt++;
+		sink->interactions += hcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if ((sink->bmax > DLmax) || (DLfac * sink->bmax > smallest_rcrit)) {
+		result[i] = sink->isbody ? MAC_ERROR : MAC_SPLIT_SINK;
+	    } else {
+		result[i] = MAC_SPLIT_SRC;
+	    }
+	} else if (sink->isbody) {
+	    /* body-body */
+	    const body *bp = source_vec[i]->ptr;
+	    VxVV(r, = bp->pos, + offset_vec[i]);
+	    VxVxV(dx, = r, - sink->pos);
+	    dr2 = Dotx(dx, dx);
+
+	    if (dr2 > Eps2) {
+		Mvec[sink->mcnt/NSSE].mass[sink->mcnt%NSSE] = bp->mass;
+		Mvec[sink->mcnt/NSSE].x[sink->mcnt%NSSE] = r0;
+		Mvec[sink->mcnt/NSSE].y[sink->mcnt%NSSE] = r1;
+		Mvec[sink->mcnt/NSSE].z[sink->mcnt%NSSE] = r2;
+		sink->mcnt++;
+	    } else if (dr2 > 0.0f) {
+		Svec[sink->scnt/NSSE].mass[sink->scnt%NSSE] = bp->mass;
+		Svec[sink->scnt/NSSE].x[sink->scnt%NSSE] = r0;
+		Svec[sink->scnt/NSSE].y[sink->scnt%NSSE] = r1;
+		Svec[sink->scnt/NSSE].z[sink->scnt%NSSE] = r2;
+		sink->scnt++;
+	    }
+	    sink->interactions++;
+	    result[i] = MAC_ACCEPT;
+	} else {
+	    /* cell-body */
+	    /* Comparing dr2 with Eps2 only works for body-body interactions */
+	    result[i] = MAC_SPLIT_SINK;
+	}
+    }
+    StopTimer(&MACTm);
+    
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
+}
+
+#endif

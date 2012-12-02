@@ -112,50 +112,64 @@ typedef struct  {
 typedef struct {
     float mass;
     float pos[NDIM];
-    float bmax, R, rcrit;
-    int padding;
+    float rcrit, R;
     int64_t daughters;
+    float rcrit_q;
+    float bmax;
 } cell, *cellptr;
 
 typedef struct {
     float mass;
     float pos[NDIM];
-    float bmax, R, rcrit;
-    int padding;
+    float rcrit_m, R;
     int64_t daughters;
     float rcrit_q;
+    float bmax;
+#ifdef DIPOLE
+    float qx, qy, qz;
+#else
+    int padding;
+#endif
     float qxx, qxy, qyy, qxz, qyz;
 } quadcell, *quadcellptr;
 
 typedef struct {
     float mass;
     float pos[NDIM];
-    float bmax, R, rcrit;
-    int padding;
+    float rcrit_m, R;
     int64_t daughters;
     float rcrit_q;
+    float bmax;
+#ifdef DIPOLE
+    float qx, qy, qz;
+#else
+    int padding;
+#endif
     float qxx, qxy, qyy, qxz, qyz;
-    float rcrit_h;
     float qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
     float qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
-    float padding_junk;
+    float rcrit_h;
 } hexacell, *hexacellptr;
 
 /* This is the intermediate data structure used to construct cofm */
 typedef struct{
-    float mass;
-    float pos[NDIM];
-    float massinv;
-    float bmax;
-    float B2;
-    float sz;
+    double m;
+    double center[NDIM];
+    double bmax;
+    double B2;
+    double sz;
     int64_t ndaughters;
-#if defined(QUAD) || defined(HEXA)
+#ifdef DIPOLE
+    double x, y, z;
+#endif
+#ifdef QUAD
     double x2, xy, y2, xz, yz, z2;
     double x3, x2y, xy2, y3, x2z, xyz, y2z, xz2, yz2, z3;
     double x4, x3y, x2y2, xy3, y4, x3z, x2yz, xy2z, y3z, x2z2, xyz2, y2z2, xz3, yz3, z4;
+#endif
+#ifdef HEXA
     double x5, x4y, x3y2, x2y3, xy4, y5, x4z, x3yz, x2y2z, xy3z, y4z, x3z2, x2yz2, xy2z2, y3z2, x2z3, xyz3, y2z3, xz4, yz4, z5;
-    double x6, x4y2, x2y4, y6, x4z2, x2y2z2, y4z2, x2z4, y2z4, z6;
+    double x6, x4y2, x2y4, y6, x4z2, x2y2z2, y4z2, x2z4, y2z4, z6; /* just the symmetric components */
 #endif
 } cofmdata;
 
@@ -202,20 +216,20 @@ extern Counter_t NbodyCnt;
 
 /* In cofm.c */
 void SetupCofm(int MACtype, float tol, float rel_tol, float rel_tol0, float R0, float ptol_boost,
-	       float stol_max, int qcut, int hcut,  tree_t *t);
+	       float stol_max, int qcut, int hcut, int geometric_center, tree_t *t);
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
 int CellSz(void *p);
 void *CellFromCofm(cofmdata *cmp);
 
 /* In print.c */
-char *PrintCellContents(const hexacell *cp);
+char *PrintCellContents(const cell *cp);
 char *PrintCellContents4(const hexacell *cp);
 char *PrintBodyContents(const body *bp);
 char *PrintBodyContentsLong(const body *vp);
 char *PrintBranch(const cofmdata *cmp);
 
 /* In mac.c */
-extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm;
+extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t FBC2Int, FBC4Int;
 extern Counter_t CCIntRej;

@@ -12,6 +12,10 @@
 static double ewx4, ewx2y2, ewx6, ewx4y2, ewx2y2z2, ewx8, ewx6y2, ewx4y4;
 static cartesian_moments CQ;
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 void
 ewald_background(const float xx[NDIM], float mass, double phicorr, double acc[NDIM], double *phi)
 {

@@ -70,10 +70,10 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 
 	    /* Prefetching improves uncached performance by 10-20% */
 	    /* __builtin_prefetch(f+j+32, 0, 3); */
-	    asm("prefetcht0 512(%rax)");
+	    __asm__("prefetcht0 512(%rax)");
 	    rinv = __builtin_ia32_rsqrtps(r2);
 
-	    asm("prefetcht0 576(%rax)");
+	    __asm__("prefetcht0 576(%rax)");
 	    /* Newton-Raphson */
 	    t = rinv;
 	    r2 *= rinv;
@@ -83,7 +83,7 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    rinv *= half;		/* flips sign to avoid storing -0.5 */
 	    /* end Newton-Raphson */
 	
-	    asm("prefetcht0 640(%rax)");
+	    __asm__("prefetcht0 640(%rax)");
 	    t = rinv;
 	    eqe = t*massp;
 	    rinv2 = t*t;
@@ -94,7 +94,7 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    a1 += y*eqe;
 	    a2 += z*eqe;
 
-	    asm("prefetcht0 704(%rax)");
+	    __asm__("prefetcht0 704(%rax)");
 	    t *= three;
 	    t *= rinv2;
 	    t *= R;
@@ -124,7 +124,7 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    a1 += y*eqe - eq1;
 	    a2 += z*eqe - eq2;
 
-	    asm("prefetcht0 768(%rax)");
+	    __asm__("prefetcht0 768(%rax)");
 	    t *= five;
 	    t *= rinv2;
 	    t *= R;
@@ -141,7 +141,7 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    xx -= zz;
 	    yy -= zz;
 
-	    asm("prefetcht0 832(%rax)");
+	    __asm__("prefetcht0 832(%rax)");
 	    eq0 = qxxx*xx;
 	    eq1 = qxyy*xy;
 	    eq2 = -(qxxx + qxyy);
@@ -171,7 +171,7 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    a1 += y*eqe - eq1;
 	    a2 += z*eqe - eq2;
 
-	    asm("prefetcht0 896(%rax)");
+	    __asm__("prefetcht0 896(%rax)");
 	    t *= seven*rinv2*R;
 	    xxy = y*xx;
 	    xyy = x*yy;
@@ -251,10 +251,10 @@ pQinteract(const float *p, float *accp, const int n, const int stride,
 
 	    r2 = x*x + y*y + z*z;
 
-	    asm("prefetcht0 512(%rax)");
+	    __asm__("prefetcht0 512(%rax)");
 	    rinv = __builtin_ia32_rsqrtps(r2);
 	
-	    asm("prefetcht0 576(%rax)");
+	    __asm__("prefetcht0 576(%rax)");
 	    /* Newton-Raphson */
 	    t = rinv;
 	    r2 *= rinv;
@@ -264,7 +264,7 @@ pQinteract(const float *p, float *accp, const int n, const int stride,
 	    rinv *= half;		/* flips sign to avoid storing -0.5 */
 	    /* end Newton-Raphson */
 	    
-	    asm("prefetcht0 640(%rax)");
+	    __asm__("prefetcht0 640(%rax)");
 	    t = rinv;
 	    eqe = t*massp;
 	    rinv2 = t*t;

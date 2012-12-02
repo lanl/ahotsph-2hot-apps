@@ -106,7 +106,7 @@ main(int argc, char *argv[])
     float CWfac, DLfac, DLmax;
     float ptol_boost;
     float stol_max;
-    int quad_ncut, hexa_ncut, mxn_hblock;
+    int quad_ncut, hexa_ncut, geometric_center, mxn_hblock;
     int ntimer_detail;
     int light_cone = 0;
     float lc_origin[NDIM] = {0.0f, 0.0f, 0.0f};
@@ -441,6 +441,7 @@ main(int argc, char *argv[])
     SDFgetfloatOrDefault(csdfp, "stol_max", &stol_max, 0.0);
     SDFgetintOrDefault(csdfp, "quad_ncut", &quad_ncut, 7);
     SDFgetintOrDefault(csdfp, "hexa_ncut", &hexa_ncut, 20);
+    SDFgetintOrDefault(csdfp, "geometric_center", &geometric_center, 0);
     SDFgetintOrDefault(csdfp, "mxn_hblock", &mxn_hblock, 4*1024);
     SDFgetfloatOrDie(csdfp, "dt", &dt_base); dt = dt_base;
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
@@ -532,6 +533,7 @@ main(int argc, char *argv[])
     singlPrintf("float frac_tol0 = %g;\n", frac_tol0);
     singlPrintf("int quad_ncut = %d;\n", quad_ncut);
     singlPrintf("int hexa_ncut = %d;\n", hexa_ncut);
+    singlPrintf("int geometric_center = %d;\n", geometric_center);
     singlPrintf("int mxn_hblock = %d;\n", mxn_hblock);
     singlPrintf("int body_size = %d;\n", sizeof(body));
     singlPrintf("int outbody_size = %d;\n", sizeof(outbody));
@@ -671,7 +673,7 @@ main(int argc, char *argv[])
 	    this_tol /= 3.0;
 	}
 	SetupCofm(MACtype, this_tol, frac_tol, frac_tol0, sysradius[0], ptol_boost, 
-		  stol_max, quad_ncut, hexa_ncut,  &thetree);
+		  stol_max, quad_ncut, hexa_ncut, geometric_center, &thetree);
 
 	if (do_cosmology && !do_periodic) {
 	    /* integer factor to keep error behavior identical to periodic */
@@ -748,7 +750,14 @@ main(int argc, char *argv[])
 
 	    singlPrintf("FindForces\n");
 	    StartTimer(&WNTTm);
-	    WalkNT(&thetree);
+	    if (MPMY_Procnum() == 131) {
+		#include <gperftools/profiler.h>
+		ProfilerStart("nlnprof.131");
+		WalkNT(&thetree);
+		ProfilerStop();
+	    } else {
+		WalkNT(&thetree);
+	    }
 	    StopTimer(&WNTTm);
 
 	    StartTimer(&WTermTm);
@@ -1157,6 +1166,7 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&GravHFTm, "HexaF Time");
     EnableCPUTimer(&GravTm, "Grav Time");
     EnableCPUTimer(&MACTm, "MAC Time");
+    EnableCPUTimer(&MACswzlTm, "MAC Swzl");
     EnableTimer(&WalkDeferTm, "Walk Defer");
     EnableTimer(&WTermTm, "WalkTerm");
     EnableTimer(&WNTTm, "WalkNT");
