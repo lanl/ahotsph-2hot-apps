@@ -15,7 +15,7 @@ PrintCellContents(const cell *p)
     }else{
 	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.2g\n"
 		"\t" Sinfix("%.4f", " "), 
-		Mass(p), p->daughters, p->bmax, p->rcrit, Vinfix(Pos(p), COMMA));
+		p->mass, p->daughters, p->bmax, p->rcrit, Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -30,9 +30,9 @@ PrintCellContents4(const hexacell *p)
     }else{
 	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.4g %.4g %.4g\n"
 		"\t" Sinfix("%.4f", " "), 
-		Mass(p), p->daughters, p->bmax, p->rcrit_m, 
+		p->mass, p->daughters, p->bmax, p->rcrit_m, 
 		p->rcrit_q, p->rcrit_h,
-		Vinfix(Pos(p), COMMA));
+		Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -48,8 +48,8 @@ PrintBodyContents(const body *p)
     }else{
 	sprintf(contents_string, "\tid:%ld, mass:%.4g\n"
 		"\t" Sinfix("%.4f", " "),
-		p->ident, Mass(p), 
-		Vinfix(Pos(p), COMMA));
+		p->ident, p->mass, 
+		Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -66,7 +66,7 @@ PrintBodyContentsLong(const body *p)
 	sprintf(contents_string, "\t@%#lx %7.4g\n"
 		"\t" Sinfix("%14.10f", " ")
 		" " Sinfix("%x", " "),
-		(unsigned long)p, Mass(p), Vinfix(Pos(p), COMMA),
+		(unsigned long)p, p->mass, Vinfix(p->pos, COMMA),
 		Vinfix( *(int *)&p->pos, COMMA));
     }
     return contents_string;

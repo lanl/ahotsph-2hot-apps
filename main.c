@@ -49,7 +49,8 @@ static void set_displacement(body *p, int n, double dt, cosmology *c,
 			     double *tpos, double *tvel, float noise, int do_periodic, ran_state *ranstate);
 static SDF *startup(int argc, char **argv);
 static void WrapPeriodic(body *bp, int n, float *rmin, float *rmax);
-static void FixCubeEwaldLE(body *b, int nobj, const float *l, float gm, int nimage);
+static void FixCubeEwaldLE(body *b, int nobj, const float *l, float gm, int nimage,
+			   int subtract_background);
 static void FixGlobalForce(body *bp, int n, cosmology *c, float real_time, int do_periodic);
 static void WriteLightCone(body *xptr, const int n, const double dt, const double dtv, 
 			   cosmology *c, double tpos, double tvel, char *name, char *tag,
@@ -83,8 +84,6 @@ main(int argc, char *argv[])
     int nobj;
     bodyptr btab;
     float eps;			/* smoothing scale */
-    float tol;			/* MAC tolerance */
-		/* for big MAC, this is multiplied by M/(rsize*rsize) */
     int i;
     float rmin[NDIM], rmax[NDIM];
     float sysradius[NDIM];
@@ -102,11 +101,8 @@ main(int argc, char *argv[])
     int force_smoothing_type;
     float comov_eps, comov_eps_Zmin;
     float this_eps, this_eps_scaled;
-    float frac_tol, frac_tol0, this_tol;
-    float CWfac, DLfac, DLmax;
-    float ptol_boost;
-    float stol_max;
-    int quad_ncut, hexa_ncut, geometric_center, mxn_hblock;
+    float CWfac;
+    int mxn_hblock;
     int ntimer_detail;
     int light_cone = 0;
     float lc_origin[NDIM] = {0.0f, 0.0f, 0.0f};
@@ -142,7 +138,6 @@ main(int argc, char *argv[])
     int read_nfiles, write_nfiles;
     int do_BH, do_DL, do_Bmax, do_Arel, do_n2_ewald;
     float n2_sample_frac;
-    int MACtype = BMAX_MAC;
     int image_freq, x_pixels, y_pixels, log_image;
     float image_size;
     double gnterms;
@@ -151,7 +146,6 @@ main(int argc, char *argv[])
     walkinit_t walk_init_src;
     inherit_t walk_inherit;
     pq_keyproto *getkey = (pq_keyproto *)GetKey;
-    macv_t mac;
     float R[NDIM];
     int N[NDIM];
     int timeout;
@@ -169,6 +163,7 @@ main(int argc, char *argv[])
 	{0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1.0};
     int ic_Nmesh;
     double ic_growthfac;
+    mac_s mac = {.type = AREL_MAC, .tol = 1e-3, .tree = &thetree};
 
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
@@ -276,7 +271,7 @@ main(int argc, char *argv[])
 	    SDFgetfloatOrDie(sdfp, "Rz",  &R[2]);
 	    /* integer factor to keep error behavior identical to periodic */
 	    Error("Need to fix this, using cosmo before it is set\n");
-	    VV(sysradius, = ((2.0+2e-6)/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
+	    VV(sysradius, = (2.0/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    VS(rmin, = -sysradius[NDIM-1]);
 	    VS(rmax, = sysradius[NDIM-1]);
 	    FixRsizeExact(rmin, rmax);
@@ -429,19 +424,20 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_Bmax", &do_Bmax, 0);
     SDFgetintOrDefault(csdfp, "do_Arel", &do_Arel, 0);
     if (do_BH || do_Bmax) 
-      SDFgetfloatOrDie(csdfp, "theta", &tol);
+      SDFgetfloatOrDie(csdfp, "theta", &mac.tol);
     else
-      SDFgetfloatOrDie(csdfp, "errtol", &tol);
-    SDFgetfloatOrDefault(csdfp, "frac_tol", &frac_tol, 0.0);
-    SDFgetfloatOrDefault(csdfp, "frac_tol0", &frac_tol0, 0.0);
+      SDFgetfloatOrDie(csdfp, "errtol", &mac.tol);
+    SDFgetfloatOrDefault(csdfp, "frac_tol", &mac.rel_tol, 0.0);
+    SDFgetfloatOrDefault(csdfp, "frac_tol0", &mac.rel_tol0, 0.0);
     SDFgetfloatOrDefault(csdfp, "CWfac", &CWfac, 0.0);
-    SDFgetfloatOrDefault(csdfp, "DLfac", &DLfac, 6.0);
-    SDFgetfloatOrDefault(csdfp, "DLmax", &DLmax, 10000.0);
-    SDFgetfloatOrDefault(csdfp, "ptol_boost", &ptol_boost, 0.0);
-    SDFgetfloatOrDefault(csdfp, "stol_max", &stol_max, 0.0);
-    SDFgetintOrDefault(csdfp, "quad_ncut", &quad_ncut, 7);
-    SDFgetintOrDefault(csdfp, "hexa_ncut", &hexa_ncut, 20);
-    SDFgetintOrDefault(csdfp, "geometric_center", &geometric_center, 0);
+    SDFgetfloatOrDefault(csdfp, "DLfac", &mac.dlfac, 6.0);
+    SDFgetfloatOrDefault(csdfp, "DLmax", &mac.dlmax, 10000.0);
+    SDFgetfloatOrDefault(csdfp, "ptol_boost", &mac.ptol_boost, 0.0);
+    SDFgetfloatOrDefault(csdfp, "stol_max", &mac.stol_max, 0.0);
+    SDFgetintOrDefault(csdfp, "quad_ncut", &mac.qcut, 7);
+    SDFgetintOrDefault(csdfp, "hexa_ncut", &mac.hcut, 20);
+    SDFgetintOrDefault(csdfp, "geometric_center", &mac.geometric_center, 0);
+    SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
     SDFgetintOrDefault(csdfp, "mxn_hblock", &mxn_hblock, 4*1024);
     SDFgetfloatOrDie(csdfp, "dt", &dt_base); dt = dt_base;
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
@@ -457,9 +453,9 @@ main(int argc, char *argv[])
 	SDFgetstringOrDefault(csdfp, "lc_name_suffix",lc_name_suffix, 
 			      sizeof(lc_name_suffix), "lc000");
     }
-    if (do_Bmax) MACtype = BMAX_MAC;
-    else if (do_BH) MACtype = BH_MAC;
-    else if (do_Arel) MACtype = AREL_MAC;
+    if (do_Bmax) mac.type = BMAX_MAC;
+    else if (do_BH) mac.type = BH_MAC;
+    else if (do_Arel) mac.type = AREL_MAC;
     else Error("No MAC specified\n");
 
     if (SDFhasname("a_outlist", csdfp)) {
@@ -511,9 +507,9 @@ main(int argc, char *argv[])
 	EnableTimer(&LightConeTm, "Light Cone");
     }
 
-    singlPrintf("float errtol = %g;\n", tol);
-    singlPrintf("float stol_max = %g;\n", stol_max);
-    singlPrintf("float ptol_boost = %g;\n", ptol_boost);
+    singlPrintf("float errtol = %g;\n", mac.tol);
+    singlPrintf("float stol_max = %g;\n", mac.stol_max);
+    singlPrintf("float ptol_boost = %g;\n", mac.ptol_boost);
     singlPrintf("float dt = %g;\n", dt);
     singlPrintf("double tpos = %g;\n", tpos);
     singlPrintf("double tvel = %g;\n", tvel);
@@ -527,13 +523,14 @@ main(int argc, char *argv[])
     singlPrintf("int do_Arel = %d;\n", do_Arel);
     singlPrintf("int do_DL = %d;\n", do_DL);
     singlPrintf("float CWfac = %.2f;\n", CWfac);
-    singlPrintf("float DLfac = %.2f;\n", DLfac);
-    singlPrintf("float DLmax = %g;\n", DLmax);
-    singlPrintf("float frac_tol = %g;\n", frac_tol);
-    singlPrintf("float frac_tol0 = %g;\n", frac_tol0);
-    singlPrintf("int quad_ncut = %d;\n", quad_ncut);
-    singlPrintf("int hexa_ncut = %d;\n", hexa_ncut);
-    singlPrintf("int geometric_center = %d;\n", geometric_center);
+    singlPrintf("float DLfac = %.2f;\n", mac.dlfac);
+    singlPrintf("float DLmax = %g;\n", mac.dlmax);
+    singlPrintf("float frac_tol = %g;\n", mac.rel_tol);
+    singlPrintf("float frac_tol0 = %g;\n", mac.rel_tol0);
+    singlPrintf("int quad_ncut = %d;\n", mac.qcut);
+    singlPrintf("int hexa_ncut = %d;\n", mac.hcut);
+    singlPrintf("int geometric_center = %d;\n", mac.geometric_center);
+    singlPrintf("int subtract_background = %d;\n", mac.subtract_background);
     singlPrintf("int mxn_hblock = %d;\n", mxn_hblock);
     singlPrintf("int body_size = %d;\n", sizeof(body));
     singlPrintf("int outbody_size = %d;\n", sizeof(outbody));
@@ -610,11 +607,11 @@ main(int argc, char *argv[])
 
 
     if (do_DL)
-      mac = (macv_t)DLRcritMAC;
+      mac.rcrit_func = (macv_t)DLRcritMAC;
     else
-      mac = (macv_t)RcritMAC;
+      mac.rcrit_func = (macv_t)RcritMAC;
 
-    this_tol = tol;
+    mac.this_tol = mac.tol;
 
     /* Initial conditions converted from other formats may not be wrapped */
     if (do_periodic) {
@@ -638,14 +635,13 @@ main(int argc, char *argv[])
 	if (do_cosmology) for (dt = dt_base; dt/tpos > dt_hiz_tol; dt *= 0.5) /* NULL */;
 
 	if (do_periodic) {
-	    float sysradius_plus[NDIM];
 	    if (do_cosmology) {
-		VV(sysradius_plus,  = ((1.0+1e-6)/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
+		VV(sysradius,  = (1.0/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    } else {
-		VV(sysradius_plus, = R);
+		VV(sysradius, = R);
 	    }
-	    VS(rmin, = -sysradius_plus[NDIM-1]); /* keep tree cells cubical */
-	    VS(rmax, = sysradius_plus[NDIM-1]);
+	    VS(rmin, = -sysradius[NDIM-1]); /* keep tree cells cubical */
+	    VS(rmax, = sysradius[NDIM-1]);
 	    FixRsizeExact(rmin, rmax);
 	} else {
 	    FindBbox(btab, nobj, rmin, rmax);
@@ -657,27 +653,29 @@ main(int argc, char *argv[])
 	      rmin[0], rmin[1], rmin[2], 
 	      rmax[0], rmax[1], rmax[2]);
 
-	
-	if (MACtype == AREL_MAC) {
+
+	if (mac.type == AREL_MAC) {
 	    /* Perhaps not what you expect for high-aspect volumes */
-	    this_tol = tol*mtot*5e5/((1.0+cosmo.z_at_t(&cosmo, tpos))*sysradius[0]*sysradius[0]*sysradius[0]);
+	    mac.this_tol = mac.tol*mtot*5e5/((1.0+cosmo.z_at_t(&cosmo, tpos))*sysradius[0]*sysradius[0]*sysradius[0]);
 	}
 	if (do_cosmology && Ztol) {
 	    double fac = cosmo.growthfac_at_t(&cosmo, tpos);
 	    if (Ztol == 2 && cosmo.z_at_t(&cosmo, tpos) > 30.0) {
 		double fac30 = cosmo.growthfac_at_t(&cosmo, tpos)/cosmo.growthfac_at_z(&cosmo, 30.0);
-		this_tol *= fac*fac30;
-	    } else this_tol *= fac;
+		mac.this_tol *= fac*fac30;
+	    } else mac.this_tol *= fac;
 	}
+	mac.r0 = sysradius[NDIM-1];
+	mac.nx = cbrt(gnobj);
+	mac.rho0 = mtot/(8.0*mac.r0*mac.r0*mac.r0);
 	if (setdisplacement) {
-	    this_tol /= 3.0;
+	    mac.this_tol /= 3.0;
 	}
-	SetupCofm(MACtype, this_tol, frac_tol, frac_tol0, sysradius[0], ptol_boost, 
-		  stol_max, quad_ncut, hexa_ncut, geometric_center, &thetree);
+	SetupCofm(&mac);
 
 	if (do_cosmology && !do_periodic) {
 	    /* integer factor to keep error behavior identical to periodic */
-	    VV(sysradius, = ((2.0+2e-6)/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
+	    VV(sysradius, = (2.0/(1.0 + cosmo.z_at_t(&cosmo, tpos)))*R);
 	    VS(rmin, = -sysradius[NDIM-1]);
 	    VS(rmax, = sysradius[NDIM-1]);
 	    FixRsizeExact(rmin, rmax);
@@ -694,8 +692,7 @@ main(int argc, char *argv[])
 	if (setdisplacement) this_eps /= 100.0;
 	this_eps_scaled = this_eps*pow(btab[0].mass, (float)(1./3.));
 
-	SetupGrav(cosmo.Gnewt, this_eps, gnobj, DLfac, 
-		  DLmax*cosmo.a_at_t(&cosmo,tpos), quad_ncut, hexa_ncut, 
+	SetupGrav(cosmo.Gnewt, this_eps, gnobj, &mac,
 		  btab[0].mass, force_smoothing_type);
 #ifdef BODY_HAS_KEY
 	FixKeys(btab, nobj, GetKey);
@@ -708,7 +705,7 @@ main(int argc, char *argv[])
 	    SetGravOffset(offset, nimage);
 	}
 
-	singlPrintf("BuildTree %d (%d), tol=%g\n", maxmem(), maxheap(), this_tol);
+	singlPrintf("BuildTree %d (%d), tol=%g\n", maxmem(), maxheap(), mac.this_tol);
 
 	StartTimer(&BuildTot);
         if (iter == 0) {	/* avoid poor load balance on first step */
@@ -745,12 +742,13 @@ main(int argc, char *argv[])
 	} else {
 	    StartTimer(&WITm);
 	    WalkInitSink(&thetree, btab, nobj, mxn_hblock);
-	    WalkInit(&thetree, &thetree, sizeof(Sink), walk_init_src, mac, walk_inherit);
+	    WalkInit(&thetree, &thetree, sizeof(Sink), walk_init_src, mac.rcrit_func, 
+		     walk_inherit);
 	    StopTimer(&WITm);
 
 	    singlPrintf("FindForces\n");
 	    StartTimer(&WNTTm);
-	    if (MPMY_Procnum() == 131) {
+	    if (0 && MPMY_Procnum() == 131) {
 		#include <gperftools/profiler.h>
 		ProfilerStart("nlnprof.131");
 		WalkNT(&thetree);
@@ -791,7 +789,8 @@ main(int argc, char *argv[])
 
 	if (do_periodic && !do_n2_ewald) {
 	    if (fix_cube_ewald_le) {
-		FixCubeEwaldLE(btab, nobj, sysradius, cosmo.Gnewt*mtot, nimage);
+		FixCubeEwaldLE(btab, nobj, sysradius, cosmo.Gnewt*mtot, nimage,
+			       mac.subtract_background);
 	    }
 	}
 
@@ -870,7 +869,8 @@ main(int argc, char *argv[])
 	if (do_output || do_checkpoint) {
 	    output(outnamebase, gnobj, nobj, btab, iter, dtout, dtvout,
 		   &cosmo, tpos, tvel, do_cosmology, do_periodic, 
-		   eps, this_eps_scaled, force_smoothing_type, this_tol, frac_tol, frac_tol0,
+		   eps, this_eps_scaled, force_smoothing_type, mac.this_tol, 
+		   mac.rel_tol, mac.rel_tol0,
 		   R, N, write_nfiles, &ke, &pe, do_output, identsort_output,
 		   ic_Nmesh, ic_growthfac);
 	    MPMY_CheckpointFinished();
@@ -1166,7 +1166,6 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&GravHFTm, "HexaF Time");
     EnableCPUTimer(&GravTm, "Grav Time");
     EnableCPUTimer(&MACTm, "MAC Time");
-    EnableCPUTimer(&MACswzlTm, "MAC Swzl");
     EnableTimer(&WalkDeferTm, "Walk Defer");
     EnableTimer(&WTermTm, "WalkTerm");
     EnableTimer(&WNTTm, "WalkNT");
@@ -1366,14 +1365,20 @@ WrapPeriodic(body *bp, int n, float *rmin, float *rmax)
     int fluxp[NDIM] = {0, 0, 0};
     int fluxm[NDIM] = {0, 0, 0};
     float sz[NDIM];
+    float center[NDIM];
+    float exact_rmin[NDIM]; /* match IntPos Key logic exactly */
+    float exact_rmax[NDIM];
 
     VVV(sz, = rmax, - rmin);
+    VVVS(center, = LPAREN rmax, + rmin, RPAREN*0.5f);
+    VVV(exact_rmin, = -0.5f*sz, + center);
+    VVV(exact_rmax, = exact_rmin, + sz);
 
     for(b=bp; b<&bp[n]; b++) {
-	VVVS(if LPAREN b->pos, > rmax, RPAREN fluxp, += 1);
-	VVVV(if LPAREN b->pos, > rmax, RPAREN b->pos, -= sz);
-	VVVS(if LPAREN b->pos, < rmin, RPAREN fluxm, += 1);
-	VVVV(if LPAREN b->pos, < rmin, RPAREN b->pos, += sz);
+	VVVS(if LPAREN b->pos, >= exact_rmax, RPAREN fluxp, += 1);
+	VVVV(if LPAREN b->pos, >= exact_rmax, RPAREN b->pos, -= sz);
+	VVVS(if LPAREN b->pos, < exact_rmin, RPAREN fluxm, += 1);
+	VVVV(if LPAREN b->pos, < exact_rmin, RPAREN b->pos, += sz);
     }
     MPMY_Combine(fluxp, fluxp, NDIM, MPMY_INT, MPMY_SUM);
     MPMY_Combine(fluxm, fluxm, NDIM, MPMY_INT, MPMY_SUM);
@@ -1388,7 +1393,8 @@ WrapPeriodic(body *bp, int n, float *rmin, float *rmax)
 static float Q[1716];
 
 static void 
-FixCubeEwaldLE(body *btab, int nobj, const float *l, float gm, int nimage)
+FixCubeEwaldLE(body *btab, int nobj, const float *l, float gm, int nimage,
+	       int subtract_background)
 
 {
     float r[NDIM];
@@ -1411,18 +1417,20 @@ FixCubeEwaldLE(body *btab, int nobj, const float *l, float gm, int nimage)
 	}
     }
 
-    calculate_cartesian_moments(btab, nobj, l[0]*2.0, Q, 0);
+    calculate_cartesian_moments(btab, nobj, l[0]*2.0, Q, subtract_background);
 
     Msgf(("grho %g 2*L*grho %g\n", grho, l[0]*2.0f*grho));
 
-    for (p = btab; p < btab+nobj; p++) {
-	VV(r, = p->pos);
-	VS(r, /= l[0]*2.0f);
-	ewald_background(r, p->mass, phicorr, f, &phi);
-	VS(f, *= l[0]*2.0f*grho);
-	VV(p->acc, += f);
-	phi *= l[0]*l[0]*4.0f*grho;
-	p->phi += phi;
+    if (1 /* DEBUG */ || !subtract_background) {
+	for (p = btab; p < btab+nobj; p++) {
+	    VV(r, = p->pos);
+	    VS(r, /= l[0]*2.0f);
+	    ewald_background(r, p->mass, phicorr, f, &phi);
+	    VS(f, *= l[0]*2.0f*grho);
+	    VV(p->acc, += f);
+	    phi *= l[0]*l[0]*4.0f*grho;
+	    p->phi += phi;
+	}
     }
 
     for (p = btab; p < btab+nobj; p++) {

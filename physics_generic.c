@@ -34,7 +34,7 @@ typedef struct{float pos[NDIM];} cell;
 #endif
 
 /* Used below to give a bit of extra breathing space to rsize/rmin */
-#define RSIZE_EPS  (.005)
+#define RSIZE_EPS  (1e-7)
 
 static float Rmin[NDIM], Rsize;
 static float keyfactor;
@@ -103,7 +103,7 @@ FixRsizeExact(float *rmin, float *rmax)
     float center[NDIM];
 
     VVV( size, = rmax, - rmin );
-    VVVS( center, = LPAREN rmax, + rmin, RPAREN*0.5 );
+    VVVS( center, = LPAREN rmax, + rmin, RPAREN*0.5f );
     d = size[0];
 #if NDIM > 1
     if( d < size[1] ) d = size[1];
@@ -111,8 +111,8 @@ FixRsizeExact(float *rmin, float *rmax)
     if( d < size[2] ) d = size[2];
 #endif
 #endif
-    VV( Rmin, = -0.5*d + center );
-    keyfactor = MAXCHU/d;
+    VV( Rmin, = -0.5f*d + center );
+    keyfactor = (float)(1.0-RSIZE_EPS)*MAXCHU/d; /* Does this affect CellCorner? */
     Rsize = d;
     Msgf(("Fixrsize: rmin=(" Sinfix("%g", " ") "), Rsize=%g, keyfactor=%g\n",
 	  Vinfix(Rmin, COMMA), Rsize, keyfactor));
@@ -120,21 +120,6 @@ FixRsizeExact(float *rmin, float *rmax)
 }    
 
 static void IntPos(const body *p, unsigned int *xp){
-    float pos[NDIM];	/* pos might be double */
-
-    VV(pos, = p->pos);
-    /* How expensive is this test??? */
-    if( VVinfix(pos, < Rmin, ||) || VVinfix(pos, >Rsize+Rmin, ||) ){
-	Msg_do("Rsize=%g\n", Rsize);
-	Msg_do("pos=" Sinfix("%g", " ")"\n", Vinfix(pos, COMMA));
-	Msg_do("Rmin=" Sinfix("%g", " ")"\n", Vinfix(Rmin, COMMA));
-	Msg_do("Rmax=" Sinfix("%g", " ")"\n", Vinfix(Rsize+Rmin, COMMA));
-	Error("Pos outside universe!\n");
-    }
-    VVVS( xp, = (int)LPAREN keyfactor*LPAREN pos, - Rmin, RPAREN RPAREN );
-}
-
-static void IntPosLong(const body *p, unsigned long long *xp){
     float pos[NDIM];	/* pos might be double */
 
     VV(pos, = p->pos);

@@ -1,5 +1,8 @@
 /* #define NOTIMERS */
 
+#ifndef NDEBUG
+#include <stdio.h>
+#endif
 #include <math.h>
 #include "order.h"
 #include "physics.h"
@@ -16,17 +19,18 @@ Counter_t CCIntRej;
 Counter_t TranslateCnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
-Timer_t MACTm, MACswzlTm;
+Timer_t MACTm;
+
+int WatchId = 0;
 
 typedef float v4sf __attribute__ ((vector_size (16)));
 
+static v4sf Eps2v;
 static int64_t GNobj, Nobj;
 static float Eps2, Eps;
 static int Smooth_type;
 static float GNewt;
-static float DLfac, DLmax;
-static int Quad_Ncut = 7;
-static int Hexa_Ncut = 20;
+static const mac_s *mac;
 #define MAX_IMAGE 125
 static int Nimage = 1;
 static float offset_array[MAX_IMAGE][NDIM];
@@ -120,16 +124,13 @@ struct Hvec {
 
 
 void
-SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max,
-	  int qcut, int hcut, float particle_mass, int smooth_type)
+SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
+	  float particle_mass, int smooth_type)
 {
     GNewt = newton_const;
     Smooth_type = smooth_type;
     GNobj = gnobj;
-    DLfac = dl_fac;
-    DLmax = dl_max;
-    Quad_Ncut = qcut;
-    Hexa_Ncut = hcut;
+    mac = m;
     if (smooth_type == 0) {
 	Eps = e;
 	Sinteract = Minteract = Arch(do_gravp);
@@ -162,6 +163,7 @@ SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max
 	Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
+    Eps2v = (v4sf){Eps2, Eps2, Eps2, Eps2};
 }
 
 void Nlognmacv(Sink *sink, const hcell **source_vec, int *result, int);
@@ -249,8 +251,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	/* must init mtot or else you get quiet exceptions in asm code */
 	float mtot = 0.0f;
 	int ijunk = 0, nn;
-	float acc[NDIM];
-	float phi;
+	float acc[NDIM], phi;
+	float accd[NDIM], phid;
+
 	float e;
 
 	VS(acc, = 0.0f);
@@ -304,10 +307,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Hvec[0] & 0xF || (long long)&Hvec[1] & 0xF)
 	  Error("Hvec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Hinteract((float *)&Hvec[from->hcnt_done/NSSE], (float *)&Hvec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
 	AddCounter(&BC4Int, from->hcnt-from->hcnt_done);
 	StopTimer(&GravHTm);
+	VV(acc, += accd); phi += phid;
+	if (bp->ident == WatchId) 
+	    printf("p4 %12g %12g %12g %d\n", acc[0], acc[1], acc[2], from->hcnt);
 #endif
 #ifdef QUAD
 	StartTimer(&GravQTm);
@@ -332,10 +339,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Qvec[0] & 0xF || (long long)&Qvec[1] & 0xF)
 	  Error("Qvec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Qinteract((float *)&Qvec[from->qcnt_done/NSSE], (float *)&Qvec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+	if (bp->ident == WatchId) 
+	    printf("p2 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->qcnt);
 	AddCounter(&BC2Int, from->qcnt-from->qcnt_done);
 	StopTimer(&GravQTm);
+	VV(acc, += accd); phi += phid;
 #endif
 	StartTimer(&GravMTm);
 	nn = from->mcnt;
@@ -348,10 +359,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Mvec[0] & 0xF || (long long)&Mvec[1] & 0xF)
 	  Error("Mvec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Minteract((float *)&Mvec[0], (float *)&Mvec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+	if (bp->ident == WatchId) 
+	    printf("p1 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->mcnt);
 	AddCounter(&BCInt, from->mcnt);
 	StopTimer(&GravMTm);
+	VV(acc, += accd); phi += phid;
 	StartTimer(&GravSTm);
 	nn = from->scnt;
 	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
@@ -364,11 +379,13 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Svec[0] & 0xF || (long long)&Svec[1] & 0xF)
 	  Error("Svec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Sinteract((float *)&Svec[0], (float *)&Svec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
 	AddCounter(&BSInt, from->scnt);
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
+	VV(acc, += accd); phi += phid;
 	if (!isfinite(acc[0]) || !isfinite(acc[1]) || !isfinite(acc[2]) || !isfinite(phi)) {
 	    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", from->pos[0], from->pos[1], from->pos[2],
 		  acc[0], acc[1], acc[2], phi);
@@ -386,7 +403,11 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	bp->phi *= GNewt;
 	VV(bp->acc, -= from->M1);
 	VV(bp->acc, += acc);
+	if (bp->ident == WatchId)
+	    printf("a %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
 	VS(bp->acc, *= GNewt);
+	if (bp->ident == WatchId)
+	    printf("g %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
 	bp->nterms += from->nterms + from->scnt + from->mcnt 
 #ifdef QUAD
 	    + QUAD_COST*from->qcnt 
@@ -505,6 +526,7 @@ mxn_hexa(Sink *to, hcell *pp)
 void
 RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
 {
+#if 0
     VxdV(float pos_sink, = sink->pos);
     int mcnt = sink->mcnt;
     int scnt = sink->scnt;
@@ -647,7 +669,22 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
     sink->hcnt = hcnt;
 #endif
     StopTimer(&MACTm);
+#endif
 }
+
+/* Transpose the 4x4 matrix composed of row[0-3].  */
+#define _MM_TRANSPOSE4_PS(row0, row1, row2, row3)			\
+do {									\
+  v4sf __r0 = (row0), __r1 = (row1), __r2 = (row2), __r3 = (row3);	\
+  v4sf __t0 = __builtin_ia32_unpcklps (__r0, __r1);			\
+  v4sf __t1 = __builtin_ia32_unpcklps (__r2, __r3);			\
+  v4sf __t2 = __builtin_ia32_unpckhps (__r0, __r1);			\
+  v4sf __t3 = __builtin_ia32_unpckhps (__r2, __r3);			\
+  (row0) = __builtin_ia32_movlhps (__t0, __t1);				\
+  (row1) = __builtin_ia32_movhlps (__t1, __t0);				\
+  (row2) = __builtin_ia32_movlhps (__t2, __t3);				\
+  (row3) = __builtin_ia32_movhlps (__t3, __t2);				\
+} while (0)
 
 
 #if 0
@@ -701,7 +738,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		const quadcell *qcp = source_vec[i]->ptr;
 		rcrit = qcp->rcrit_q;
 		if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
-		    StartTimer(&MACswzlTm);
 		    Qvec[qcnt/NSSE].mass[qcnt%NSSE] = qcp->mass;
 		    Qvec[qcnt/NSSE].x[qcnt%NSSE] = r0;
 		    Qvec[qcnt/NSSE].y[qcnt%NSSE] = r1;
@@ -717,7 +753,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		    Qvec[qcnt/NSSE].qyy[qcnt%NSSE] = qcp->qyy;
 		    Qvec[qcnt/NSSE].qxz[qcnt%NSSE] = qcp->qxz;
 		    Qvec[qcnt/NSSE].qyz[qcnt%NSSE] = qcp->qyz;
-		    StopTimer(&MACswzlTm);
 		    qcnt++;
 		    if (qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
 		    interactions += daughters;
@@ -731,7 +766,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		const hexacell *hcp = source_vec[i]->ptr;
 		rcrit = hcp->rcrit_h;
 		if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
-		    StartTimer(&MACswzlTm);
 		    Hvec[hcnt/NSSE].mass[hcnt%NSSE] = hcp->mass;
 		    Hvec[hcnt/NSSE].x[hcnt%NSSE] = r0;
 		    Hvec[hcnt/NSSE].y[hcnt%NSSE] = r1;
@@ -763,7 +797,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		    Hvec[hcnt/NSSE].qxxyz[hcnt%NSSE] = hcp->qxxyz;
 		    Hvec[hcnt/NSSE].qxyyz[hcnt%NSSE] = hcp->qxyyz;
 		    Hvec[hcnt/NSSE].qyyyz[hcnt%NSSE] = hcp->qyyyz;
-		    StopTimer(&MACswzlTm);
 		    hcnt++;
 		    if (hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 		    interactions += daughters;
@@ -772,7 +805,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		}
 	    }
 #endif
-	    if ((bmax > DLmax) || (DLfac * bmax > rcrit)) {
+	    if ((bmax > mac->dlmax) || (mac->dlfac * bmax > rcrit)) {
 		result[i] = MAC_SPLIT_SINK;
 		if (sink->isbody) Error("Trying to split body\n");
 	    } else {
@@ -820,20 +853,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
     StopTimer(&MACTm);
 }
 
-/* Transpose the 4x4 matrix composed of row[0-3].  */
-#define _MM_TRANSPOSE4_PS(row0, row1, row2, row3)			\
-do {									\
-  v4sf __r0 = (row0), __r1 = (row1), __r2 = (row2), __r3 = (row3);	\
-  v4sf __t0 = __builtin_ia32_unpcklps (__r0, __r1);			\
-  v4sf __t1 = __builtin_ia32_unpcklps (__r2, __r3);			\
-  v4sf __t2 = __builtin_ia32_unpckhps (__r0, __r1);			\
-  v4sf __t3 = __builtin_ia32_unpckhps (__r2, __r3);			\
-  (row0) = __builtin_ia32_movlhps (__t0, __t1);				\
-  (row1) = __builtin_ia32_movhlps (__t1, __t0);				\
-  (row2) = __builtin_ia32_movlhps (__t2, __t3);				\
-  (row3) = __builtin_ia32_movhlps (__t3, __t2);				\
-} while (0)
-
 /* RcritMAC with Don't Laugh-like traversal */
 void
 DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
@@ -879,7 +898,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 		hbuf[nh++] = (v4sf){cp->mass, r0, r1, r2};
 		sink->interactions += cp->daughters;
 		result[i] = MAC_ACCEPT;
-	    } else if ((sink->bmax > DLmax) || (DLfac * sink->bmax > smallest_rcrit)) {
+	    } else if ((sink->bmax > mac->dlmax) || (mac->dlfac * sink->bmax > smallest_rcrit)) {
 		result[i] = sink->isbody ? MAC_ERROR : MAC_SPLIT_SINK;
 	    } else {
 		result[i] = MAC_SPLIT_SRC;
@@ -902,7 +921,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	}
     }
 
-    StartTimer(&MACswzlTm);
     hexacell hzero = {};
     quadcell qzero = {};
     int i, j, k, m;
@@ -1124,125 +1142,355 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	Svec[j].y = r2;
 	Svec[j].z = r3;
     }
-    StopTimer(&MACswzlTm);
     StopTimer(&MACTm);
 }
 
-#else
+
+#define appendMvec(mxyz, p) \
+    do { \
+      int _i = sink->mcnt/NSSE; \
+      int _j = sink->mcnt%NSSE;	 \
+      Mvec[_i].mass[_j] = mxyz[0]; \
+      Mvec[_i].x[_j] = mxyz[1]; \
+      Mvec[_i].y[_j] = mxyz[2]; \
+      Mvec[_i].z[_j] = mxyz[3]; \
+      sink->mcnt++;		\
+    } while(0)
+
+#define appendSvec(mxyz, p) \
+    do { \
+      int _i = sink->scnt/NSSE; \
+      int _j = sink->scnt%NSSE;	 \
+      Svec[_i].mass[_j] = mxyz[0]; \
+      Svec[_i].x[_j] = mxyz[1]; \
+      Svec[_i].y[_j] = mxyz[2]; \
+      Svec[_i].z[_j] = mxyz[3]; \
+      sink->scnt++;		\
+    } while(0)
+
+#define appendQvec(mxyz, p) \
+    do { \
+      int _i = sink->qcnt/NSSE; \
+      int _j = sink->qcnt%NSSE;	 \
+      Qvec[_i].mass[_j] = mxyz[0]; \
+      Qvec[_i].x[_j] = mxyz[1]; \
+      Qvec[_i].y[_j] = mxyz[2]; \
+      Qvec[_i].z[_j] = mxyz[3]; \
+      Qvec[_i].R[_j] = (p)->bmax; \
+      Qvec[_i].qx[_j] = (p)->qx; \
+      Qvec[_i].qy[_j] = (p)->qy; \
+      Qvec[_i].qz[_j] = (p)->qz; \
+      Qvec[_i].qxx[_j] = (p)->qxx; \
+      Qvec[_i].qxy[_j] = (p)->qxy; \
+      Qvec[_i].qyy[_j] = (p)->qyy; \
+      Qvec[_i].qxz[_j] = (p)->qxz; \
+      Qvec[_i].qyz[_j] = (p)->qyz; \
+      sink->qcnt++;		\
+    } while(0)
+
+#define appendHvec(mxyz, p) \
+    do { \
+      int _i = sink->hcnt/NSSE; \
+      int _j = sink->hcnt%NSSE;	 \
+      Hvec[_i].mass[_j] = mxyz[0]; \
+      Hvec[_i].x[_j] = mxyz[1]; \
+      Hvec[_i].y[_j] = mxyz[2]; \
+      Hvec[_i].z[_j] = mxyz[3]; \
+      Hvec[_i].R[_j] = (p)->bmax; \
+      Hvec[_i].qx[_j] = (p)->qx; \
+      Hvec[_i].qy[_j] = (p)->qy; \
+      Hvec[_i].qz[_j] = (p)->qz; \
+      Hvec[_i].qxx[_j] = (p)->qxx; \
+      Hvec[_i].qxy[_j] = (p)->qxy; \
+      Hvec[_i].qyy[_j] = (p)->qyy; \
+      Hvec[_i].qxz[_j] = (p)->qxz; \
+      Hvec[_i].qyz[_j] = (p)->qyz; \
+      Hvec[_i].qxxx[_j] = (p)->qxxx; \
+      Hvec[_i].qxxy[_j] = (p)->qxxy; \
+      Hvec[_i].qxyy[_j] = (p)->qxyy; \
+      Hvec[_i].qyyy[_j] = (p)->qyyy; \
+      Hvec[_i].qxxz[_j] = (p)->qxxz; \
+      Hvec[_i].qxyz[_j] = (p)->qxyz; \
+      Hvec[_i].qyyz[_j] = (p)->qyyz; \
+      Hvec[_i].qxxxx[_j] = (p)->qxxxx; \
+      Hvec[_i].qxxxy[_j] = (p)->qxxxy; \
+      Hvec[_i].qxxyy[_j] = (p)->qxxyy; \
+      Hvec[_i].qxyyy[_j] = (p)->qxyyy; \
+      Hvec[_i].qyyyy[_j] = (p)->qyyyy; \
+      Hvec[_i].qxxxz[_j] = (p)->qxxxz; \
+      Hvec[_i].qxxyz[_j] = (p)->qxxyz; \
+      Hvec[_i].qxyyz[_j] = (p)->qxyyz; \
+      Hvec[_i].qyyyz[_j] = (p)->qyyyz; \
+      sink->hcnt++;		\
+    } while(0)
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
 DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
 {
+    const v4sf sink_pos = {0.0f, sink->pos[0], sink->pos[1], sink->pos[2]};
+    const v4sf sink_bmax = {sink->bmax, sink->bmax, sink->bmax, sink->bmax};
+    const v4sf DLfac_bmax = {mac->dlfac*sink->bmax, mac->dlfac*sink->bmax, mac->dlfac*sink->bmax, mac->dlfac*sink->bmax};
+    const v4sf zero = {0.0f, 0.0f, 0.0f, 0.0f};
+
+    StartTimer(&MACTm);
+    for (int i = 0; i < n; i += 4) {
+	const cell *cp[4] = {source_vec[i+0]->ptr, 
+			     source_vec[i+1 < n ? i+1 : i]->ptr,
+			     source_vec[i+2 < n ? i+2 : i]->ptr,
+			     source_vec[i+3 < n ? i+3 : i]->ptr};
+	int iscell = 
+	    (Sub_Flags(source_vec[i+0]) ? 1 : 0) | 
+	    (Sub_Flags(source_vec[i+1 < n ? i+1 : i]) ? 2 : 0) | 
+	    (Sub_Flags(source_vec[i+2 < n ? i+2 : i]) ? 4 : 0) | 
+	    (Sub_Flags(source_vec[i+3 < n ? i+3 : i]) ? 8 : 0);
+	v4sf r[4];
+	r[0] = __builtin_ia32_loadups((const float *)cp[0]);
+	r[1] = __builtin_ia32_loadups((const float *)cp[1]);
+	r[2] = __builtin_ia32_loadups((const float *)cp[2]);
+	r[3] = __builtin_ia32_loadups((const float *)cp[3]);
+	v4sf rc = {iscell & 1 ? cp[0]->rcrit : 0.0f,
+		   iscell & 2 ? cp[1]->rcrit : 0.0f,
+		   iscell & 4 ? cp[2]->rcrit : 0.0f,
+		   iscell & 8 ? cp[3]->rcrit : 0.0f};
+	rc += sink_bmax;
+	int splitsink = __builtin_ia32_movmskps(__builtin_ia32_cmpleps(rc, DLfac_bmax));
+	v4sf rc2 = rc*rc;
+	int hashexa =
+	    (iscell & 1 && cp[0]->daughters >= Hexa_Ncut ? 1 : 0) | 
+	    (iscell & 2 && cp[1]->daughters >= Hexa_Ncut ? 2 : 0) | 
+	    (iscell & 4 && cp[2]->daughters >= Hexa_Ncut ? 4 : 0) | 
+	    (iscell & 8 && cp[3]->daughters >= Hexa_Ncut ? 8 : 0);
+	int hasquad =
+	    (iscell & 1 && cp[0]->daughters >= Quad_Ncut ? 1 : 0) | 
+	    (iscell & 2 && cp[1]->daughters >= Quad_Ncut ? 2 : 0) | 
+	    (iscell & 4 && cp[2]->daughters >= Quad_Ncut ? 4 : 0) | 
+	    (iscell & 8 && cp[3]->daughters >= Quad_Ncut ? 8 : 0);
+	r[0] += *(v4sf *)(offset_vec[i+0]);
+	r[1] += *(v4sf *)(offset_vec[i+1 < n ? i+1 : i]);
+	r[2] += *(v4sf *)(offset_vec[i+2 < n ? i+2 : i]);
+	r[3] += *(v4sf *)(offset_vec[i+3 < n ? i+3 : i]);
+	v4sf dr0 = r[0]-sink_pos;
+	v4sf dr1 = r[1]-sink_pos;
+	v4sf dr2 = r[2]-sink_pos;
+	v4sf dr3 = r[3]-sink_pos;
+	_MM_TRANSPOSE4_PS(dr0, dr1, dr2, dr3);
+	v4sf r2 = dr1*dr1;
+	r2 += dr2*dr2;
+	r2 += dr3*dr3;
+	int mactrue = __builtin_ia32_movmskps(__builtin_ia32_cmpleps(rc2,r2));
+	int notsmooth = __builtin_ia32_movmskps(__builtin_ia32_cmpleps(Eps2v,r2));
+	int notself = __builtin_ia32_movmskps(__builtin_ia32_cmpneqps(r2,zero));
+
+	for (int j = 0; j < 4 && i+j < n; j++) {
+	    int b = 1<<j;
+	    if (iscell & b) {
+		if (mactrue & b) {
+		    result[i+j] = MAC_ACCEPT;
+		    sink->interactions += cp[j]->daughters;
+		    if (hashexa & b) appendHvec(r[j], (hexacell *)cp[j]);
+		    else if (hasquad & b) appendQvec(r[j], (quadcell *)cp[j]);
+		    else appendMvec(r[j], cp[j]);
+		} else result[i+j] = splitsink & b ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+	    } else if (sink->isbody) {
+		result[i+j] = MAC_ACCEPT;
+		sink->interactions++;
+		if (notsmooth & b) appendMvec(r[j], cp[j]);
+		else if (notself & b) appendSvec(r[j], cp[j]);
+	    } else result[i+j] = MAC_SPLIT_SINK;
+	} 
+    }
+    StopTimer(&MACTm);
+    
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
+}
+
+#else
+
+#define appendMvec(p) \
+    do { \
+      int _i = sink->mcnt/NSSE; \
+      int _j = sink->mcnt%NSSE;	 \
+      Mvec[_i].mass[_j] = (p)->mass; \
+      Mvec[_i].x[_j] = r0; \
+      Mvec[_i].y[_j] = r1; \
+      Mvec[_i].z[_j] = r2; \
+      sink->mcnt++; \
+    } while(0)
+
+#define appendSvec(p) \
+    do { \
+      int _i = sink->scnt/NSSE; \
+      int _j = sink->scnt%NSSE;	 \
+      Svec[_i].mass[_j] = (p)->mass; \
+      Svec[_i].x[_j] = r0; \
+      Svec[_i].y[_j] = r1; \
+      Svec[_i].z[_j] = r2; \
+      sink->scnt++; \
+    } while(0)
+
+#ifdef DIPOLE
+#define appendQvec(p) \
+    do { \
+      int _i = sink->qcnt/NSSE; \
+      int _j = sink->qcnt%NSSE;	 \
+      Qvec[_i].mass[_j] = (p)->mass; \
+      Qvec[_i].x[_j] = r0; \
+      Qvec[_i].y[_j] = r1; \
+      Qvec[_i].z[_j] = r2; \
+      Qvec[_i].R[_j] = (p)->bmax; \
+      Qvec[_i].qx[_j] = (p)->qx; \
+      Qvec[_i].qy[_j] = (p)->qy; \
+      Qvec[_i].qz[_j] = (p)->qz; \
+      Qvec[_i].qxx[_j] = (p)->qxx; \
+      Qvec[_i].qxy[_j] = (p)->qxy; \
+      Qvec[_i].qyy[_j] = (p)->qyy; \
+      Qvec[_i].qxz[_j] = (p)->qxz; \
+      Qvec[_i].qyz[_j] = (p)->qyz; \
+      sink->qcnt++;		\
+    } while(0)
+
+#define appendHvec(p) \
+    do { \
+      int _i = sink->hcnt/NSSE; \
+      int _j = sink->hcnt%NSSE;	 \
+      Hvec[_i].mass[_j] = (p)->mass; \
+      Hvec[_i].x[_j] = r0; \
+      Hvec[_i].y[_j] = r1; \
+      Hvec[_i].z[_j] = r2; \
+      Hvec[_i].R[_j] = (p)->bmax; \
+      Hvec[_i].qx[_j] = (p)->qx; \
+      Hvec[_i].qy[_j] = (p)->qy; \
+      Hvec[_i].qz[_j] = (p)->qz; \
+      Hvec[_i].qxx[_j] = (p)->qxx; \
+      Hvec[_i].qxy[_j] = (p)->qxy; \
+      Hvec[_i].qyy[_j] = (p)->qyy; \
+      Hvec[_i].qxz[_j] = (p)->qxz; \
+      Hvec[_i].qyz[_j] = (p)->qyz; \
+      Hvec[_i].qxxx[_j] = (p)->qxxx; \
+      Hvec[_i].qxxy[_j] = (p)->qxxy; \
+      Hvec[_i].qxyy[_j] = (p)->qxyy; \
+      Hvec[_i].qyyy[_j] = (p)->qyyy; \
+      Hvec[_i].qxxz[_j] = (p)->qxxz; \
+      Hvec[_i].qxyz[_j] = (p)->qxyz; \
+      Hvec[_i].qyyz[_j] = (p)->qyyz; \
+      Hvec[_i].qxxxx[_j] = (p)->qxxxx; \
+      Hvec[_i].qxxxy[_j] = (p)->qxxxy; \
+      Hvec[_i].qxxyy[_j] = (p)->qxxyy; \
+      Hvec[_i].qxyyy[_j] = (p)->qxyyy; \
+      Hvec[_i].qyyyy[_j] = (p)->qyyyy; \
+      Hvec[_i].qxxxz[_j] = (p)->qxxxz; \
+      Hvec[_i].qxxyz[_j] = (p)->qxxyz; \
+      Hvec[_i].qxyyz[_j] = (p)->qxyyz; \
+      Hvec[_i].qyyyz[_j] = (p)->qyyyz; \
+      sink->hcnt++;		\
+    } while(0)
+
+#else
+
+#define appendQvec(p) \
+    do { \
+      int _i = sink->qcnt/NSSE; \
+      int _j = sink->qcnt%NSSE;	 \
+      Qvec[_i].mass[_j] = (p)->mass; \
+      Qvec[_i].x[_j] = r0; \
+      Qvec[_i].y[_j] = r1; \
+      Qvec[_i].z[_j] = r2; \
+      Qvec[_i].R[_j] = (p)->bmax; \
+      Qvec[_i].qxx[_j] = (p)->qxx; \
+      Qvec[_i].qxy[_j] = (p)->qxy; \
+      Qvec[_i].qyy[_j] = (p)->qyy; \
+      Qvec[_i].qxz[_j] = (p)->qxz; \
+      Qvec[_i].qyz[_j] = (p)->qyz; \
+      sink->qcnt++;		\
+    } while(0)
+
+#define appendHvec(p) \
+    do { \
+      int _i = sink->hcnt/NSSE; \
+      int _j = sink->hcnt%NSSE;	 \
+      Hvec[_i].mass[_j] = (p)->mass; \
+      Hvec[_i].x[_j] = r0; \
+      Hvec[_i].y[_j] = r1; \
+      Hvec[_i].z[_j] = r2; \
+      Hvec[_i].R[_j] = (p)->bmax; \
+      Hvec[_i].qxx[_j] = (p)->qxx; \
+      Hvec[_i].qxy[_j] = (p)->qxy; \
+      Hvec[_i].qyy[_j] = (p)->qyy; \
+      Hvec[_i].qxz[_j] = (p)->qxz; \
+      Hvec[_i].qyz[_j] = (p)->qyz; \
+      Hvec[_i].qxxx[_j] = (p)->qxxx; \
+      Hvec[_i].qxxy[_j] = (p)->qxxy; \
+      Hvec[_i].qxyy[_j] = (p)->qxyy; \
+      Hvec[_i].qyyy[_j] = (p)->qyyy; \
+      Hvec[_i].qxxz[_j] = (p)->qxxz; \
+      Hvec[_i].qxyz[_j] = (p)->qxyz; \
+      Hvec[_i].qyyz[_j] = (p)->qyyz; \
+      Hvec[_i].qxxxx[_j] = (p)->qxxxx; \
+      Hvec[_i].qxxxy[_j] = (p)->qxxxy; \
+      Hvec[_i].qxxyy[_j] = (p)->qxxyy; \
+      Hvec[_i].qxyyy[_j] = (p)->qxyyy; \
+      Hvec[_i].qyyyy[_j] = (p)->qyyyy; \
+      Hvec[_i].qxxxz[_j] = (p)->qxxxz; \
+      Hvec[_i].qxxyz[_j] = (p)->qxxyz; \
+      Hvec[_i].qxyyz[_j] = (p)->qxyyz; \
+      Hvec[_i].qyyyz[_j] = (p)->qyyyz; \
+      sink->hcnt++;		\
+    } while(0)
+#endif
+
+
+/* RcritMAC with Don't Laugh-like traversal */
+void
+DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+{
+    const int gc = mac->geometric_center;
     float dr2;
     Vxd(float r);
     Vxd(float dx);
 
     StartTimer(&MACTm);
     for (int i = 0; i < n; i++) {
-	if (Sub_Flags(source_vec[i])) {
-	    const cell *cp = source_vec[i]->ptr;
-	    const quadcell *qcp = source_vec[i]->ptr;
-	    const hexacell *hcp = source_vec[i]->ptr;
-	    VxVV(r, = cp->pos, + offset_vec[i]);
-	    VxVxV(dx, = r, - sink->pos);
-	    dr2 = Dotx(dx, dx);
-
-	    int isquad = Quad_Ncut && (cp->daughters >= Quad_Ncut);
-	    int ishexa = Hexa_Ncut && (cp->daughters >= Hexa_Ncut);
+	const cell *cp = source_vec[i]->ptr;
+	const quadcell *qcp = source_vec[i]->ptr;
+	const hexacell *hcp = source_vec[i]->ptr;
+	int sf = Sub_Flags(source_vec[i]);
+	if (!sf && !sink->isbody) {
+	    result[i] = MAC_SPLIT_SINK;
+	    continue;
+	}
+	VxVV(r, = cp->pos, + offset_vec[i]);
+	VxVxV(dx, = r, - sink->pos);
+	dr2 = Dotx(dx, dx);
+	if (sf) {
+	    int isquad = mac->qcut && cp->daughters >= mac->qcut;
+	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
 	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
 	    
-	    /* bmax is 0 if sink is a body */
-	    if (dr2 > Square(cp->rcrit + sink->bmax)) {
-		/* cell-cell or body-cell */
-		Mvec[sink->mcnt/NSSE].mass[sink->mcnt%NSSE] = cp->mass;
-		Mvec[sink->mcnt/NSSE].x[sink->mcnt%NSSE] = r0;
-		Mvec[sink->mcnt/NSSE].y[sink->mcnt%NSSE] = r1;
-		Mvec[sink->mcnt/NSSE].z[sink->mcnt%NSSE] = r2;
-		sink->mcnt++;
+	    if ((!isquad || !gc) && dr2 > Square(cp->rcrit + sink->bmax)) {
+		appendMvec(cp);
 		sink->interactions += cp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else if (isquad && dr2 > Square(qcp->rcrit_q + sink->bmax)) {
-		Qvec[sink->qcnt/NSSE].mass[sink->qcnt%NSSE] = qcp->mass;
-		Qvec[sink->qcnt/NSSE].x[sink->qcnt%NSSE] = r0;
-		Qvec[sink->qcnt/NSSE].y[sink->qcnt%NSSE] = r1;
-		Qvec[sink->qcnt/NSSE].z[sink->qcnt%NSSE] = r2;
-		Qvec[sink->qcnt/NSSE].R[sink->qcnt%NSSE] = qcp->bmax;
-		Qvec[sink->qcnt/NSSE].qx[sink->qcnt%NSSE] = qcp->qx;
-		Qvec[sink->qcnt/NSSE].qy[sink->qcnt%NSSE] = qcp->qy;
-		Qvec[sink->qcnt/NSSE].qz[sink->qcnt%NSSE] = qcp->qz;
-		Qvec[sink->qcnt/NSSE].qxx[sink->qcnt%NSSE] = qcp->qxx;
-		Qvec[sink->qcnt/NSSE].qxy[sink->qcnt%NSSE] = qcp->qxy;
-		Qvec[sink->qcnt/NSSE].qyy[sink->qcnt%NSSE] = qcp->qyy;
-		Qvec[sink->qcnt/NSSE].qxz[sink->qcnt%NSSE] = qcp->qxz;
-		Qvec[sink->qcnt/NSSE].qyz[sink->qcnt%NSSE] = qcp->qyz;
-		sink->qcnt++;
+		appendQvec(qcp);
 		sink->interactions += qcp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + sink->bmax)) {
-		Hvec[sink->hcnt/NSSE].mass[sink->hcnt%NSSE] = hcp->mass;
-		Hvec[sink->hcnt/NSSE].x[sink->hcnt%NSSE] = r0;
-		Hvec[sink->hcnt/NSSE].y[sink->hcnt%NSSE] = r1;
-		Hvec[sink->hcnt/NSSE].z[sink->hcnt%NSSE] = r2;
-		Hvec[sink->hcnt/NSSE].R[sink->hcnt%NSSE] = hcp->bmax;
-		Hvec[sink->hcnt/NSSE].qx[sink->hcnt%NSSE] = hcp->qx;
-		Hvec[sink->hcnt/NSSE].qy[sink->hcnt%NSSE] = hcp->qy;
-		Hvec[sink->hcnt/NSSE].qz[sink->hcnt%NSSE] = hcp->qz;
-		Hvec[sink->hcnt/NSSE].qxx[sink->hcnt%NSSE] = hcp->qxx;
-		Hvec[sink->hcnt/NSSE].qxy[sink->hcnt%NSSE] = hcp->qxy;
-		Hvec[sink->hcnt/NSSE].qyy[sink->hcnt%NSSE] = hcp->qyy;
-		Hvec[sink->hcnt/NSSE].qxz[sink->hcnt%NSSE] = hcp->qxz;
-		Hvec[sink->hcnt/NSSE].qyz[sink->hcnt%NSSE] = hcp->qyz;
-		Hvec[sink->hcnt/NSSE].qxxx[sink->hcnt%NSSE] = hcp->qxxx;
-		Hvec[sink->hcnt/NSSE].qxxy[sink->hcnt%NSSE] = hcp->qxxy;
-		Hvec[sink->hcnt/NSSE].qxyy[sink->hcnt%NSSE] = hcp->qxyy;
-		Hvec[sink->hcnt/NSSE].qyyy[sink->hcnt%NSSE] = hcp->qyyy;
-		Hvec[sink->hcnt/NSSE].qxxz[sink->hcnt%NSSE] = hcp->qxxz;
-		Hvec[sink->hcnt/NSSE].qxyz[sink->hcnt%NSSE] = hcp->qxyz;
-		Hvec[sink->hcnt/NSSE].qyyz[sink->hcnt%NSSE] = hcp->qyyz;
-		Hvec[sink->hcnt/NSSE].qxxxx[sink->hcnt%NSSE] = hcp->qxxxx;
-		Hvec[sink->hcnt/NSSE].qxxxy[sink->hcnt%NSSE] = hcp->qxxxy;
-		Hvec[sink->hcnt/NSSE].qxxyy[sink->hcnt%NSSE] = hcp->qxxyy;
-		Hvec[sink->hcnt/NSSE].qxyyy[sink->hcnt%NSSE] = hcp->qxyyy;
-		Hvec[sink->hcnt/NSSE].qyyyy[sink->hcnt%NSSE] = hcp->qyyyy;
-		Hvec[sink->hcnt/NSSE].qxxxz[sink->hcnt%NSSE] = hcp->qxxxz;
-		Hvec[sink->hcnt/NSSE].qxxyz[sink->hcnt%NSSE] = hcp->qxxyz;
-		Hvec[sink->hcnt/NSSE].qxyyz[sink->hcnt%NSSE] = hcp->qxyyz;
-		Hvec[sink->hcnt/NSSE].qyyyz[sink->hcnt%NSSE] = hcp->qyyyz;
-		sink->hcnt++;
+		appendHvec(hcp);
 		sink->interactions += hcp->daughters;
 		result[i] = MAC_ACCEPT;
-	    } else if ((sink->bmax > DLmax) || (DLfac * sink->bmax > smallest_rcrit)) {
-		result[i] = sink->isbody ? MAC_ERROR : MAC_SPLIT_SINK;
 	    } else {
-		result[i] = MAC_SPLIT_SRC;
+		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
 	    }
-	} else if (sink->isbody) {
+	} else {
 	    /* body-body */
-	    const body *bp = source_vec[i]->ptr;
-	    VxVV(r, = bp->pos, + offset_vec[i]);
-	    VxVxV(dx, = r, - sink->pos);
-	    dr2 = Dotx(dx, dx);
-
-	    if (dr2 > Eps2) {
-		Mvec[sink->mcnt/NSSE].mass[sink->mcnt%NSSE] = bp->mass;
-		Mvec[sink->mcnt/NSSE].x[sink->mcnt%NSSE] = r0;
-		Mvec[sink->mcnt/NSSE].y[sink->mcnt%NSSE] = r1;
-		Mvec[sink->mcnt/NSSE].z[sink->mcnt%NSSE] = r2;
-		sink->mcnt++;
-	    } else if (dr2 > 0.0f) {
-		Svec[sink->scnt/NSSE].mass[sink->scnt%NSSE] = bp->mass;
-		Svec[sink->scnt/NSSE].x[sink->scnt%NSSE] = r0;
-		Svec[sink->scnt/NSSE].y[sink->scnt%NSSE] = r1;
-		Svec[sink->scnt/NSSE].z[sink->scnt%NSSE] = r2;
-		sink->scnt++;
-	    }
+	    if (dr2 > Eps2) appendMvec(cp);
+	    else if (dr2 > 0.0f) appendSvec(cp);
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
-	} else {
-	    /* cell-body */
-	    /* Comparing dr2 with Eps2 only works for body-body interactions */
-	    result[i] = MAC_SPLIT_SINK;
 	}
     }
     StopTimer(&MACTm);

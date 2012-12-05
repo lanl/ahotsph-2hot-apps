@@ -412,7 +412,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	a1 += y*eqe;
 	a2 += z*eqe;
 
-        t *= rinv*R;
+        t *= R;
         eq0 = t*qx;
         eq1 = t*qy;
         eq2 = t*qz;

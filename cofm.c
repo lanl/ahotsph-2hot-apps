@@ -12,21 +12,7 @@
 #include "fastflpt.h"
 #include "protos.h"
 
-static int MACtype = BMAX_MAC;		/* default */
-static float Tol;
-static float invTol;
-static float RelTol;
-static float invRelTol;
-static float RelTol0;
-static float invRelTol0;
-static float Bmax0;
-static float Ptol_boost;
-static float Stol_max;
-static int Quad_Ncut = 7;
-static int Hexa_Ncut = 20;
-static int Geometric_center = 0;
-static tree_t *Tree;
-
+static const mac_s *mac;
 static float min_sigma_m = 1.0f;
 static float max_sigma_m = 7.2e+10; /* exp(25.0) */
 static float sigma_m[] = {
@@ -60,23 +46,17 @@ static void mpole_add_cube(double a, double rho, cofmdata *q);
 static void mpole_add_mono(cofmdata *cmp, body *bp);
 static void mpole_add(cofmdata *cmp, cofmdata *dp);
 
-void SetupCofm(int type, float tol, float rel_tol, float rel_tol0, float r0, float ptol_boost, 
-	       float stol_max, int qcut, int hcut, int geometric_center, tree_t *t)
+void SetupCofm(mac_s *m)
 {
-    MACtype = type;
-    Tol = tol;
-    invTol = 1.0/tol;
-    RelTol = rel_tol;
-    invRelTol = 1.0/rel_tol;
-    RelTol0 = rel_tol0;
-    invRelTol0 = 1.0/rel_tol0;
-    Bmax0 = r0;
-    Ptol_boost = ptol_boost;
-    Stol_max = stol_max;
-    Quad_Ncut = qcut;
-    Hexa_Ncut = hcut;
-    Geometric_center = geometric_center;
-    Tree = t;
+    m->inv_tol = 1.0/m->this_tol;
+    m->inv_rel_tol = 1.0/m->rel_tol;
+    m->inv_rel_tol0 = 1.0/m->rel_tol0;
+    m->bmax0 = m->r0;
+    float dx = 4.0*m->r0/m->nx;    /* 2x mean interparticle separation */
+    float mass = dx*dx*dx*m->rho0;
+    float rcrit = 0.5*dx + sqrt(0.25*dx*dx+sqrt(0.75*mass/m->this_tol));
+    m->mpole_rcrit = Max(dx, rcrit);
+    mac = m;
 }
 
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
@@ -113,7 +93,10 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    cmp->ndaughters += dp->ndaughters;
 	} 
     }
-    if (Geometric_center && cmp->ndaughters >= Quad_Ncut) {
+    if (mac->geometric_center && cmp->ndaughters >= mac->qcut) {
+#ifndef DIPOLE
+	Error("Can't do geometric center expansion without DIPOLE\n");
+#endif
 	/* Use geometric center */
 	VV(cmp->center, = center);
     } else {
@@ -208,9 +191,9 @@ CellSz(void *p)
 {
     const cell *cp = p;
 
-    if (Hexa_Ncut && (cp->daughters >= Hexa_Ncut)) {
+    if (mac->hcut && (cp->daughters >= mac->hcut)) {
 	return sizeof(hexacell);
-    } else if (Quad_Ncut && (cp->daughters >= Quad_Ncut)) {
+    } else if (mac->qcut && (cp->daughters >= mac->qcut)) {
 	return sizeof(quadcell);
     } else {
 	return sizeof(cell);
@@ -224,22 +207,22 @@ void *CellFromCofm(cofmdata *cmp)
     quadcell *qcp = NULL;
     hexacell *hcp = NULL;
 
-    if (Hexa_Ncut && (cmp->ndaughters >= Hexa_Ncut)) {
-	cp = ChnAlloc(&Tree->cell4chn);
+    if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
+	cp = ChnAlloc(&mac->tree->cell4chn);
 	qcp = (quadcell *)cp;
 	hcp = (hexacell *)cp;
-    } else if (Quad_Ncut && (cmp->ndaughters >= Quad_Ncut)) {
-	cp = ChnAlloc(&Tree->cell2chn);
+    } else if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
+	cp = ChnAlloc(&mac->tree->cell2chn);
 	qcp = (quadcell *)cp;
     } else {
-	cp = ChnAlloc(&Tree->cellchn);
+	cp = ChnAlloc(&mac->tree->cellchn);
     }
     cp->mass = cmp->m;
     VV(cp->pos, = cmp->center);
     cp->bmax = cmp->bmax;
     cp->daughters = cmp->ndaughters;
-    cp->R = 0.5f*cmp->sz;
-    if (MACtype == AREL_MAC) {
+    /* cp->R = 0.5f*cmp->sz; */
+    if (mac->type == AREL_MAC) {
 	float abs_rcrit;
 	float rel_rcrit, rel_rcrit0;
 	float B3, bmaxhalf, rcritmax;
@@ -250,22 +233,22 @@ void *CellFromCofm(cofmdata *cmp)
 #endif
 	float ptol;
 
-	if (Stol_max > 1.0f) {
+	if (mac->stol_max > 1.0f) {
 	    if (cmp->m <= min_sigma_m) {
-		ptol = Tol;
+		ptol = mac->this_tol;
 	    } else if (cmp->m > max_sigma_m) {
-		ptol = Stol_max*Tol;
+		ptol = mac->stol_max*mac->this_tol;
 	    } else {
 		int idx = logf(cmp->m);
 		float s = sigma_m[idx];
-		if (s < Stol_max) {
-		    ptol = s*Tol;
+		if (s < mac->stol_max) {
+		    ptol = s*mac->this_tol;
 		} else {
-		    ptol = Stol_max*Tol;
+		    ptol = mac->stol_max*mac->this_tol;
 		}
 	    }
 	} else {
-	    ptol = Tol/(1.+Ptol_boost*cmp->bmax/Bmax0);
+	    ptol = mac->this_tol/(1.+mac->ptol_boost*cmp->bmax/mac->bmax0);
 	}
 	bmaxhalf = cmp->bmax * (float)0.5;
 	rcritmax = bmaxhalf + sqrtf_fast(bmaxhalf*bmaxhalf
@@ -285,19 +268,19 @@ void *CellFromCofm(cofmdata *cmp)
 	abs_rcrit =  rtnewt(5, rcrit_poly, rcritmax, .01*rcritmax);
 	abs_rcrit += 0.01*rcritmax;
 
-	rcritmax = cmp->bmax + sqrtf_fast((float)3.*invRelTol0*B2*massinv);
+	rcritmax = cmp->bmax + sqrtf_fast((float)3.*mac->inv_rel_tol0*B2*massinv);
 	a[0] = 2.*B3;
-	a[1] = -3. * B2 + RelTol0 * cmp->bmax*cmp->bmax * cmp->m;
-	a[2] = -2. * RelTol0 * cmp->bmax * cmp->m;
-	a[3] = RelTol0 * cmp->m;
+	a[1] = -3. * B2 + mac->rel_tol0 * cmp->bmax*cmp->bmax * cmp->m;
+	a[2] = -2. * mac->rel_tol0 * cmp->bmax * cmp->m;
+	a[3] = mac->rel_tol0 * cmp->m;
 	rel_rcrit0 =  rtnewt(3, rcrit_poly, rcritmax, .01*rcritmax);
 	rel_rcrit0 += 0.01*rcritmax;
 
-	rcritmax = cmp->bmax + sqrtf_fast((float)3.*invRelTol*B2*massinv);
+	rcritmax = cmp->bmax + sqrtf_fast((float)3.*mac->inv_rel_tol*B2*massinv);
 	a[0] = 2.*B3;
-	a[1] = -3. * B2 + RelTol * cmp->bmax*cmp->bmax * cmp->m;
-	a[2] = -2. * RelTol * cmp->bmax * cmp->m;
-	a[3] = RelTol * cmp->m;
+	a[1] = -3. * B2 + mac->rel_tol * cmp->bmax*cmp->bmax * cmp->m;
+	a[2] = -2. * mac->rel_tol * cmp->bmax * cmp->m;
+	a[3] = mac->rel_tol * cmp->m;
 	rel_rcrit =  rtnewt(3, rcrit_poly, rcritmax, .01*rcritmax);
 	rel_rcrit += 0.01*rcritmax;
 
@@ -306,7 +289,7 @@ void *CellFromCofm(cofmdata *cmp)
 	/* if rel_rcrit0 is more accurate, then use it */
 	if (rel_rcrit0 > cp->rcrit) cp->rcrit = rel_rcrit0;
 #ifdef QUAD
-	if (Quad_Ncut && (cmp->ndaughters >= Quad_Ncut)) {
+	if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
 	    B3 = cmp->bmax*(cmp->x2+cmp->y2+cmp->z2); 	/* upper bound */
 	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2);
 	    if (!isfinite(B4) || !isfinite(B3))
@@ -326,18 +309,18 @@ void *CellFromCofm(cofmdata *cmp)
 	    rcritmax = rel_rcrit0;
 	    a[0] = 3.*B4;
 	    a[1] = -4. * B3;
-	    a[2] = RelTol0 * cmp->bmax*cmp->bmax * cmp->m;
-	    a[3] = -2. * RelTol0 * cmp->bmax * cmp->m;
-	    a[4] = RelTol0 * cmp->m;
+	    a[2] = mac->rel_tol0 * cmp->bmax*cmp->bmax * cmp->m;
+	    a[3] = -2. * mac->rel_tol0 * cmp->bmax * cmp->m;
+	    a[4] = mac->rel_tol0 * cmp->m;
 	    rel_rcrit0 =  rtnewt(4, rcrit_poly, rcritmax, .01*rcritmax);
 	    rel_rcrit0 += 0.01*rcritmax;
 
 	    rcritmax = rel_rcrit;
 	    a[0] = 3.*B4;
 	    a[1] = -4. * B3;
-	    a[2] = RelTol * cmp->bmax*cmp->bmax * cmp->m;
-	    a[3] = -2. * RelTol * cmp->bmax * cmp->m;
-	    a[4] = RelTol * cmp->m;
+	    a[2] = mac->rel_tol * cmp->bmax*cmp->bmax * cmp->m;
+	    a[3] = -2. * mac->rel_tol * cmp->bmax * cmp->m;
+	    a[4] = mac->rel_tol * cmp->m;
 	    rel_rcrit =  rtnewt(4, rcrit_poly, rcritmax, .01*rcritmax);
 	    rel_rcrit += 0.01*rcritmax;
 
@@ -368,7 +351,7 @@ void *CellFromCofm(cofmdata *cmp)
 #endif
 
 #ifdef HEXA
-	if (Hexa_Ncut && (cmp->ndaughters >= Hexa_Ncut)) {
+	if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
 	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2.0f*cmp->x2y2 + 2.0f*cmp->x2z2 + 2.0f*cmp->y2z2);
 	    B5 = cmp->bmax*B4; /* upper bound */
 	    B6 = (cmp->x6+cmp->y6+cmp->z6+3.0f*cmp->x4y2+3.0f*cmp->x2y4+3.0f*cmp->x4z2+6.0f*cmp->x2y2z2+3.0f*cmp->y4z2+3.0f*cmp->x2z4+3.0f*cmp->y2z4);
@@ -381,11 +364,18 @@ void *CellFromCofm(cofmdata *cmp)
 	    a[3] = 0.;
 	    a[4] = 0.;
 	    a[5] = 0.;
-	    a[6] = 0.;
-	    a[7] = ptol*cmp->bmax*cmp->bmax;
-	    a[8] = -2. * ptol * cmp->bmax;
-	    a[9] = ptol;
-	    abs_rcrit =  rtnewt(9, rcrit_poly, rcritmax, .001*rcritmax);
+	    if (mac->subtract_background) {
+		a[6] = 0.;
+		a[7] = ptol*cmp->bmax*cmp->bmax;
+		a[8] = -2. * ptol * cmp->bmax;
+		a[9] = ptol;
+		abs_rcrit =  rtnewt(9, rcrit_poly, rcritmax, .001*rcritmax);
+	    } else {
+		a[6] = ptol*cmp->bmax*cmp->bmax;
+		a[7] = -2. * ptol * cmp->bmax;
+		a[8] = ptol;
+		abs_rcrit =  rtnewt(8, rcrit_poly, rcritmax, .001*rcritmax);
+	    }
 	    abs_rcrit += 0.001*rcritmax;
 
 	    rcritmax = rel_rcrit0;
@@ -393,9 +383,9 @@ void *CellFromCofm(cofmdata *cmp)
 	    a[1] = -6.*B5;
 	    a[2] = 0.;
 	    a[3] = 0.;
-	    a[4] = RelTol0 * cmp->bmax*cmp->bmax * cmp->m;
-	    a[5] = -2. * RelTol0 * cmp->bmax * cmp->m;
-	    a[6] = RelTol0 * cmp->m;
+	    a[4] = mac->rel_tol0 * cmp->bmax*cmp->bmax * cmp->m;
+	    a[5] = -2. * mac->rel_tol0 * cmp->bmax * cmp->m;
+	    a[6] = mac->rel_tol0 * cmp->m;
 	    rel_rcrit0 =  rtnewt(6, rcrit_poly, rcritmax, .001*rcritmax);
 	    rel_rcrit0 += 0.001*rcritmax;
 
@@ -404,9 +394,9 @@ void *CellFromCofm(cofmdata *cmp)
 	    a[1] = -6.*B5;
 	    a[2] = 0.;
 	    a[3] = 0.;
-	    a[4] = RelTol * cmp->bmax*cmp->bmax * cmp->m;
-	    a[5] = -2. * RelTol * cmp->bmax * cmp->m;
-	    a[6] = RelTol * cmp->m;
+	    a[4] = mac->rel_tol * cmp->bmax*cmp->bmax * cmp->m;
+	    a[5] = -2. * mac->rel_tol * cmp->bmax * cmp->m;
+	    a[6] = mac->rel_tol * cmp->m;
 	    rel_rcrit =  rtnewt(6, rcrit_poly, rcritmax, .001*rcritmax);
 	    rel_rcrit += 0.001*rcritmax;
 
@@ -480,9 +470,9 @@ void *CellFromCofm(cofmdata *cmp)
 	    Msgf(("Cell4: %s\n", PrintCellContents4(hcp)));
 	}
 #endif
-    } else if(MACtype == BH_MAC) cp->rcrit = cmp->sz*invTol;
-    else if (MACtype == BMAX_MAC) cp->rcrit = cmp->bmax*invTol;
-    else Error("Bad MAC type (%d)\n", MACtype);
+    } else if(mac->type == BH_MAC) cp->rcrit = cmp->sz*mac->inv_tol;
+    else if (mac->type == BMAX_MAC) cp->rcrit = cmp->bmax*mac->inv_tol;
+    else Error("Bad MAC type (%d)\n", mac->type);
 
     return cp;
 }
@@ -570,18 +560,18 @@ mpole_add_mono(cofmdata *p, body *q)
 
     p->m += m;
 
-#ifdef QUAD
     x = -p->center[0]+q->pos[0];
     y = -p->center[1]+q->pos[1];
     z = -p->center[2]+q->pos[2];
 
-    if (fabs(x) > Bmax0 || fabs(y) > Bmax0 || fabs(z) > Bmax0)
-	Error("Bad wrap %.12g %.12g %.12g, R0 = %.12g\n", q->pos[0], q->pos[1], q->pos[2], Bmax0);
+    if (fabs(x) > mac->bmax0 || fabs(y) > mac->bmax0 || fabs(z) > mac->bmax0)
+	Error("Bad wrap %.12g %.12g %.12g, R0 = %.12g\n", q->pos[0], q->pos[1], q->pos[2], mac->bmax0);
 
     p->x += m*x;
     p->y += m*y;
     p->z += m*z;
 
+#ifdef QUAD
     x2 = x*x; y2 = y*y; z2 = z*z;
 
     p->x2 += m*x2;
@@ -590,7 +580,6 @@ mpole_add_mono(cofmdata *p, body *q)
     p->y2 += m*y2;
     p->yz += m*y*z;
     p->z2 += m*z2;
-#endif
 
     x3 = x2*x; y3 = y2*y; z3 = z2*z;
 
@@ -622,6 +611,7 @@ mpole_add_mono(cofmdata *p, body *q)
     p->y2z2 += m*y2*z2;
     p->yz3 += m*y*z3;
     p->z4 += m*z4;
+#endif
 
 #ifdef HEXA
     x5 = x4*x; y5 = y4*y; z5 = z4*z;
@@ -678,7 +668,6 @@ mpole_add(cofmdata *p, cofmdata *q)
 
     p->m += m;
 
-#ifdef QUAD
     x = q->center[0]-p->center[0];
     y = q->center[1]-p->center[1];
     z = q->center[2]-p->center[2];
@@ -687,6 +676,7 @@ mpole_add(cofmdata *p, cofmdata *q)
     p->y += q->y + m*y;
     p->z += q->z + m*z;
 
+#ifdef QUAD
     x2 = x*x; y2 = y*y; z2 = z*z;
 
     p->x2 += q->x2 + 2*q->x*x + m*x2;
@@ -695,7 +685,6 @@ mpole_add(cofmdata *p, cofmdata *q)
     p->y2 += q->y2 + 2*q->y*y + m*y2;
     p->yz += q->yz + q->z*y + q->y*z + m*y*z;
     p->z2 += q->z2 + 2*q->z*z + m*z2;
-#endif
 
     x3 = x2*x; y3 = y2*y; z3 = z2*z;
 
@@ -727,6 +716,7 @@ mpole_add(cofmdata *p, cofmdata *q)
     p->y2z2 += q->y2z2 + 2*q->yz2*y + q->z2*y2 + 2*q->y2z*z + 4*q->yz*y*z + 2*q->z*y2*z + q->y2*z2 + 2*q->y*y*z2 + m*y2*z2;
     p->yz3 += q->yz3 + q->z3*y + 3*q->yz2*z + 3*q->z2*y*z + 3*q->yz*z2 + 3*q->z*y*z2 + q->y*z3 + m*y*z3;
     p->z4 += q->z4 + 4*q->z3*z + 6*q->z2*z2 + 4*q->z*z3 + m*z4;
+#endif
 
 #ifdef HEXA
     x5 = x4*x; y5 = y4*y; z5 = z4*z;

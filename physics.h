@@ -112,19 +112,16 @@ typedef struct  {
 typedef struct {
     float mass;
     float pos[NDIM];
-    float rcrit, R;
+    float rcrit, bmax;
     int64_t daughters;
-    float rcrit_q;
-    float bmax;
 } cell, *cellptr;
 
 typedef struct {
     float mass;
     float pos[NDIM];
-    float rcrit_m, R;
+    float rcrit_m, bmax;
     int64_t daughters;
-    float rcrit_q;
-    float bmax;
+    float rcrit_q, pad;
 #ifdef DIPOLE
     float qx, qy, qz;
 #else
@@ -136,10 +133,9 @@ typedef struct {
 typedef struct {
     float mass;
     float pos[NDIM];
-    float rcrit_m, R;
+    float rcrit_m, bmax;
     int64_t daughters;
-    float rcrit_q;
-    float bmax;
+    float rcrit_q, rcrit_h;
 #ifdef DIPOLE
     float qx, qy, qz;
 #else
@@ -148,7 +144,6 @@ typedef struct {
     float qxx, qxy, qyy, qxz, qyz;
     float qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
     float qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
-    float rcrit_h;
 } hexacell, *hexacellptr;
 
 /* This is the intermediate data structure used to construct cofm */
@@ -159,10 +154,8 @@ typedef struct{
     double B2;
     double sz;
     int64_t ndaughters;
-#ifdef DIPOLE
-    double x, y, z;
-#endif
 #ifdef QUAD
+    double x, y, z;
     double x2, xy, y2, xz, yz, z2;
     double x3, x2y, xy2, y3, x2z, xyz, y2z, xz2, yz2, z3;
     double x4, x3y, x2y2, xy3, y4, x3z, x2yz, xy2z, y3z, x2z2, xyz2, y2z2, xz3, yz3, z4;
@@ -176,12 +169,17 @@ typedef struct{
 typedef struct{
     float bmax;
     float pos[NDIM];
+    int isbody;
+    float nterms;
     float M0;
     float M1[NDIM];
-    int isbody;
     int64_t daughters;
-    float nterms;
     int64_t interactions;
+    double fmass;
+    int fill_background;
+    float cmass;
+    float ccenter[NDIM];
+    float cr;
     int scnt;
     int mcnt;
 #ifdef QUAD
@@ -198,12 +196,43 @@ typedef struct{
 #define HAS_NTERMS
 #define HAS_IDENT
 
-#define Mass(x) ((x)->mass)
-#define Pos(x)  ((x)->pos)
+enum mac_type {BMAX_MAC, BH_MAC, AREL_MAC};
 
-#define BMAX_MAC 1
-#define BH_MAC  2
-#define AREL_MAC 3
+typedef struct mac_s {
+    /* specified */
+    macv_t rcrit_func;
+    tree_t *tree;
+    enum mac_type type;
+    float tol;		/* absolute acc */
+    float this_tol;	/* absolute acc for this step */
+    float rel_tol;
+    float rel_tol0;
+    float r0;
+    float dlfac;
+    float dlmax;
+    float nx;
+    float ptol_boost;
+    float stol_max;
+    union {
+	int p2cut;
+	int qcut;
+    };
+    union {
+	int p4cut;
+	int hcut;
+    };
+    int p8cut;
+    int geometric_center;
+    int subtract_background;
+    float rho0;
+    /* derived */
+    float inv_tol;
+    float inv_rel_tol;
+    float inv_rel_tol0;
+    float bmax0;
+    float mpole_rcrit;
+} mac_s;
+
 
 /* Prototypes for all the functions which are "friends" of physics.h */
 #include "physics_generic.h"
@@ -215,8 +244,7 @@ extern Timer_t FindForcesTm;
 extern Counter_t NbodyCnt;
 
 /* In cofm.c */
-void SetupCofm(int MACtype, float tol, float rel_tol, float rel_tol0, float R0, float ptol_boost,
-	       float stol_max, int qcut, int hcut, int geometric_center, tree_t *t);
+void SetupCofm(mac_s *mac);
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
 int CellSz(void *p);
 void *CellFromCofm(cofmdata *cmp);
@@ -235,8 +263,8 @@ extern Counter_t FBC2Int, FBC4Int;
 extern Counter_t CCIntRej;
 extern Counter_t TranslateCnt;
 
-void SetupGrav(float newton_const, float eps, int64_t gnobj, float dl_fac, float dl_max,
-	       int qcut, int hcut, float particle_mass, int smoothing_type);
+void SetupGrav(float newton_const, float eps, int64_t gnobj, mac_s *mac,
+	       float particle_mass, int smoothing_type);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
 void DLRcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
