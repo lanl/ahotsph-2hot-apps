@@ -240,8 +240,7 @@ typedef struct mac_s {
     float inv_rel_tol;
     float inv_rel_tol0;
     float bmax0;
-    float mpole_rcrit;
-    float mpole_rcrit_q;
+    float cr;
 } mac_s;
 
 

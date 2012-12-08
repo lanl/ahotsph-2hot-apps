@@ -58,25 +58,10 @@ void SetupCofm(mac_s *m)
     m->inv_rel_tol = 1.0/m->rel_tol;
     m->inv_rel_tol0 = 1.0/m->rel_tol0;
     m->bmax0 = m->r0;
-    float dx = 4.0*m->r0/m->nx;    /* 2x mean interparticle separation */
-    float mass = dx*dx*dx*m->rho0;
-    float rcrit = 0.5*dx + sqrt(0.25*dx*dx+sqrt(0.75*mass/m->this_tol));
-    m->mpole_rcrit = Max(dx, rcrit);
-    cofmdata c = {.sz=dx, .bmax=dx*sqrt(0.75)};
-    mpole_add_cube(c.sz, m->rho0, &c);
-    double B3 = c.bmax*(c.x2+c.y2+c.z2); 	/* upper bound */
-    double B4 = (c.x4 + c.y4 + c.z4 + 2*c.x2y2 + 2*c.x2z2 + 2*c.y2z2);
-    a[0] = 3.*B4;
-    a[1] = -4.*B3;
-    a[2] = 0.0;
-    a[3] = 0.0;
-    a[4] = m->this_tol*c.bmax*c.bmax;
-    a[5] = -2.*m->this_tol*c.bmax;
-    a[6] = m->this_tol;
-    m->mpole_rcrit_q =  rtnewt(6, rcrit_poly, m->mpole_rcrit, .01*m->mpole_rcrit);
-    m->mpole_rcrit_q += 0.01*m->mpole_rcrit;
+    float dx = 2.0*m->r0/m->nx;    /* mean interparticle separation */
+    m->cr = 6.0f*dx;
     mac = m;
-    singlPrintf("cube rcrits %.1f %.1f\n", 2.*m->mpole_rcrit/dx, 2.*m->mpole_rcrit_q/dx);
+    singlPrintf("cr is %.3f\n", m->cr);
 }
 
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
@@ -114,7 +99,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    cmp->ndaughters += dp->ndaughters;
 	} 
     }
-    if (mac->geometric_center && cmp->ndaughters >= mac->qcut) {
+    if (mac->geometric_center) {
 #ifndef DIPOLE
 	Error("Can't do geometric center expansion without DIPOLE\n");
 #endif

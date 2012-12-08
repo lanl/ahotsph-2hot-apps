@@ -21,15 +21,15 @@ Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm;
 
 #if 1
-int WatchId = 5756051;
-Key_t WatchKey = {.k = {27096166, 0}};
+int WatchId = 0;
+Key_t WatchKey = {.k = {32768, 0}};
 #include <stdio.h>
 #define DebugWatchId(a, ...) \
    if (bp->ident == WatchId) \
-       Msg_do(a, __VA_ARGS__)
+       printf(a, __VA_ARGS__)
 #define DebugWatchKey(a, ...) \
    if (KeyContained(sink->key, WatchKey, NDIM)) \
-       Msg_do(a, __VA_ARGS__)
+       printf(a, __VA_ARGS__)
 #else
 #define DebugWatchId(a, ...)
 #define DebugWatchKey(a, ...)
@@ -433,8 +433,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    cubic_acc(r, from->cr, accd);
 	    VS(accd, *= -mac->rho0);
 	    VV(acc, += accd);
-	    DebugWatchId("ca %12g %12g - %g %g %g\n", 
-			 from->cr, mac->mpole_rcrit, r[0], r[1], r[2]);
+	    DebugWatchId("ca %12g - %g %g %g\n", from->cr, r[0], r[1], r[2]);
 	    DebugWatchId("c %12g %12g %12g\n", accd[0], accd[1], accd[2]);
 	    double cmass = mac->rho0*pow3(2.0f*from->cr);
 	    if (fabs(from->fmass-cmass) > mac->m0*1e-7) 
@@ -481,12 +480,12 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 
     if (from) {
-	if (mac->subtract_background && 0.5f*to->halfsz < mac->mpole_rcrit &&
+	if (mac->subtract_background && to->halfsz <= mac->cr &&
 	    !from->fill_background) {
 	    assert(mac->geometric_center);
 	    to->fill_background = 1;
 	    VV(to->cen, = to->pos);
-	    to->cr = 3.0f*to->halfsz;
+	    to->cr = mac->cr;
 	} else {
 	    to->fill_background = from->fill_background;
 	    VV(to->cen, = from->cen);
@@ -1523,7 +1522,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+DLRcritMAC1(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
 {
     const int gc = mac->geometric_center;
     float dr2;
@@ -1632,6 +1631,118 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 			DebugWatchKey("%12g %12g %12g %12g %12g Mvec empty\n", 
 				      mxyz[0], mxyz[1]-sink->cen[0],
 				      mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], 0.0);
+		    }
+		}
+	    }
+	}
+    }
+    StopTimer(&MACTm);
+    
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
+}
+
+/* RcritMAC with Don't Laugh-like traversal */
+void
+DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+{
+    float dr2;
+    Vxd(float r);
+    Vxd(float dx);
+
+    StartTimer(&MACTm);
+    for (int i = 0; i < n; i++) {
+	const cell *cp = source_vec[i]->ptr;
+	const quadcell *qcp = source_vec[i]->ptr;
+	const hexacell *hcp = source_vec[i]->ptr;
+	int incube = 0, outcube = 0;
+	int sf = Sub_Flags(source_vec[i]);
+	if (!sf && !sink->isbody) {
+	    result[i] = MAC_SPLIT_SINK;
+	    continue;
+	}
+	VxVV(r, = cp->pos, + offset_vec[i]);
+	VxVxV(dx, = r, - sink->pos);
+	dr2 = Dotx(dx, dx);
+	if (sink->fill_background) {
+	    float far = sink->cr;
+	    float near = sink->cr;
+	    if (sf) {
+		far -= 0.99f*ucell[cp->level].halfsz;
+		near += 0.99f*ucell[cp->level].halfsz;
+	    }
+	    VxVxV(dx, = r, - sink->cen);
+	    dx0 = fabsf(dx0);
+	    dx1 = fabsf(dx1);
+	    dx2 = fabsf(dx2);
+	    if (dx0 <= near && dx1 <= near && dx2 <= near) incube = 1;
+	    if (dx0 > far || dx1 > far || dx2 > far) outcube = 1;
+	}
+	if (sf) {
+	    int isquad = mac->qcut && cp->daughters >= mac->qcut;
+	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    if (incube && outcube) {
+		DebugWatchKey("straddle %12g %12g %12g daughters %ld halfsz %g cr %g\n", 
+			   r0-sink->cen[0], r1-sink->cen[1], r2-sink->cen[2], 
+			   (long int)cp->daughters, ucell[cp->level].halfsz, sink->cr);
+		result[i] = MAC_SPLIT_SRC;
+	    } else if (!isquad) {
+		result[i] = MAC_SPLIT_SRC;
+	    } else if (isquad && dr2 > Square(qcp->rcrit_q + sink->bmax)) {
+		DebugWatchKey("%12g %12g %12g %12g %12g Qvec %ld%s\n", incube ? qcp->mass+ucell[qcp->level].mass : qcp->mass, r0-sink->cen[0], r1-sink->cen[1], r2-sink->cen[2], ucell[qcp->level].halfsz, (long int)cp->daughters, incube ? " fill" : "");
+		appendQvec(qcp);
+		sink->interactions += qcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + sink->bmax)) {
+		DebugWatchKey("%12g %12g %12g %12g %12g Hvec %ld%s\n", incube ? hcp->mass+ucell[hcp->level].mass : hcp->mass, 
+			      r0-sink->cen[0], r1-sink->cen[1], r2-sink->cen[2], 
+			      ucell[hcp->level].halfsz, (long int) hcp->daughters, incube ? " fill" : "");
+		appendHvec(hcp);
+		sink->interactions += hcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else {
+		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+	    }
+	} else {
+	    /* body-body */
+	    if (dr2 > Eps2) {
+		appendMvec(cp, cp->mass);
+		DebugWatchKey("%12g %12g %12g %12g %12g Mvec\n", cp->mass, r0-sink->cen[0],
+			      r1-sink->cen[1], r2-sink->cen[2], 0.0);
+	    } else if (dr2 > 0.0f) appendSvec(cp);
+	    sink->fmass += cp->mass;
+	    sink->interactions++;
+	    result[i] = MAC_ACCEPT;
+	}
+	if (result[i] == MAC_SPLIT_SRC && outcube) {
+	    if (!incube && cp->daughters < mac->qcut) {
+		appendMvec(cp, -ucell[cp->level].mass);
+		AddCounter(&MCCorr, 1);
+		DebugWatchKey("%12g %12g %12g %12g %12g Mvec fill\n", 
+			      -ucell[cp->level].mass, r0-sink->cen[0],
+			      r1-sink->cen[1], r2-sink->cen[2], 0.0);
+		sink->fmass += -ucell[cp->level].mass;
+	    } else if (sf != (1<<MAXNSUB) - 1) {
+		Key_t k = KeyLshift(source_vec[i]->key, NDIM);
+		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
+		    if ((sf & 1) == 0) {
+			float mxyz[4], cellsz;
+			CellCorner(k, mxyz+1, &cellsz);
+			VV((mxyz+1), += 0.5f*cellsz + offset_vec[i]);
+			if (fabsf(mxyz[1]-sink->cen[0]) > sink->cr ||
+			    fabsf(mxyz[2]-sink->cen[1]) > sink->cr ||
+			    fabsf(mxyz[3]-sink->cen[2]) > sink->cr) {
+			    mxyz[0] = -ucell[cp->level+1].mass;
+			    sink->fmass += mxyz[0];
+			    appendMvec(mxyz,mxyz[0]);
+			    AddCounter(&CEmpty, 1);
+			    DebugWatchKey("%12g %12g %12g %12g %12g Mvec empty\n", 
+					  mxyz[0], mxyz[1]-sink->cen[0],
+					  mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], 0.0);
+			}
 		    }
 		}
 	    }
