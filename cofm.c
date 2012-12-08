@@ -46,8 +46,14 @@ static void mpole_add_cube(double a, double rho, cofmdata *q);
 static void mpole_add_mono(cofmdata *cmp, body *bp);
 static void mpole_add(cofmdata *cmp, cofmdata *dp);
 
+static double a[14];		/* coef of error poly */
+static void rcrit_poly(int n, double r, double *value, double *deriv);
+static double rtnewt(int n, void (*funcd)(int, double, double *, double *),  
+		    double x1, double xacc);
+
 void SetupCofm(mac_s *m)
 {
+    m->rho0 = m->m0/pow3(2.0*m->r0);
     m->inv_tol = 1.0/m->this_tol;
     m->inv_rel_tol = 1.0/m->rel_tol;
     m->inv_rel_tol0 = 1.0/m->rel_tol0;
@@ -56,7 +62,21 @@ void SetupCofm(mac_s *m)
     float mass = dx*dx*dx*m->rho0;
     float rcrit = 0.5*dx + sqrt(0.25*dx*dx+sqrt(0.75*mass/m->this_tol));
     m->mpole_rcrit = Max(dx, rcrit);
+    cofmdata c = {.sz=dx, .bmax=dx*sqrt(0.75)};
+    mpole_add_cube(c.sz, m->rho0, &c);
+    double B3 = c.bmax*(c.x2+c.y2+c.z2); 	/* upper bound */
+    double B4 = (c.x4 + c.y4 + c.z4 + 2*c.x2y2 + 2*c.x2z2 + 2*c.y2z2);
+    a[0] = 3.*B4;
+    a[1] = -4.*B3;
+    a[2] = 0.0;
+    a[3] = 0.0;
+    a[4] = m->this_tol*c.bmax*c.bmax;
+    a[5] = -2.*m->this_tol*c.bmax;
+    a[6] = m->this_tol;
+    m->mpole_rcrit_q =  rtnewt(6, rcrit_poly, m->mpole_rcrit, .01*m->mpole_rcrit);
+    m->mpole_rcrit_q += 0.01*m->mpole_rcrit;
     mac = m;
+    singlPrintf("cube rcrits %.1f %.1f\n", 2.*m->mpole_rcrit/dx, 2.*m->mpole_rcrit_q/dx);
 }
 
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
@@ -78,6 +98,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     assert(cmp);
     memset(cmp, 0, sizeof(cofmdata));
     CELLCORNER(hptr->key, center, &cellsz);
+    cmp->level = TreeLevel(hptr->key, NDIM);
     cmp->sz = cellsz;
     VS(center, += 0.5f*cellsz);
     
@@ -180,11 +201,6 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     hptr->ptr = cmp;
 }
 
-static double a[14];		/* coef of error poly */
-static void rcrit_poly(int n, double r, double *value, double *deriv);
-static double rtnewt(int n, void (*funcd)(int, double, double *, double *),  
-		    double x1, double xacc);
-
 /* Tell the tree internals how big an object to copy */
 int 
 CellSz(void *p)
@@ -206,6 +222,7 @@ void *CellFromCofm(cofmdata *cmp)
     cell *cp = NULL;
     quadcell *qcp = NULL;
     hexacell *hcp = NULL;
+    cofmdata u;
 
     if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
 	cp = ChnAlloc(&mac->tree->cell4chn);
@@ -220,6 +237,7 @@ void *CellFromCofm(cofmdata *cmp)
     cp->mass = cmp->m;
     VV(cp->pos, = cmp->center);
     cp->bmax = cmp->bmax;
+    cp->level = cmp->level;
     cp->daughters = cmp->ndaughters;
     /* cp->R = 0.5f*cmp->sz; */
     if (mac->type == AREL_MAC) {
@@ -289,6 +307,9 @@ void *CellFromCofm(cofmdata *cmp)
 	/* if rel_rcrit0 is more accurate, then use it */
 	if (rel_rcrit0 > cp->rcrit) cp->rcrit = rel_rcrit0;
 #ifdef QUAD
+	memcpy(&u, cmp, sizeof(u));
+	if (mac->subtract_background) mpole_add_cube(cmp->sz, -mac->rho0, &u);
+
 	if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
 	    B3 = cmp->bmax*(cmp->x2+cmp->y2+cmp->z2); 	/* upper bound */
 	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2);
@@ -329,17 +350,19 @@ void *CellFromCofm(cofmdata *cmp)
 	    {
 		double t;
 #ifdef DIPOLE
+		
+		qcp->mass = u.m;
 		t = rinv;
-		qcp->qx = t*cmp->x;
-		qcp->qy = t*cmp->y;
-		qcp->qz = t*cmp->z;
+		qcp->qx = t*u.x;
+		qcp->qy = t*u.y;
+		qcp->qz = t*u.z;
 #endif
-		t = (cmp->x2 + cmp->y2 + cmp->z2)/3.0;
-		qcp->qxx = (cmp->x2 - t);
-		qcp->qxy = cmp->xy;
-		qcp->qyy = (cmp->y2 - t);
-		qcp->qxz = cmp->xz;
-		qcp->qyz = cmp->yz;
+		t = (u.x2 + u.y2 + u.z2)/3.0;
+		qcp->qxx = (u.x2 - t);
+		qcp->qxy = u.xy;
+		qcp->qyy = (u.y2 - t);
+		qcp->qxz = u.xz;
+		qcp->qyz = u.yz;
 		t = rinv*rinv;
 		qcp->qxx *= t;
 		qcp->qxy *= t;
@@ -364,7 +387,7 @@ void *CellFromCofm(cofmdata *cmp)
 	    a[3] = 0.;
 	    a[4] = 0.;
 	    a[5] = 0.;
-	    if (mac->subtract_background) {
+	    if (mac->subtract_background && (cmp->ndaughters > 32)) {
 		a[6] = 0.;
 		a[7] = ptol*cmp->bmax*cmp->bmax;
 		a[8] = -2. * ptol * cmp->bmax;
@@ -405,33 +428,34 @@ void *CellFromCofm(cofmdata *cmp)
 	    {
 		double t, tx, ty, tz, txx, txy, tyy, txz, tyz, tzz;
 #ifdef DIPOLE
+		hcp->mass = u.m;
 		t = rinv;
-		hcp->qx = t*cmp->x;
-		hcp->qy = t*cmp->y;
-		hcp->qz = t*cmp->z;
+		hcp->qx = t*u.x;
+		hcp->qy = t*u.y;
+		hcp->qz = t*u.z;
 #endif
-		t = (cmp->x2 + cmp->y2 + cmp->z2)/3.0;
-		hcp->qxx = cmp->x2 - t;
-		hcp->qxy = cmp->xy;
-		hcp->qyy = cmp->y2 - t;
-		hcp->qxz = cmp->xz;
-		hcp->qyz = cmp->yz;
+		t = (u.x2 + u.y2 + u.z2)/3.0;
+		hcp->qxx = u.x2 - t;
+		hcp->qxy = u.xy;
+		hcp->qyy = u.y2 - t;
+		hcp->qxz = u.xz;
+		hcp->qyz = u.yz;
 		t = rinv*rinv;
 		hcp->qxx *= t;
 		hcp->qxy *= t;
 		hcp->qyy *= t;
 		hcp->qxz *= t;
 		hcp->qyz *= t;
-		tx = (cmp->x3 + cmp->xy2 + cmp->xz2)/5.0;
-		ty = (cmp->x2y + cmp->y3 + cmp->yz2)/5.0;
-		tz = (cmp->x2z + cmp->y2z + cmp->z3)/5.0;
-		hcp->qxxx = cmp->x3 - 3.0*tx;
-		hcp->qxxy = cmp->x2y - ty;
-		hcp->qxyy = cmp->xy2 - tx;
-		hcp->qyyy = cmp->y3 - 3.0*ty;
-		hcp->qxxz = cmp->x2z - tz;
-		hcp->qxyz = cmp->xyz;
-		hcp->qyyz = cmp->y2z - tz;
+		tx = (u.x3 + u.xy2 + u.xz2)/5.0;
+		ty = (u.x2y + u.y3 + u.yz2)/5.0;
+		tz = (u.x2z + u.y2z + u.z3)/5.0;
+		hcp->qxxx = u.x3 - 3.0*tx;
+		hcp->qxxy = u.x2y - ty;
+		hcp->qxyy = u.xy2 - tx;
+		hcp->qyyy = u.y3 - 3.0*ty;
+		hcp->qxxz = u.x2z - tz;
+		hcp->qxyz = u.xyz;
+		hcp->qyyz = u.y2z - tz;
 		t = rinv*rinv*rinv;
 		hcp->qxxx *= t;
 		hcp->qxxy *= t;
@@ -440,22 +464,30 @@ void *CellFromCofm(cofmdata *cmp)
 		hcp->qxxz *= t;
 		hcp->qxyz *= t;
 		hcp->qyyz *= t;
+		txx = (u.x4 + u.x2y2 + u.x2z2)/7.0;
+		txy = (u.x3y + u.xy3 + u.xyz2)/7.0;
+		txz = (u.x3z + u.xy2z + u.xz3)/7.0;
+		tyy = (u.x2y2 + u.y4 + u.y2z2)/7.0;
+		tyz = (u.x2yz + u.y3z + u.yz3)/7.0;
+		tzz = (u.x2z2 + u.y2z2 + u.z4)/7.0;
+		t = 0.1*(txx + tyy + tzz);
+		hcp->qxxxx = u.x4 - 6.0*(txx - t);
+		hcp->qxxxy = u.x3y - 3.0*txy;
+		hcp->qxxyy = u.x2y2 - (txx + tyy - 2.0*t);
+		hcp->qxyyy = u.xy3 - 3.0*txy;
+		hcp->qyyyy = u.y4 - 6.0*(tyy - t);
+		hcp->qxxxz = u.x3z - 3.0*txz;
+		hcp->qxxyz = u.x2yz - tyz;
+		hcp->qxyyz = u.xy2z - txz;
+		hcp->qyyyz = u.y3z - 3.0*tyz;
 		txx = (cmp->x4 + cmp->x2y2 + cmp->x2z2)/7.0;
-		txy = (cmp->x3y + cmp->xy3 + cmp->xyz2)/7.0;
-		txz = (cmp->x3z + cmp->xy2z + cmp->xz3)/7.0;
 		tyy = (cmp->x2y2 + cmp->y4 + cmp->y2z2)/7.0;
-		tyz = (cmp->x2yz + cmp->y3z + cmp->yz3)/7.0;
 		tzz = (cmp->x2z2 + cmp->y2z2 + cmp->z4)/7.0;
 		t = 0.1*(txx + tyy + tzz);
-		hcp->qxxxx = cmp->x4 - 6.0*(txx - t);
-		hcp->qxxxy = cmp->x3y - 3.0*txy;
-		hcp->qxxyy = cmp->x2y2 - (txx + tyy - 2.0*t);
-		hcp->qxyyy = cmp->xy3 - 3.0*txy;
-		hcp->qyyyy = cmp->y4 - 6.0*(tyy - t);
-		hcp->qxxxz = cmp->x3z - 3.0*txz;
-		hcp->qxxyz = cmp->x2yz - tyz;
-		hcp->qxyyz = cmp->xy2z - txz;
-		hcp->qyyyz = cmp->y3z - 3.0*tyz;
+		hcp->umass = cmp->m;
+		hcp->uxxxx = cmp->x4 - 6.0*(txx - t);
+		hcp->uxxyy = cmp->x2y2 - (txx + tyy - 2.0*t);
+		hcp->uyyyy = cmp->y4 - 6.0*(tyy - t);
 		t = rinv*rinv*rinv*rinv;
 		hcp->qxxxx *= t;
 		hcp->qxxxy *= t;
@@ -466,6 +498,9 @@ void *CellFromCofm(cofmdata *cmp)
 		hcp->qxxyz *= t;
 		hcp->qxyyz *= t;
 		hcp->qyyyz *= t;
+		hcp->uxxxx *= t;
+		hcp->uxxyy *= t;
+		hcp->uyyyy *= t;
 	    }
 	    Msgf(("Cell4: %s\n", PrintCellContents4(hcp)));
 	}

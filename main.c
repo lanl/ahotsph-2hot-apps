@@ -666,8 +666,8 @@ main(int argc, char *argv[])
 	    } else mac.this_tol *= fac;
 	}
 	mac.r0 = sysradius[NDIM-1];
+	mac.m0 = mtot;
 	mac.nx = cbrt(gnobj);
-	mac.rho0 = mtot/(8.0*mac.r0*mac.r0*mac.r0);
 	if (setdisplacement) {
 	    mac.this_tol /= 3.0;
 	}
@@ -1174,6 +1174,8 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BC2Int, "Body-quad");
     EnableCounter(&BC4Int, "Body-hexa");
     EnableCounter(&FBC4Int, "Body-hexaF");
+    EnableCounter(&CEmpty, "Cube Empty");
+    EnableCounter(&MCCorr, "Cube Corr");
     EnableCounter(&BSMax, "Max smth");
     EnableCounter(&Scycles, "Smth cycles");
     EnableCounter(&Mcycles, "Mono cycles");
@@ -1421,7 +1423,7 @@ FixCubeEwaldLE(body *btab, int nobj, const float *l, float gm, int nimage,
 
     Msgf(("grho %g 2*L*grho %g\n", grho, l[0]*2.0f*grho));
 
-    if (1 /* DEBUG */ || !subtract_background) {
+    if (!subtract_background) {
 	for (p = btab; p < btab+nobj; p++) {
 	    VV(r, = p->pos);
 	    VS(r, /= l[0]*2.0f);

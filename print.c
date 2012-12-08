@@ -15,7 +15,7 @@ PrintCellContents(const cell *p)
     }else{
 	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.2g\n"
 		"\t" Sinfix("%.4f", " "), 
-		p->mass, p->daughters, p->bmax, p->rcrit, Vinfix(p->pos, COMMA));
+		p->mass, (long int)p->daughters, p->bmax, p->rcrit, Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -30,7 +30,7 @@ PrintCellContents4(const hexacell *p)
     }else{
 	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.4g %.4g %.4g\n"
 		"\t" Sinfix("%.4f", " "), 
-		p->mass, p->daughters, p->bmax, p->rcrit_m, 
+		p->mass, (long int)p->daughters, p->bmax, p->rcrit_m, 
 		p->rcrit_q, p->rcrit_h,
 		Vinfix(p->pos, COMMA));
     }
@@ -75,7 +75,7 @@ PrintBodyContentsLong(const body *p)
 char *PrintBranch(const cofmdata *cmp){
     static char ret[512];
     sprintf(ret, "Br: mass: %.3g, ndaughters=%ld, pos=(%.3f %.3f %.3f), bmax:%.2g\n",
-	   cmp->m, cmp->ndaughters, 
+	    cmp->m, (long int)cmp->ndaughters, 
 	    cmp->center[0], cmp->center[1], cmp->center[2],
 	    cmp->bmax);
     return ret;

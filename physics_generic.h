@@ -45,6 +45,8 @@ void FixNterms(body *btab, int nobj);
 
 /* Should go somewhere else */
 #define Square(x) ({ __typeof__ (x) _x = (x); _x*_x; })
+#define pow2(x) ({ __typeof__ (x) _x = (x); _x*_x; })
+#define pow3(x) ({ __typeof__ (x) _x = (x); _x*_x*_x; })
 
 #define Max(a,b) \
     ({ __typeof__ (a) _a = (a); \

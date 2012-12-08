@@ -10,7 +10,7 @@
 #include "key.h"
 #include "timers.h"
 
-/* #define SAVE_ACC */
+#define SAVE_ACC
 /* #define BODY_HAS_KEY */
 
 #ifdef USE_PH
@@ -113,14 +113,16 @@ typedef struct {
     float mass;
     float pos[NDIM];
     float rcrit, bmax;
-    int64_t daughters;
+    int64_t level : 16;
+    int64_t daughters : 48;
 } cell, *cellptr;
 
 typedef struct {
     float mass;
     float pos[NDIM];
     float rcrit_m, bmax;
-    int64_t daughters;
+    int64_t level : 16;
+    int64_t daughters : 48;
     float rcrit_q, pad;
 #ifdef DIPOLE
     float qx, qy, qz;
@@ -134,7 +136,8 @@ typedef struct {
     float mass;
     float pos[NDIM];
     float rcrit_m, bmax;
-    int64_t daughters;
+    int64_t level : 16;
+    int64_t daughters : 48;
     float rcrit_q, rcrit_h;
 #ifdef DIPOLE
     float qx, qy, qz;
@@ -144,6 +147,7 @@ typedef struct {
     float qxx, qxy, qyy, qxz, qyz;
     float qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
     float qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
+    float umass, uxxxx, uxxyy, uyyyy;
 } hexacell, *hexacellptr;
 
 /* This is the intermediate data structure used to construct cofm */
@@ -153,7 +157,8 @@ typedef struct{
     double bmax;
     double B2;
     double sz;
-    int64_t ndaughters;
+    int64_t level : 16;
+    int64_t ndaughters : 48;
 #ifdef QUAD
     double x, y, z;
     double x2, xy, y2, xz, yz, z2;
@@ -175,10 +180,14 @@ typedef struct{
     float M1[NDIM];
     int64_t daughters;
     int64_t interactions;
+#ifndef NDEBUG
+    Key_t key;
+#endif
     double fmass;
     int fill_background;
+    float halfsz;
     float cmass;
-    float ccenter[NDIM];
+    float cen[NDIM];
     float cr;
     int scnt;
     int mcnt;
@@ -224,13 +233,15 @@ typedef struct mac_s {
     int p8cut;
     int geometric_center;
     int subtract_background;
-    float rho0;
+    double m0;
     /* derived */
+    double rho0;
     float inv_tol;
     float inv_rel_tol;
     float inv_rel_tol0;
     float bmax0;
     float mpole_rcrit;
+    float mpole_rcrit_q;
 } mac_s;
 
 
@@ -259,6 +270,7 @@ char *PrintBranch(const cofmdata *cmp);
 /* In mac.c */
 extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
+extern Counter_t CEmpty, MCCorr;
 extern Counter_t FBC2Int, FBC4Int;
 extern Counter_t CCIntRej;
 extern Counter_t TranslateCnt;
