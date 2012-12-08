@@ -369,7 +369,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	AddCounter(&BSInt, from->scnt);
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
-	if (!finite(acc[0]) || !finite(acc[1]) || !finite(acc[2]) || !finite(phi)) {
+	if (!isfinite(acc[0]) || !isfinite(acc[1]) || !isfinite(acc[2]) || !isfinite(phi)) {
 	    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", from->pos[0], from->pos[1], from->pos[2],
 		  acc[0], acc[1], acc[2], phi);
 	}
@@ -493,7 +493,7 @@ mxn_hexa(Sink *to, hcell *pp)
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
     to->hcnt_done = n1*NSSE;
 
-    if (!finite(first->acc[0]) || !finite(first->acc[1]) || !finite(first->acc[2]) || !finite(first->phi)) {
+    if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
 	Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
 	      first->pos[0], first->pos[1], first->pos[2],
 	      first->acc[0], first->acc[1], first->acc[2], first->phi);

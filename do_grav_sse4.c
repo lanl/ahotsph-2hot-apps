@@ -63,10 +63,10 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	r2 = x*x + y*y + z*z;
 
 	/* Prefetching improves uncached performance by 10-20% */
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
-	asm("prefetcht0 576(%rdi)");
+	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
 	t = rinv;
 	r2 *= rinv;
@@ -76,7 +76,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
 	
-	asm("prefetcht0 640(%rdi)");
+	__asm__("prefetcht0 640(%rdi)");
 	t = rinv;
 	eqe = t*mass;
 	rinv2 = t*t;
@@ -87,7 +87,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	a1 += y*eqe;
 	a2 += z*eqe;
 
-	asm("prefetcht0 704(%rdi)");
+	__asm__("prefetcht0 704(%rdi)");
         t *= three*rinv2*R*R;
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
@@ -99,7 +99,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 768(%rdi)");
+	__asm__("prefetcht0 768(%rdi)");
         t *= five*rinv2*R;
         xx = half*x*x;
         xy = x*y;
@@ -114,7 +114,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         xx -= zz;
         yy -= zz;
 
-	asm("prefetcht0 832(%rdi)");
+	__asm__("prefetcht0 832(%rdi)");
         eq0 = t*(qxxx*xx + qxyy*yy + qxxy*xy + qxxz*xz + qxyz*yz);
         eq1 = t*(qxyy*xy + qxxy*xx + qyyy*yy + qyyz*yz + qxyz*xz);
         eq2 = t*(-(qxxx + qxyy)*xz - (qxxy + qyyy)*yz + qxxz*xx + qyyz*yy + qxyz*xy);
@@ -125,7 +125,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 896(%rdi)");
+	__asm__("prefetcht0 896(%rdi)");
         t *= seven*rinv2*R;
         xxy = y*xx;
         xyy = x*yy;
@@ -182,10 +182,10 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	r2 = x*x + y*y + z*z;
 
 	/* Prefetching improves uncached performance by 10-20% */
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
-	asm("prefetcht0 576(%rdi)");
+	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
 	t = rinv;
 	r2 *= rinv;
@@ -195,7 +195,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
 	
-	asm("prefetcht0 640(%rdi)");
+	__asm__("prefetcht0 640(%rdi)");
 	t = rinv;
 	eqe = t*mass;
 	rinv2 = t*t;
@@ -206,7 +206,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	a1 += y*eqe;
 	a2 += z*eqe;
 
-	asm("prefetcht0 704(%rdi)");
+	__asm__("prefetcht0 704(%rdi)");
         t *= three;
         t *= rinv2;
         t *= R;
@@ -236,7 +236,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 768(%rdi)");
+	__asm__("prefetcht0 768(%rdi)");
         t *= five;
         t *= rinv2;
         t *= R;
@@ -253,7 +253,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
         xx -= zz;
         yy -= zz;
 
-	asm("prefetcht0 832(%rdi)");
+	__asm__("prefetcht0 832(%rdi)");
         eq0 = qxxx*xx;
         eq1 = qxyy*xy;
         eq2 = -(qxxx + qxyy);
@@ -283,7 +283,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 896(%rdi)");
+	__asm__("prefetcht0 896(%rdi)");
         t *= seven*rinv2*R;
         xxy = y*xx;
         xyy = x*yy;
@@ -359,10 +359,10 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 
 	r2 = x*x + y*y + z*z;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
-	asm("prefetcht0 576(%rdi)");
+	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
 	t = rinv;
 	r2 *= rinv;
@@ -372,7 +372,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
 	
-	asm("prefetcht0 640(%rdi)");
+	__asm__("prefetcht0 640(%rdi)");
 	t = rinv;
 	eqe = t*mass;
 	rinv2 = t*t;
@@ -429,7 +429,7 @@ do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, f
 
 	r2 = x*x + y*y + z*z;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
 	/* Newton-Raphson */
@@ -502,7 +502,7 @@ do_gravsS_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	u2 = x*x + y*y + z*z;
 	u2 *= eps_inv * eps_inv;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 
 	rinv = __builtin_ia32_rsqrtps(u2);
 	/* Newton-Raphson */
@@ -583,7 +583,7 @@ do_gravsF1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0
 	u2 *= eps_inv * eps_inv;
 	u2 -= one;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 
 	t = p2*u2;
 	t += p1;
@@ -643,7 +643,7 @@ do_gravsF2_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0
 	u2 *= eps_inv * eps_inv;
 	u2 -= one;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 
 	t = p3*u2;
 	t += p2;
@@ -705,7 +705,7 @@ do_gravsK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0
 	u2 *= eps_inv * eps_inv;
 	u2 -= one;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 
 	t = p3*u2;
 	t += p2;
@@ -764,7 +764,7 @@ do_gravsU_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	t = eps_inv * eps_inv;
 	u2 *= t;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	
 	phi -= mass * eps_inv * half * (three - u2);
 
@@ -812,7 +812,7 @@ do_gravsCP_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0
 
 	r2 = x*x + y*y + z*z + eps2;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
 	/* Newton-Raphson */
@@ -864,7 +864,7 @@ do_grav11bits_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *ma
 
 	r2 = x*x + y*y + z*z;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
 	t = rinv*rinv;
@@ -919,10 +919,10 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	r2 = x*x + y*y + z*z + eps2;
 
 	/* Prefetching improves uncached performance by 10-20% */
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
-	asm("prefetcht0 576(%rdi)");
+	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
 	t = rinv;
 	r2 *= rinv;
@@ -932,7 +932,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
 	
-	asm("prefetcht0 640(%rdi)");
+	__asm__("prefetcht0 640(%rdi)");
 	t = rinv;
 	eqe = t*mass;
 	rinv2 = t*t;
@@ -943,7 +943,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	a1 += y*eqe;
 	a2 += z*eqe;
 
-	asm("prefetcht0 704(%rdi)");
+	__asm__("prefetcht0 704(%rdi)");
         t *= three*rinv2*R*R;
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
@@ -955,7 +955,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 768(%rdi)");
+	__asm__("prefetcht0 768(%rdi)");
         t *= five*rinv2*R;
         xx = half*x*x;
         xy = x*y;
@@ -970,7 +970,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
         xx -= zz;
         yy -= zz;
 
-	asm("prefetcht0 832(%rdi)");
+	__asm__("prefetcht0 832(%rdi)");
         eq0 = t*(qxxx*xx + qxyy*yy + qxxy*xy + qxxz*xz + qxyz*yz);
         eq1 = t*(qxyy*xy + qxxy*xx + qyyy*yy + qyyz*yz + qxyz*xz);
         eq2 = t*(-(qxxx + qxyy)*xz - (qxxy + qyyy)*yz + qxxz*xx + qyyz*yy + qxyz*xy);
@@ -981,7 +981,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 896(%rdi)");
+	__asm__("prefetcht0 896(%rdi)");
         t *= seven*rinv2*R;
         xxy = y*xx;
         xyy = x*yy;
@@ -1039,10 +1039,10 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
 	r2 = x*x + y*y + z*z + eps2;
 
 	/* Prefetching improves uncached performance by 10-20% */
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
-	asm("prefetcht0 576(%rdi)");
+	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
 	t = rinv;
 	r2 *= rinv;
@@ -1052,7 +1052,7 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
 	
-	asm("prefetcht0 640(%rdi)");
+	__asm__("prefetcht0 640(%rdi)");
 	t = rinv;
 	eqe = t*mass;
 	rinv2 = t*t;
@@ -1063,7 +1063,7 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
 	a1 += y*eqe;
 	a2 += z*eqe;
 
-	asm("prefetcht0 704(%rdi)");
+	__asm__("prefetcht0 704(%rdi)");
         t *= three;
         t *= rinv2;
         t *= R;
@@ -1093,7 +1093,7 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 768(%rdi)");
+	__asm__("prefetcht0 768(%rdi)");
         t *= five;
         t *= rinv2;
         t *= R;
@@ -1110,7 +1110,7 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
         xx -= zz;
         yy -= zz;
 
-	asm("prefetcht0 832(%rdi)");
+	__asm__("prefetcht0 832(%rdi)");
         eq0 = qxxx*xx;
         eq1 = qxyy*xy;
         eq2 = -(qxxx + qxyy);
@@ -1140,7 +1140,7 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
 	a1 += y*eqe - eq1;
 	a2 += z*eqe - eq2;
 
-	asm("prefetcht0 896(%rdi)");
+	__asm__("prefetcht0 896(%rdi)");
         t *= seven*rinv2*R;
         xxy = y*xx;
         xyy = x*yy;
@@ -1216,10 +1216,10 @@ do_gravpq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 
 	r2 = x*x + y*y + z*z + eps2;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
-	asm("prefetcht0 576(%rdi)");
+	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
 	t = rinv;
 	r2 *= rinv;
@@ -1229,7 +1229,7 @@ do_gravpq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
 	
-	asm("prefetcht0 640(%rdi)");
+	__asm__("prefetcht0 640(%rdi)");
 	t = rinv;
 	eqe = t*mass;
 	rinv2 = t*t;
@@ -1286,7 +1286,7 @@ do_gravp_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 
 	r2 = x*x + y*y + z*z + eps2;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
 	/* Newton-Raphson */
@@ -1339,7 +1339,7 @@ do_gravp11bits_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *m
 
 	r2 = x*x + y*y + z*z + eps2;
 
-	asm("prefetcht0 512(%rdi)");
+	__asm__("prefetcht0 512(%rdi)");
 	rinv = __builtin_ia32_rsqrtps(r2);
 
 	t = rinv*rinv;

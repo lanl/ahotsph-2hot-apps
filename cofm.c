@@ -254,11 +254,11 @@ void *CellFromCofm(cofmdata *cmp)
 	bmaxhalf = cmp->bmax * (float)0.5;
 	rcritmax = bmaxhalf + sqrtf_fast(bmaxhalf*bmaxhalf
 					 + sqrtf_fast((float)3.*B2/ptol));
-	if (!finite(rcritmax))
+	if (!isfinite(rcritmax))
 	  Error("Bad rcritmax, q->bmax = %g, B2 = %g\n", cmp->bmax, B2);
 	if (B2 == (float)0.0) Error("B2 is zero\n");
 	B3 = B2 * sqrtf_fast(B2*cmp->massinv); /* lower bound */
-	if (!finite(B2) || !finite(B3) || !finite(cmp->bmax))
+	if (!isfinite(B2) || !isfinite(B3) || !isfinite(cmp->bmax))
 	  Error("Bad value B2 = %g, B3 = %g, bmax = %g\n", B2, B3, cmp->bmax);
 	a[0] = 2.*B3;
 	a[1] = -3. * B2;
@@ -295,7 +295,7 @@ void *CellFromCofm(cofmdata *cmp)
 	    R4 = R2*R2;
 	    B3 = cmp->bmax*(cmp->x2+cmp->y2+cmp->z2)*R2; 	/* upper bound */
 	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2)*R4;
-	    if (!finite(B4) || !finite(B3))
+	    if (!isfinite(B4) || !isfinite(B3))
 		Error("Bad B3 or B4, B2 = %g, massinv = %g\n", B2, cmp->massinv);
 	    rcritmax = abs_rcrit;
 	    a[0] = 3.*B4;
@@ -347,7 +347,7 @@ void *CellFromCofm(cofmdata *cmp)
 	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2.0f*cmp->x2y2 + 2.0f*cmp->x2z2 + 2.0f*cmp->y2z2)*R4;
 	    B5 = cmp->bmax*B4; /* upper bound */
 	    B6 = (cmp->x6+cmp->y6+cmp->z6+3.0f*cmp->x4y2+3.0f*cmp->x2y4+3.0f*cmp->x4z2+6.0f*cmp->x2y2z2+3.0f*cmp->y4z2+3.0f*cmp->x2z4+3.0f*cmp->y2z4)*R2*R4;
-	    if (!finite(B5) || !finite(B6))
+	    if (!isfinite(B5) || !isfinite(B6))
 		Error("Bad B5 or B6, B2 = %g, massinv = %g\n", B2, cmp->massinv);
 	    rcritmax = abs_rcrit;
 	    a[0] = 5.*B6;
@@ -443,7 +443,7 @@ static void rcrit_poly(int n, double r, double *value, double *deriv)
     /* See pg. 149 of Numerical Rec. */
     /* We could unroll it... */
     while(n>0) { dp = dp*r + p; p = p*r + a[--n]; }
-    if (!finite(p) || !finite(dp))
+    if (!isfinite(p) || !isfinite(dp))
       Error("Bad p or dp, p = %g, dp = %g, n = %d\n", p, dp, n);
     *value = p;
     *deriv = dp;
