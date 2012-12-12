@@ -1175,6 +1175,7 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BC4Int, "Body-hexa");
     EnableCounter(&FBC4Int, "Body-hexaF");
     EnableCounter(&CEmpty, "Cube Empty");
+    EnableCounter(&MCAnti, "Cube Anti");
     EnableCounter(&MCCorr, "Cube Corr");
     EnableCounter(&BSMax, "Max smth");
     EnableCounter(&Scycles, "Smth cycles");

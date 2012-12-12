@@ -147,7 +147,6 @@ typedef struct {
     float qxx, qxy, qyy, qxz, qyz;
     float qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
     float qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
-    float umass, uxxxx, uxxyy, uyyyy;
 } hexacell, *hexacellptr;
 
 /* This is the intermediate data structure used to construct cofm */
@@ -180,15 +179,12 @@ typedef struct{
     float M1[NDIM];
     int64_t daughters;
     int64_t interactions;
-#ifndef NDEBUG
     Key_t key;
-#endif
     double fmass;
-    int fill_background;
-    float halfsz;
-    float cmass;
+    int clevel;
+    int near;
     float cen[NDIM];
-    float cr;
+    float cr, cr2;
     int scnt;
     int mcnt;
 #ifdef QUAD
@@ -269,7 +265,7 @@ char *PrintBranch(const cofmdata *cmp);
 /* In mac.c */
 extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
-extern Counter_t CEmpty, MCCorr;
+extern Counter_t CEmpty, MCCorr, MCAnti;
 extern Counter_t FBC2Int, FBC4Int;
 extern Counter_t CCIntRej;
 extern Counter_t TranslateCnt;
@@ -277,8 +273,8 @@ extern Counter_t TranslateCnt;
 void SetupGrav(float newton_const, float eps, int64_t gnobj, mac_s *mac,
 	       float particle_mass, int smoothing_type);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
-void DLRcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
-void RcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
+void DLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
+void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void SetGravOffset(float *off, int nimage);
 void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock);
 void WalkInitSrc(Stk *kstk, Stk *ostk);

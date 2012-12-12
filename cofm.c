@@ -58,10 +58,7 @@ void SetupCofm(mac_s *m)
     m->inv_rel_tol = 1.0/m->rel_tol;
     m->inv_rel_tol0 = 1.0/m->rel_tol0;
     m->bmax0 = m->r0;
-    float dx = 2.0*m->r0/m->nx;    /* mean interparticle separation */
-    m->cr = 6.0f*dx;
     mac = m;
-    singlPrintf("cr is %.3f\n", m->cr);
 }
 
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
@@ -465,14 +462,6 @@ void *CellFromCofm(cofmdata *cmp)
 		hcp->qxxyz = u.x2yz - tyz;
 		hcp->qxyyz = u.xy2z - txz;
 		hcp->qyyyz = u.y3z - 3.0*tyz;
-		txx = (cmp->x4 + cmp->x2y2 + cmp->x2z2)/7.0;
-		tyy = (cmp->x2y2 + cmp->y4 + cmp->y2z2)/7.0;
-		tzz = (cmp->x2z2 + cmp->y2z2 + cmp->z4)/7.0;
-		t = 0.1*(txx + tyy + tzz);
-		hcp->umass = cmp->m;
-		hcp->uxxxx = cmp->x4 - 6.0*(txx - t);
-		hcp->uxxyy = cmp->x2y2 - (txx + tyy - 2.0*t);
-		hcp->uyyyy = cmp->y4 - 6.0*(tyy - t);
 		t = rinv*rinv*rinv*rinv;
 		hcp->qxxxx *= t;
 		hcp->qxxxy *= t;
@@ -483,9 +472,6 @@ void *CellFromCofm(cofmdata *cmp)
 		hcp->qxxyz *= t;
 		hcp->qxyyz *= t;
 		hcp->qyyyz *= t;
-		hcp->uxxxx *= t;
-		hcp->uxxyy *= t;
-		hcp->uyyyy *= t;
 	    }
 	    Msgf(("Cell4: %s\n", PrintCellContents4(hcp)));
 	}
