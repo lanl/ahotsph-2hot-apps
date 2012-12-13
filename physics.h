@@ -147,6 +147,7 @@ typedef struct {
     float qxx, qxy, qyy, qxz, qyz;
     float qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
     float qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
+    float umass, uxxxx, uyyyy, uxxyy;
 } hexacell, *hexacellptr;
 
 /* This is the intermediate data structure used to construct cofm */

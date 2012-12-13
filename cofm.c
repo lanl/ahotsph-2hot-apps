@@ -291,10 +291,11 @@ void *CellFromCofm(cofmdata *cmp)
 #ifdef QUAD
 	memcpy(&u, cmp, sizeof(u));
 	if (mac->subtract_background) mpole_add_cube(cmp->sz, -mac->rho0, &u);
+	float ee = 1.0f/sqrtf(cmp->ndaughters);
 
 	if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
-	    B3 = cmp->bmax*(cmp->x2+cmp->y2+cmp->z2); 	/* upper bound */
-	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2);
+	    B3 = ee*cmp->bmax*(cmp->x2+cmp->y2+cmp->z2); 	/* upper bound */
+	    B4 = ee*(cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2);
 	    if (!isfinite(B4) || !isfinite(B3))
 		Error("Bad B3 or B4, B2 = %g, massinv = %g\n", B2, massinv);
 	    rcritmax = abs_rcrit;
@@ -358,8 +359,8 @@ void *CellFromCofm(cofmdata *cmp)
 #ifdef HEXA
 	if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
 	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2.0f*cmp->x2y2 + 2.0f*cmp->x2z2 + 2.0f*cmp->y2z2);
-	    B5 = cmp->bmax*B4; /* upper bound */
-	    B6 = (cmp->x6+cmp->y6+cmp->z6+3.0f*cmp->x4y2+3.0f*cmp->x2y4+3.0f*cmp->x4z2+6.0f*cmp->x2y2z2+3.0f*cmp->y4z2+3.0f*cmp->x2z4+3.0f*cmp->y2z4);
+	    B5 = ee*cmp->bmax*B4; /* upper bound */
+	    B6 = ee*(cmp->x6+cmp->y6+cmp->z6+3.0f*cmp->x4y2+3.0f*cmp->x2y4+3.0f*cmp->x4z2+6.0f*cmp->x2y2z2+3.0f*cmp->y4z2+3.0f*cmp->x2z4+3.0f*cmp->y2z4);
 	    if (!isfinite(B5) || !isfinite(B6))
 		Error("Bad B5 or B6, B2 = %g, massinv = %g\n", B2, massinv);
 	    rcritmax = abs_rcrit;
@@ -369,18 +370,10 @@ void *CellFromCofm(cofmdata *cmp)
 	    a[3] = 0.;
 	    a[4] = 0.;
 	    a[5] = 0.;
-	    if (mac->subtract_background && (cmp->ndaughters > 32)) {
-		a[6] = 0.;
-		a[7] = ptol*cmp->bmax*cmp->bmax;
-		a[8] = -2. * ptol * cmp->bmax;
-		a[9] = ptol;
-		abs_rcrit =  rtnewt(9, rcrit_poly, rcritmax, .001*rcritmax);
-	    } else {
-		a[6] = ptol*cmp->bmax*cmp->bmax;
-		a[7] = -2. * ptol * cmp->bmax;
-		a[8] = ptol;
-		abs_rcrit =  rtnewt(8, rcrit_poly, rcritmax, .001*rcritmax);
-	    }
+	    a[6] = ptol*cmp->bmax*cmp->bmax;
+	    a[7] = -2. * ptol * cmp->bmax;
+	    a[8] = ptol;
+	    abs_rcrit =  rtnewt(8, rcrit_poly, rcritmax, .001*rcritmax);
 	    abs_rcrit += 0.001*rcritmax;
 
 	    rcritmax = rel_rcrit0;
@@ -462,6 +455,14 @@ void *CellFromCofm(cofmdata *cmp)
 		hcp->qxxyz = u.x2yz - tyz;
 		hcp->qxyyz = u.xy2z - txz;
 		hcp->qyyyz = u.y3z - 3.0*tyz;
+		txx = (cmp->x4 + cmp->x2y2 + cmp->x2z2)/7.0;
+		tyy = (cmp->x2y2 + cmp->y4 + cmp->y2z2)/7.0;
+		tzz = (cmp->x2z2 + cmp->y2z2 + cmp->z4)/7.0;
+		t = 0.1*(txx + tyy + tzz);
+		hcp->umass = cmp->m;
+		hcp->uxxxx = cmp->x4 - 6.0*(txx - t);
+		hcp->uxxyy = cmp->x2y2 - (txx + tyy - 2.0*t);
+		hcp->uyyyy = cmp->y4 - 6.0*(tyy - t);
 		t = rinv*rinv*rinv*rinv;
 		hcp->qxxxx *= t;
 		hcp->qxxxy *= t;
@@ -472,6 +473,9 @@ void *CellFromCofm(cofmdata *cmp)
 		hcp->qxxyz *= t;
 		hcp->qxyyz *= t;
 		hcp->qyyyz *= t;
+		hcp->uxxxx *= t;
+		hcp->uxxyy *= t;
+		hcp->uyyyy *= t;
 	    }
 	    Msgf(("Cell4: %s\n", PrintCellContents4(hcp)));
 	}

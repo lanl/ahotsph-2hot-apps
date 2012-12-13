@@ -21,8 +21,8 @@ Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm;
 
 #if 0
-int WatchId = 1270817;
-Key_t WatchKey = {.k = {18034759, 0}};
+int WatchId = 2277075;
+Key_t WatchKey = {.k = {203393281, 0}};
 #include <stdio.h>
 /* #define Msg_do printf */
 #define DebugWatchId(a, ...) \
@@ -445,7 +445,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
 		Error("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 	    if (from->near != 27) {
-		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+		/* Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near); */
 	    }
 	}
 
@@ -1443,12 +1443,12 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	int _i = sink->hcnt/NSSE;				\
 	int _j = sink->hcnt%NSSE;				\
 	if (bs) {						\
-	    _m = (p)->mass + ucell[(p)->level].mass;		\
+	    _m = (p)->umass;					\
 	    sink->fmass += _m;					\
 	    Hvec[_i].mass[_j] = _m;				\
-	    Hvec[_i].qxxxx[_j] = (p)->qxxxx + ucell[(p)->level].x4;	\
-	    Hvec[_i].qyyyy[_j] = (p)->qyyyy + ucell[(p)->level].x4;	\
-	    Hvec[_i].qxxyy[_j] = (p)->qxxyy + ucell[(p)->level].x2y2;	\
+	    Hvec[_i].qxxxx[_j] = (p)->uxxxx;			\
+	    Hvec[_i].qyyyy[_j] = (p)->uyyyy;			\
+	    Hvec[_i].qxxyy[_j] = (p)->uxxyy;			\
 	} else {						\
 	    _m = (p)->mass;					\
 	    sink->fmass += _m;					\
@@ -1568,7 +1568,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, in
 	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
 	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
 		dr2 = ddot(r, sink->cen);
-		bmax = 1.15470f*sink->cr;
+		bmax = 1.16f*sink->cr;
 	    } else {
 		dr2 = ddot(r, sink->pos);
 		bmax = sink->bmax;
@@ -1577,20 +1577,16 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, in
 		bs = BACKGROUND_FLAG;
 		flags_vec[i] |= bs;
 		sink->near++;
-		DebugWatchKey("%12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
+		DebugWatchKey("b %12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } 
 	    if (isquad && dr2 > Square(qcp->rcrit_q + bmax)) {
 		appendQvec(qcp);
-		if (bs) {
-		    DebugWatchKey("%12g %12g Rvec %ld %s\n", _m, sqrt(dr2), (long int)qcp->daughters, PrintKey(source_vec[i]->key));
-		} else {
-		    DebugWatchKey("%12g %12g Qvec %ld %s\n", _m, sqrt(dr2), (long int)qcp->daughters, PrintKey(source_vec[i]->key));
-		}
+		DebugWatchKey("%s %12g %12g Qvec %ld %s\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)qcp->daughters, PrintKey(source_vec[i]->key));
 		sink->interactions += qcp->daughters;
 		result[i] = MAC_ACCEPT;
-	    } else if (ishexa && !bs && dr2 > Square(hcp->rcrit_h + bmax)) {
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + bmax)) {
 		appendHvec(hcp);
-		DebugWatchKey("%12g %12g Hvec %ld %s %g %g\n", _m, sqrt(dr2), (long int)hcp->daughters, PrintKey(source_vec[i]->key), hcp->rcrit_h, bmax);
+		DebugWatchKey("%s %12g %12g Hvec %ld %s %g %g\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)hcp->daughters, PrintKey(source_vec[i]->key), hcp->rcrit_h, bmax);
 		sink->interactions += hcp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else {
@@ -1603,7 +1599,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, in
 		appendMvec(cp, cp->mass);
 	    } else if (dr2 > 0.0f) appendSvec(cp);
 	    sink->fmass += cp->mass;
-	    DebugWatchKey("%12g %12g Mvec 1 %s\n", cp->mass, sqrt(dr2), PrintKey(source_vec[i]->key));
+	    DebugWatchKey("  %12g %12g Mvec 1 %s\n", cp->mass, sqrt(dr2), PrintKey(source_vec[i]->key));
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
 	    if (!bs) {
@@ -1617,9 +1613,9 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, in
 		    appendMvec(mxyz, mxyz[0]);
 		    sink->fmass += mxyz[0];
 		    AddCounter(&MCAnti, 1);
-		    DebugWatchKey("%12g %12g Mvec anti\n", mxyz[0], sqrt(ddot(r, sink->cen)));
+		    DebugWatchKey("b %12g %12g Mvec anti\n", mxyz[0], sqrt(ddot(r, sink->cen)));
 		} else {
-		    DebugWatchKey("%12g %12g Mvec anti Near %s \n", 0.0, sqrt(ddot(r, sink->cen)), PrintKey(source_vec[i]->key));
+		    DebugWatchKey("  %12g %12g Mvec anti Near %s \n", 0.0, sqrt(ddot(r, sink->cen)), PrintKey(source_vec[i]->key));
 		    sink->near++;
 		}
 	    }
@@ -1631,7 +1627,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, in
 		sink->fmass += um;
 		AddCounter(&MCCorr, 1);
 		flags_vec[i] |= BACKGROUND_FLAG;
-		DebugWatchKey("%12g %12g Cvec %ld %s\n", um, sqrt(dr2), (long int)cp->daughters, PrintKey(source_vec[i]->key));
+		DebugWatchKey("  %12g %12g Cvec %ld %s\n", um, sqrt(dr2), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } else if (sf != (1<<MAXNSUB) - 1) {
 		Key_t k = KeyLshift(source_vec[i]->key, NDIM);
 		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
@@ -1646,9 +1642,9 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, in
 			    appendMvec(mxyz, mxyz[0]);
 			    sink->fmass += mxyz[0];
 			    AddCounter(&CEmpty, 1);
-			    DebugWatchKey("%12g %12g Mvec empty %s\n", mxyz[0], sqrt(dr2), PrintKey(k));
+			    DebugWatchKey("  %12g %12g %12g %12g Mvec empty %s %d\n", mxyz[0], mxyz[1]-sink->cen[0], mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], PrintKey(k), offset_index(flags_vec[i]));
 			} else {
-			    DebugWatchKey("%12g %12g Mvec empty Near %s\n", mxyz[0], sqrt(dr2), PrintKey(k));
+			    DebugWatchKey("  %12g %12g %12g %12g Mvec empty Near %s %d\n", mxyz[0], mxyz[1]-sink->cen[0], mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], PrintKey(k), offset_index(flags_vec[i]));
 			    sink->near++;
 			}
 		    }
