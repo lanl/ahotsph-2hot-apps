@@ -1543,7 +1543,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags_vec, int *result, int n)
+DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *restrict result, int n)
 {
     float dr2;
     Vxd(float r);
