@@ -26,6 +26,8 @@ static float DLfac, DLmax;
 static int Quad_Ncut = 7;
 static int Hexa_Ncut = 20;
 #define MAX_IMAGE 125
+#define OFFSET_MASK 255
+#define offset_index(f) ((f) & OFFSET_MASK)
 static int Nimage = 1;
 static float offset_array[MAX_IMAGE][NDIM];
 static tree_t *SinkTree;
@@ -197,7 +199,7 @@ void
 WalkInitSrc(Stk *kstk, Stk *ostk)
 {
     StkPushType(kstk, KeyInt(1), Key_t);
-    StkPushType(ostk, offset_array[Nimage/2], float *);
+    StkPushType(ostk, Nimage/2, int);
 }
 
 void
@@ -207,7 +209,7 @@ WalkInitSrcPeriodic(Stk *kstk, Stk *ostk)
 
     for (i = 0; i < Nimage; i++) {
 	StkPushType(kstk, KeyInt(1), Key_t);
-	StkPushType(ostk, offset_array[i], float *);
+	StkPushType(ostk, i, int);
     }
 }
 
@@ -503,7 +505,7 @@ mxn_hexa(Sink *to, hcell *pp)
 }
 
 void
-RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
     int mcnt = sink->mcnt;
@@ -537,7 +539,7 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 	    hcp = source->ptr;
 	} else {
 	    const body *bp = source->ptr;
-	    VxVV(r, = bp->pos, + offset_vec[i]);
+	    VxVV(r, = bp->pos, + offset_array[offset_index(flags[i])]);
 	    VxVxVx(dx, = r, - pos_sink);
 	    dr2 = Dotx(dx, dx);
 	    if (dr2 > Eps2) {
@@ -556,7 +558,7 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 	    continue;
 	}
 
-	VxVV(r, = cp->pos, + offset_vec[i]);
+	VxVV(r, = cp->pos, + offset_array[offset_index(flags[i])]);
 	VxVxVx(dx, = r, - pos_sink);
 	dr2 = Dotx(dx, dx);
 
@@ -632,7 +634,7 @@ RcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *re
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
+DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
     float bmax = sink->bmax;
@@ -657,7 +659,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	if (Sub_Flags(source_vec[i])) {
 	    const cell *cp = source_vec[i]->ptr;
 	    daughters = cp->daughters;
-	    VxVV(r, = cp->pos, + offset_vec[i]);
+	    VxVV(r, = cp->pos, + offset_array[offset_index(flags[i])]);
 	    VxVxVx(dx, = r, - pos_sink);
 	    rcrit = cp->rcrit;
 	    dr2 = Dotx(dx, dx);
@@ -740,7 +742,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	} else if (sink->isbody) {
 	    /* body-body */
 	    const body *bp = source_vec[i]->ptr;
-	    VxVV(r, = bp->pos, + offset_vec[i]);
+	    VxVV(r, = bp->pos, + offset_array[offset_index(flags[i])]);
 	    VxVxVx(dx, = r, - pos_sink);
 	    dr2 = Dotx(dx, dx);
 	    if (dr2 > Eps2) {

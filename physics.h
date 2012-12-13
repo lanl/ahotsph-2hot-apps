@@ -10,7 +10,7 @@
 #include "key.h"
 #include "timers.h"
 
-/* #define SAVE_ACC */
+#define SAVE_ACC
 /* #define BODY_HAS_KEY */
 
 #ifdef USE_PH
@@ -224,8 +224,8 @@ extern Counter_t TranslateCnt;
 void SetupGrav(float newton_const, float eps, int64_t gnobj, float dl_fac, float dl_max,
 	       int qcut, int hcut, float particle_mass, int smoothing_type);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
-void DLRcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
-void RcritMAC(Sink *sink, const hcell **source, const float **offset, int *result, int n);
+void DLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
+void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void SetGravOffset(float *off, int nimage);
 void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
