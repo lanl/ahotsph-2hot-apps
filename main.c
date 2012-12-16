@@ -155,6 +155,7 @@ main(int argc, char *argv[])
     int memory_tune_MB;
     int identsort_output = 0;
     int do_test = 0;
+    int do_profile = 0;
     cosmology cosmo;
     int n_outlist = 12;
     double *a_outlist;
@@ -184,6 +185,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "do_periodic", &do_periodic, 0);
     SDFgetintOrDefault(csdfp, "nimage", &nimage, 2);
     SDFgetintOrDefault(csdfp, "do_test", &do_test, 0);
+    SDFgetintOrDefault(csdfp, "do_profile", &do_profile, 0);
     SDFgetintOrDefault(csdfp, "fix_cube_ewald", &fix_cube_ewald, 0);
     SDFgetintOrDefault(csdfp, "fix_cube_ewald_le", &fix_cube_ewald_le, 0);
     SDFgetintOrDefault(csdfp, "cosmology", &do_cosmology, 0);
@@ -660,10 +662,7 @@ main(int argc, char *argv[])
 	}
 	if (do_cosmology && Ztol) {
 	    double fac = cosmo.growthfac_at_t(&cosmo, tpos);
-	    if (Ztol == 2 && cosmo.z_at_t(&cosmo, tpos) > 30.0) {
-		double fac30 = cosmo.growthfac_at_t(&cosmo, tpos)/cosmo.growthfac_at_z(&cosmo, 30.0);
-		mac.this_tol *= fac*fac30;
-	    } else mac.this_tol *= fac;
+	    mac.this_tol *= fac;
 	}
 	mac.r0 = sysradius[NDIM-1];
 	mac.m0 = mtot;
@@ -748,7 +747,7 @@ main(int argc, char *argv[])
 
 	    singlPrintf("FindForces\n");
 	    StartTimer(&WNTTm);
-	    if (0 && MPMY_Procnum() == 131) {
+	    if (do_profile && MPMY_Procnum() == 131) {
 		#include <gperftools/profiler.h>
 		ProfilerStart("nlnprof.131");
 		WalkNT(&thetree);

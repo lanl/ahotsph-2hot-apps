@@ -291,11 +291,15 @@ void *CellFromCofm(cofmdata *cmp)
 #ifdef QUAD
 	memcpy(&u, cmp, sizeof(u));
 	if (mac->subtract_background) mpole_add_cube(cmp->sz, -mac->rho0, &u);
-	float ee = 1.0f/sqrtf(cmp->ndaughters);
 
 	if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
-	    B3 = ee*cmp->bmax*(cmp->x2+cmp->y2+cmp->z2); 	/* upper bound */
-	    B4 = ee*(cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2);
+	    if (mac->subtract_background && cmp->ndaughters > 8) {
+		B3 = (fabs(cmp->x3) + 3*fabs(cmp->x2y) + 3*fabs(cmp->xy2) + fabs(cmp->y3) + 3*fabs(cmp->x2z) + 6*fabs(cmp->xyz) + 3*fabs(cmp->y2z) + 3*fabs(cmp->xz2) + 3*fabs(cmp->yz2) + fabs(cmp->z3))/9.0;
+		B4 = 0.0;
+	    } else {
+		B3 = cmp->bmax*(cmp->x2+cmp->y2+cmp->z2); 	/* upper bound */
+		B4 = cmp->x4 + cmp->y4 + cmp->z4 + 2*cmp->x2y2 + 2*cmp->x2z2 + 2*cmp->y2z2;
+	    }
 	    if (!isfinite(B4) || !isfinite(B3))
 		Error("Bad B3 or B4, B2 = %g, massinv = %g\n", B2, massinv);
 	    rcritmax = abs_rcrit;
@@ -358,9 +362,14 @@ void *CellFromCofm(cofmdata *cmp)
 
 #ifdef HEXA
 	if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
-	    B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2.0f*cmp->x2y2 + 2.0f*cmp->x2z2 + 2.0f*cmp->y2z2);
-	    B5 = ee*cmp->bmax*B4; /* upper bound */
-	    B6 = ee*(cmp->x6+cmp->y6+cmp->z6+3.0f*cmp->x4y2+3.0f*cmp->x2y4+3.0f*cmp->x4z2+6.0f*cmp->x2y2z2+3.0f*cmp->y4z2+3.0f*cmp->x2z4+3.0f*cmp->y2z4);
+	    if (mac->subtract_background && cmp->ndaughters > 8) {
+		B5 = (fabs(cmp->x5) + 5*fabs(cmp->x4y) + 10*fabs(cmp->x3y2) + 10*fabs(cmp->x2y3) + 5*fabs(cmp->xy4) + fabs(cmp->y5) + 5*fabs(cmp->x4z) + 20*fabs(cmp->x3yz) + 30*fabs(cmp->x2y2z) + 20*fabs(cmp->xy3z) + 5*fabs(cmp->y4z) + 10*fabs(cmp->x3z2) + 30*fabs(cmp->x2yz2) + 30*fabs(cmp->xy2z2) + 10*fabs(cmp->y3z2) + 10*fabs(cmp->x2z3) + 20*fabs(cmp->xyz3) + 10*fabs(cmp->y2z3) + 5*fabs(cmp->xz4) + 5*fabs(cmp->yz4) + fabs(cmp->z5))/27.0;
+		B6 = 0.0;
+	    } else {
+		B4 = (cmp->x4 + cmp->y4 + cmp->z4 + 2.0f*cmp->x2y2 + 2.0f*cmp->x2z2 + 2.0f*cmp->y2z2);
+		B5 = cmp->bmax*B4; /* upper bound */
+		B6 = cmp->x6+cmp->y6+cmp->z6+3.0f*cmp->x4y2+3.0f*cmp->x2y4+3.0f*cmp->x4z2+6.0f*cmp->x2y2z2+3.0f*cmp->y4z2+3.0f*cmp->x2z4+3.0f*cmp->y2z4;
+	    }
 	    if (!isfinite(B5) || !isfinite(B6))
 		Error("Bad B5 or B6, B2 = %g, massinv = %g\n", B2, massinv);
 	    rcritmax = abs_rcrit;

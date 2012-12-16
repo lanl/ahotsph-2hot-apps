@@ -443,10 +443,12 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    double cmass = -mac->rho0*pow3(2.0f*from->cr);
 	    DebugWatchId("fmass %12g cmass %12g\n", from->fmass, cmass);
 	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
-		Error("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+		SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+#if 0
 	    if (from->near != 27) {
-		/* Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near); */
+		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 	    }
+#endif
 	}
 
 	/* Make sure these are initialized to zero externally */
@@ -479,7 +481,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->bmax = cp->bmax;
 	to->daughters = cp->daughters;
 	to->isbody = 0;
-	if (cp->daughters <= 32 || 2.0f*mac->r0/mac->nx == ucell[cp->level].halfsz) ccp = cp;
+	if (cp->daughters <= 32 || 4.0f*mac->r0/mac->nx == ucell[cp->level].halfsz) ccp = cp;
     } else {
 	body *bp = pp->ptr;
 	VV(to->pos, = bp->pos);
@@ -1550,20 +1552,20 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 
     StartTimer(&MACTm);
     for (int i = 0; i < n; i++) {
-	const cell *cp = source_vec[i]->ptr;
-	const quadcell *qcp = source_vec[i]->ptr;
-	const hexacell *hcp = source_vec[i]->ptr;
-	int bs = flags_vec[i] & BACKGROUND_FLAG;
 	int sf = Sub_Flags(source_vec[i]);
 	if (!sf && !sink->isbody) {
 	    result[i] = MAC_SPLIT_SINK;
 	    continue;
 	}
+	const cell *cp = source_vec[i]->ptr;
+	const quadcell *qcp = source_vec[i]->ptr;
+	const hexacell *hcp = source_vec[i]->ptr;
+	int bs = flags_vec[i] & BACKGROUND_FLAG;
 	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
 	if (sf) {
 	    float bmax;
 	    int isquad = mac->qcut && cp->daughters >= mac->qcut;
-	    int ishexa = mac->hcut && cp->daughters >= mac->hcut && !bs;
+	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
 	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
 	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
 	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
