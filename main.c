@@ -609,9 +609,9 @@ main(int argc, char *argv[])
 
 
     if (do_DL)
-      mac.rcrit_func = (macv_t)DLRcritMAC;
+	mac.rcrit_func = mac.subtract_background ? (macv_t)DLRcritMACsb : (macv_t)DLRcritMAC;
     else
-      mac.rcrit_func = (macv_t)RcritMAC;
+	mac.rcrit_func = (macv_t)RcritMAC;
 
     mac.this_tol = mac.tol;
 

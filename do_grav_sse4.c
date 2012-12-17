@@ -5,8 +5,6 @@
 #include "order.h"
 typedef float v4sf __attribute__ ((vector_size (16)));
 
-#ifdef DIPOLE 
-
 #define mass f[0]
 #define xp f[1]
 #define yp f[2]
@@ -20,6 +18,7 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 #define qyy f[10]
 #define qxz f[11]
 #define qyz f[12]
+#define QSZ 13
 #define qxxx f[13]
 #define qxxy f[14]
 #define qxyy f[15]
@@ -36,10 +35,11 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 #define qxxyz f[26]
 #define qxyyz f[27]
 #define qyyyz f[28]
+#define HSZ 29
 
 /* 217 flops, 100 bytes */
 void
-do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravdh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     v4sf t, r2, rinv, rinv2;
     v4sf x, y, z;
@@ -149,7 +149,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
         eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
         eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
-	f += 29;
+	f += HSZ;
         eqe = quarter*(eq0*x + eq1*y + eq2*z);
 	phi += eqe;
 	eqe *= nine*rinv2;
@@ -168,7 +168,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 }
 
 void
-do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravdh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     v4sf t, r2, rinv, rinv2;
     v4sf x, y, z;
@@ -341,7 +341,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	eq0 *= t;
 	eq1 *= t;
         eq2 *= t;
-	f += 29;
+	f += HSZ;
         eqe = eq0*x;
         eqe += eq1*y;
         eqe += eq2*z;
@@ -364,7 +364,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 
 /* 66 flops, 40 bytes */
 void
-do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravdq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     v4sf t, r2, rinv, rinv2;
     v4sf x, y, z;
@@ -426,7 +426,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
         eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
-	f += 13;
+	f += QSZ;
         eqe = half*(eq0*x + eq1*y + eq2*z);
 	phi -= eqe;
 	eqe *= five*rinv2;
@@ -444,7 +444,38 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
 
-#else
+#ifndef DIPOLE
+#undef mass
+#undef xp
+#undef yp
+#undef zp
+#undef R
+#undef qx
+#undef qy
+#undef qz
+#undef qxx
+#undef qxy
+#undef qyy
+#undef qxz
+#undef qyz
+#undef QSZ
+#undef qxxx
+#undef qxxy
+#undef qxyy
+#undef qyyy
+#undef qxxz
+#undef qxyz
+#undef qyyz
+#undef qxxxx
+#undef qxxxy
+#undef qxxyy
+#undef qxyyy
+#undef qyyyy
+#undef qxxxz
+#undef qxxyz
+#undef qxyyz
+#undef qyyyz
+#undef HSZ
 
 #define mass f[0]
 #define xp f[1]
@@ -456,6 +487,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 #define qyy f[7]
 #define qxz f[8]
 #define qyz f[9]
+#define QSZ 10
 #define qxxx f[10]
 #define qxxy f[11]
 #define qxyy f[12]
@@ -472,6 +504,8 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 #define qxxyz f[23]
 #define qxyyz f[24]
 #define qyyyz f[25]
+#define HSZ 26
+#endif
 
 /* 217 flops, 100 bytes */
 void
@@ -575,7 +609,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
         eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
         eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
-	f += 26;
+	f += HSZ;
         eqe = quarter*(eq0*x + eq1*y + eq2*z);
 	phi += eqe;
 	eqe *= nine*rinv2;
@@ -755,7 +789,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	eq0 *= t;
 	eq1 *= t;
         eq2 *= t;
-	f += 26;
+	f += HSZ;
         eqe = eq0*x;
         eqe += eq1*y;
         eqe += eq2*z;
@@ -829,7 +863,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
         eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
-	f += 10;
+	f += QSZ;
         eqe = half*(eq0*x + eq1*y + eq2*z);
 	phi -= eqe;
 	eqe *= five*rinv2;
@@ -846,8 +880,6 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
     acc[1] += __builtin_ia32_haddps(a1, a1)[0];
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
-
-#endif
 
 /* 26 flops, 16 bytes */
 void
@@ -1432,7 +1464,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
         eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
         eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
         eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
-	f += 26;
+	f += HSZ;
         eqe = quarter*(eq0*x + eq1*y + eq2*z);
 	phi += eqe;
 	eqe *= nine*rinv2;
@@ -1588,31 +1620,32 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
         xxy = y*xx;
         xyy = x*yy;
         xyz = xy*z;
+        eq2 = -qxxxx*xxz;
         eq0 = qxxxx*xxx;
         eq1 = qxyyy*xyy;
-        eq2 = -qxxxx*xxz;
+        eq2 -= (qxyyy + qxxxy)*xyz;
         eq0 += qxyyy*yyy;
         eq1 += qxxxy*xxx;
-        eq2 -= (qxyyy + qxxxy)*xyz;
+        eq2 -= qyyyy*yyz;
         eq0 += qxxxy*xxy;
         eq1 += qyyyy*yyy;
-        eq2 -= qyyyy*yyz;
+        eq2 += qxxxz*xxx;
         eq0 += qxxxz*xxz;
         eq1 += qyyyz*yyz;
-        eq2 += qxxxz*xxx;
+        eq2 += qyyyz*yyy;
         eq0 += qxxyy*xyy;
         eq1 += qxxyy*xxy;
-        eq2 += qyyyz*yyy;
+	eq2 -= qxxyy*(xxz + yyz);
         eq0 += qxxyz*xyz;
         eq1 += qxxyz*xxz;
-	eq2 -= qxxyy*(xxz + yyz);
+	eq2 += qxxyz*xxy;
         eq0 += qxyyz*yyz;
         eq1 += qxyyz*xyz;
 	eq2 += qxyyz*xyy;
 	eq0 *= t;
 	eq1 *= t;
         eq2 *= t;
-	f += 26;
+	f += HSZ;
         eqe = eq0*x;
         eqe += eq1*y;
         eqe += eq2*z;
@@ -1686,7 +1719,7 @@ do_gravpq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
         eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
-	f += 10;
+	f += QSZ;
         eqe = half*(eq0*x + eq1*y + eq2*z);
 	phi -= eqe;
 	eqe *= five*rinv2;

@@ -62,10 +62,10 @@ static int MxN_min_sink = 256;
 static int MxN_min_hsrc = 512;
 static int MxN_do_pH = 0;
 
-static grav_t Sinteract;
-static grav_t Minteract;
-static grav_t Qinteract;
-static grav_t Hinteract;
+static grav_f Sinteract;
+static grav_f Minteract;
+static grav_f Qinteract;
+static grav_f Hinteract;
 #ifdef AMD6100
 static int amd6100 = 1;
 #else
@@ -181,8 +181,13 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	    Error("Unknown smoothing type\n");
 	}
 	Minteract = Arch(do_grav);
-	Qinteract = Arch(do_gravq);
-	Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
+	if (mac->geometric_center) {
+	    Qinteract = Arch(do_gravdq);
+	    Hinteract = (amd6100) ? Arch(do_gravdh_amd6100) : Arch(do_gravdh);
+	} else {
+	    Qinteract = Arch(do_gravq);
+	    Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
+	}
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
     Eps2v = (v4sf){Eps2, Eps2, Eps2, Eps2};
@@ -757,6 +762,8 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 #endif
 }
 
+#if 0
+
 /* Transpose the 4x4 matrix composed of row[0-3].  */
 #define _MM_TRANSPOSE4_PS(row0, row1, row2, row3)			\
 do {									\
@@ -772,7 +779,6 @@ do {									\
 } while (0)
 
 
-#if 0
 /* RcritMAC with Don't Laugh-like traversal */
 void
 DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *result, int n)
@@ -1392,7 +1398,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
     if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 }
 
-#else
+#endif
 
 #define appendMvec(p, m)				\
     do { \
@@ -1416,8 +1422,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
       sink->scnt++; \
     } while(0)
 
-#ifdef DIPOLE
-#define appendQvec(p)							\
+#define appendQdvec(p)							\
     float _m = bs ? (p)->mass + ucell[(p)->level].mass : (p)->mass;	\
     do {								\
 	int _i = sink->qcnt/NSSE;					\
@@ -1439,7 +1444,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	sink->qcnt++;							\
     } while(0)
 
-#define appendHvec(p)						\
+#define appendHdvec(p)						\
     float _m;							\
     do {							\
 	int _i = sink->hcnt/NSSE;				\
@@ -1486,8 +1491,6 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
 	Hvec[_i].qyyyz[_j] = (p)->qyyyz;			\
 	sink->hcnt++;						\
     } while(0)
-
-#else
 
 #define appendQvec(p)				\
     do {					\
@@ -1539,13 +1542,11 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, const float **offset_vec, int *
       sink->hcnt++;		\
     } while(0)
 
-#endif
-
 #define ddot(a, b) (pow2(a##0-b[0])+pow2(a##1-b[1])+pow2(a##2-b[2]))
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *restrict result, int n)
+DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *restrict result, int n)
 {
     float dr2;
     Vxd(float r);
@@ -1582,12 +1583,12 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 		DebugWatchKey("b %12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } 
 	    if (isquad && dr2 > Square(qcp->rcrit_q + bmax)) {
-		appendQvec(qcp);
+		appendQdvec(qcp);
 		DebugWatchKey("%s %12g %12g Qvec %ld %s\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)qcp->daughters, PrintKey(source_vec[i]->key));
 		sink->interactions += qcp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + bmax)) {
-		appendHvec(hcp);
+		appendHdvec(hcp);
 		DebugWatchKey("%s %12g %12g Hvec %ld %s %g %g\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)hcp->daughters, PrintKey(source_vec[i]->key), hcp->rcrit_h, bmax);
 		sink->interactions += hcp->daughters;
 		result[i] = MAC_ACCEPT;
@@ -1662,4 +1663,56 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
     if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 }
 
-#endif
+/* RcritMAC with Don't Laugh-like traversal */
+void
+DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *restrict result, int n)
+{
+    float dr2;
+    Vxd(float r);
+
+    StartTimer(&MACTm);
+    for (int i = 0; i < n; i++) {
+	int sf = Sub_Flags(source_vec[i]);
+	if (!sf && !sink->isbody) {
+	    result[i] = MAC_SPLIT_SINK;
+	    continue;
+	}
+	const cell *cp = source_vec[i]->ptr;
+	const quadcell *qcp = source_vec[i]->ptr;
+	const hexacell *hcp = source_vec[i]->ptr;
+	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
+	dr2 = ddot(r, sink->pos);
+	if (sf) {
+	    int isquad = mac->qcut && cp->daughters >= mac->qcut;
+	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    if (dr2 > Square(cp->rcrit + cp->bmax)) {
+		appendMvec(cp, cp->mass);
+		sink->interactions += cp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (isquad && dr2 > Square(qcp->rcrit_q + qcp->bmax)) {
+		appendQvec(qcp);
+		sink->interactions += qcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + hcp->bmax)) {
+		appendHvec(hcp);
+		sink->interactions += hcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else {
+		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+	    }
+	} else {
+	    /* body-body */
+	    if (dr2 > Eps2) appendMvec(cp, cp->mass);
+	    else if (dr2 > 0.0f) appendSvec(cp);
+	    sink->interactions++;
+	    result[i] = MAC_ACCEPT;
+	}
+    }
+    StopTimer(&MACTm);
+    
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
+}

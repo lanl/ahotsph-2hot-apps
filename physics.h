@@ -275,6 +275,7 @@ void SetupGrav(float newton_const, float eps, int64_t gnobj, mac_s *mac,
 	       float particle_mass, int smoothing_type);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
 void DLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
+void DLRcritMACsb(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void SetGravOffset(float *off, int nimage);
 void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock);
@@ -283,8 +284,14 @@ void WalkInitSrcPeriodic(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
 
 /* In grav.c */
-typedef void (*grav_t)(const float *p, const float *end, const float *pos0, float *mass0,
+typedef void (*grav_f)(const float *p, const float *end, const float *pos0, float *mass0,
 		       float *acc0, float *phi0, const float *eps2p, int *ncut);
+
+#define grav_decl(f) void f(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+
+grav_decl(do_gravdq_sse4);
+grav_decl(do_gravdh_sse4);
+grav_decl(do_gravdh_amd6100_sse4);
 
 void do_gravh_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_gravh_amd6100_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
