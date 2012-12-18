@@ -37,6 +37,7 @@ Key_t WatchKey = {.k = {203393281, 0}};
 int WatchId = -1;
 Key_t WatchKey = {.k = {-1, -1}};
 #endif
+int Nwarn;
 
 typedef float v4sf __attribute__ ((vector_size (16)));
 
@@ -149,6 +150,7 @@ void
 SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	  float particle_mass, int smooth_type)
 {
+    Nwarn = 0;
     GNewt = newton_const;
     Smooth_type = smooth_type;
     GNobj = gnobj;
@@ -448,7 +450,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    double cmass = -mac->rho0*pow3(2.0f*from->cr);
 	    DebugWatchId("fmass %12g cmass %12g\n", from->fmass, cmass);
 	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
-		SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+		if (Nwarn++ < 10) SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 #if 0
 	    if (from->near != 27) {
 		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
@@ -1571,7 +1573,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
 	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
 		dr2 = ddot(r, sink->cen);
-		bmax = 1.16f*sink->cr;
+		bmax = 1.2f*sink->cr;
 	    } else {
 		dr2 = ddot(r, sink->pos);
 		bmax = sink->bmax;
