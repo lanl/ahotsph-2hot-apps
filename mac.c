@@ -21,8 +21,8 @@ Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm;
 
 #if 0
-int WatchId = 2277075;
-Key_t WatchKey = {.k = {203393281, 0}};
+int64_t WatchId = 7310803995;
+Key_t WatchKey = {.k = {781836800001, 0}};
 #include <stdio.h>
 /* #define Msg_do printf */
 #define DebugWatchId(a, ...) \
@@ -450,7 +450,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    double cmass = -mac->rho0*pow3(2.0f*from->cr);
 	    DebugWatchId("fmass %12g cmass %12g\n", from->fmass, cmass);
 	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
-		if (Nwarn++ < 10) SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+		if (Nwarn++ < 2) SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 #if 0
 	    if (from->near != 27) {
 		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);

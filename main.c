@@ -872,7 +872,7 @@ main(int argc, char *argv[])
 		   mac.rel_tol, mac.rel_tol0,
 		   R, N, write_nfiles, &ke, &pe, do_output, identsort_output,
 		   ic_Nmesh, ic_growthfac);
-	    MPMY_CheckpointFinished();
+	    if (!do_output) MPMY_CheckpointFinished();
 	}
 
 	if (light_cone && do_output) {

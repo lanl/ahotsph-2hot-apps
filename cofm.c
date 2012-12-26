@@ -142,6 +142,8 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 		cmp->B2 += bp->mass * tmpsq;
 		newbmax += sqrt(tmpsq);
 		mpole_add_mono(cmp, bp);
+	    } else {
+		cmp->m += bp->mass;
 	    }
 	} else {
 	    dp = daughters[i]->ptr;
@@ -153,6 +155,8 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    if (tmpsq != 0.) {
 		cmp->B2 += dp->m * tmpsq;
 		newbmax += sqrt(tmpsq);
+	    } else {
+		cmp->m += dp->m;
 	    }
 	}
 	if (newbmax > cmp->bmax)
@@ -170,7 +174,8 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 		Msg_do("B2 cell\n");
 	    } 
 	}
-	cmp->B2 = fabs(bp->pos[0] * 1e-7); /* HACK */
+	cmp->bmax = fabs(bp->pos[0] * 1e-7); /* HACK */
+	cmp->B2 = bp->mass*cmp->bmax*cmp->bmax;
 	Warning("cmp->B2 is zero, suspect identical particle positions\n");
     }
 
