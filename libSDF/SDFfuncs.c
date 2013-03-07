@@ -704,7 +704,7 @@ int SDFseekrdvecsarr(SDF *hdr, int nreq,
 	    recptr = buf;
 	    /* Repaired by msw Mon Jul 11 14:35:19 PDT 1994 */
 	    /* Repaired again by johns Tue Jun 27 14:55:42 EST 1995 */
-	    fileoffset = blk->begin_offset + blk->reclen * first_rec 
+	    fileoffset = blk->begin_offset + (off_t)(blk->reclen) * first_rec
 		+ hdr->begin_file_offset;
 	}
 
