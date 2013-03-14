@@ -1,11 +1,11 @@
 defaultCC:=icc
 defaultFC:=ifort -nofor_main
 
-CC_SPECIFIC:=-g -DLONG_LONG_KEYS
-FC_SPECIFIC:=
-ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -DUSE_SYSTEM_MALLOC
-OPTIMIZE:=-O3 -static -no-prec-div -xW
-AGGRESSIVE_OPT=-O3 -static -no-prec-div -xW
+CC_SPECIFIC:=-g -debug inline-debug-info
+FC_SPECIFIC:=-g
+ARCH_SPECIFIC:=-D__iX86__=686 -D__ICC__ -DUSE_SYSTEM_MALLOC -DLONG_LONG_KEYS
+OPTIMIZE:=-O3 -static -no-prec-div -xHost
+AGGRESSIVE_OPT=-O3 -static -no-prec-div -xHost
 LEX:=flex
 YACC:=bison -y
 RANLIB:=ranlib
