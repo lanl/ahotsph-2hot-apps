@@ -332,7 +332,7 @@ main(int argc, char *argv[])
 		char cosmo_tbl[256];
 		SDFgetstring(csdfp, "cosmo_tbl", cosmo_tbl, sizeof(cosmo_tbl));
 		tbl_init(&cosmo, cosmo_tbl);
-	    } else if (version == 1) {
+	    } else {
 		cosmo1_init(&cosmo);
 	    }
 	}
