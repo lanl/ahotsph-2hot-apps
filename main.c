@@ -328,11 +328,13 @@ main(int argc, char *argv[])
 	    } else {
 		cosmo.velfac = 1.0;
 	    }
-	}
-	if (SDFhasname("cosmo_tbl", csdfp)) {
-	    char cosmo_tbl[256];
-	    SDFgetstring(csdfp, "cosmo_tbl", cosmo_tbl, sizeof(cosmo_tbl));
-	    tbl_init(&cosmo, cosmo_tbl);
+	    if (SDFhasname("cosmo_tbl", csdfp)) {
+		char cosmo_tbl[256];
+		SDFgetstring(csdfp, "cosmo_tbl", cosmo_tbl, sizeof(cosmo_tbl));
+		tbl_init(&cosmo, cosmo_tbl);
+	    } else if (version == 1) {
+		cosmo1_init(&cosmo);
+	    }
 	}
 	if (setdisplacement) SDFgetfloatOrDie(sdfp, "unit_mass", &unit_mass);
 	SDFgetintOrDefault(sdfp, "ic_Nmesh",  &ic_Nmesh, 0);
