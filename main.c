@@ -337,10 +337,14 @@ main(int argc, char *argv[])
 	    }
 	}
 	if (setdisplacement) SDFgetfloatOrDie(sdfp, "unit_mass", &unit_mass);
-	SDFgetintOrDefault(sdfp, "ic_Nmesh",  &ic_Nmesh, 0);
-	SDFgetdoubleOrDefault(sdfp, "ic_growthfac",  &ic_growthfac, 0);
 	SDFgetintOrDefault(sdfp, "iter",  &iter, 0);
 	start_iter = iter;
+	SDFgetintOrDefault(sdfp, "ic_Nmesh",  &ic_Nmesh, 0);
+	if (SDFhasname("ic_growthfac", sdfp)) {
+	    SDFgetdoubleOrDie(sdfp, "ic_growthfac",  &ic_growthfac);
+	} else if (iter == 0) {
+	    ic_growthfac = cosmo.growthfac_at_z(&cosmo, 1.0/cosmo.a-1.0);
+	}
 	if (sdfp) SDFclose(sdfp);
     } else {
 	int cencon;
@@ -843,7 +847,7 @@ main(int argc, char *argv[])
 	dtout = dt; /* time for checkpoint, reset below for do_output */
 	dtvout = tpos + 0.5 * dt - tvel;
 	for (i = 0; i < n_outlist; i++) {
-	    if ((tpos < 1.0001*t_outlist[i]) && (tpos + dt >= t_outlist[i])) {
+	    if (!first_step && (tpos < 1.0001*t_outlist[i]) && (tpos + dt >= t_outlist[i])) {
 		do_output = 1;
 		dtout = t_outlist[i] - tpos;
 		dtvout = t_outlist[i] - tvel;

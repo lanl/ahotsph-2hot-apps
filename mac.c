@@ -449,9 +449,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    DebugWatchId("c %12g %12g %12g\n", accd[0], accd[1], accd[2]);
 	    double cmass = -mac->rho0*pow3(2.0f*from->cr);
 	    DebugWatchId("fmass %12g cmass %12g\n", from->fmass, cmass);
+#if 0
 	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
 		if (Nwarn++ < 2) SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
-#if 0
 	    if (from->near != 27) {
 		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 	    }
