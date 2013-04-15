@@ -2,8 +2,6 @@ TREEHOME=..
 treedir_sed=\.\.
 ##### Application-specific stuff goes here
 
-ARCH=amd6100
-
 EXTRACFLAGS=-I/usr/projects/cosmo/amd6100/include
 PRELIBS=-lrt -Wl,-rpath -Wl,/usr/projects/cosmo/amd6100/lib -L/usr/projects/cosmo/amd6100/lib -lprofiler
 programname=../devel/nln

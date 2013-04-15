@@ -478,7 +478,8 @@ main(int argc, char *argv[])
     for (i = 0; i < n_outlist; i++) {
 	t_outlist[i] = cosmo.t_at_z(&cosmo, 1.0/a_outlist[i]-1.0);
     }
-    if (!save_first && do_cosmology && tpos*1.0001 > t_outlist[n_outlist-1]) {
+    if (!save_first && do_cosmology && tpos*1.0001 > t_outlist[n_outlist-1]
+	&& tvel*1.0001 > t_outlist[n_outlist-1]) {
 	singlPrintf("Already done.\n");
 	exit(0);
     } 
@@ -847,11 +848,13 @@ main(int argc, char *argv[])
 	dtout = dt; /* time for checkpoint, reset below for do_output */
 	dtvout = tpos + 0.5 * dt - tvel;
 	for (i = 0; i < n_outlist; i++) {
-	    if (!first_step && (tpos < 1.0001*t_outlist[i]) && (tpos + dt >= t_outlist[i])) {
-		do_output = 1;
-		dtout = t_outlist[i] - tpos;
-		dtvout = t_outlist[i] - tvel;
-		break;
+	    if ((tpos < 1.0001*t_outlist[i]) && (tpos + dt >= t_outlist[i])) {
+		if (!(first_step && tpos == tvel)) { /* Don't rewrite output */
+		    do_output = 1;
+		    dtout = t_outlist[i] - tpos;
+		    dtvout = t_outlist[i] - tvel;
+		    break;
+		}
 	    }
 	}
 	if ((first_step && save_first) || ForceOutput()) {
