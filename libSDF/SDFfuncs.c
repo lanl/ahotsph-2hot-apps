@@ -14,6 +14,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <sys/types.h>
 #include "Msgs.h"
 #include "stdio.h" /* for sprintf, etc.  No 'real' stdio */
 #include "SDF-private.h"
