@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Michael S. Warren. All Rights Reserved.
+ * Copyright 2012-2013 Michael S. Warren. All Rights Reserved.
  */
 #include <stdio.h>		/* only use sprintf */
 #include <stdlib.h>

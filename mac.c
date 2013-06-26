@@ -427,10 +427,11 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	AddCounter(&BSInt, from->scnt);
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
-	VV(acc, += accd); phi += phid;
-	if (!isfinite(acc[0]) || !isfinite(acc[1]) || !isfinite(acc[2]) || !isfinite(phi)) {
-	    Error("bad results from do_grav for id %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", bp->ident, from->pos[0], from->pos[1], from->pos[2],
-		  acc[0], acc[1], acc[2], phi);
+	if (!isfinite(accd[0]) || !isfinite(accd[1]) || !isfinite(accd[2]) || !isfinite(phi)) {
+	    SeriousWarning("bad results from do_grav for id %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", bp->ident, from->pos[0], from->pos[1], from->pos[2],
+			   acc[0], acc[1], acc[2], phi);
+	} else {
+	    VV(acc, += accd); phi += phid;
 	}
 	
 	if (Minteract == do_grav_sse16_ivec_asm) {
