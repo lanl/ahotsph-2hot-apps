@@ -755,10 +755,10 @@ main(int argc, char *argv[])
 	    singlPrintf("FindForces\n");
 	    StartTimer(&WNTTm);
 	    if (do_profile && MPMY_Procnum() == 131) {
-		#include <gperftools/profiler.h>
-		ProfilerStart("nlnprof.131");
+		// #include <gperftools/profiler.h>
+		// ProfilerStart("nlnprof.131");
 		WalkNT(&thetree);
-		ProfilerStop();
+		// ProfilerStop();
 	    } else {
 		WalkNT(&thetree);
 	    }
