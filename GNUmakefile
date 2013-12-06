@@ -6,7 +6,7 @@ EXTRACFLAGS=-I/usr/projects/cosmo/amd6100/include
 #PRELIBS=-lrt -Wl,-rpath -Wl,/usr/projects/cosmo/amd6100/lib -L/usr/projects/cosmo/amd6100/lib -lprofiler
 programname=../devel/nlna
 
-src = cofm.c grav.c mac.c main.c physics.c print.c output.c integrate.c ewald_le2.c do_grav_sse4.c do_grav_avx8.c pgrav_sse4.c ewald.c grav_n2.c version.c
+src = cofm.c grav.c mac.c main.c physics.c print.c output.c integrate.c ewald_le2.c do_grav_sse4.c do_grav_avx8.c pgrav_vec.c ewald.c grav_n2.c version.c
 treedir=$(TREEHOME)
 
 appexcludes:=-name data
