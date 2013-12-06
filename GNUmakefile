@@ -4,7 +4,7 @@ treedir_sed=\.\.
 
 ifdef PROFILE
 EXTRACFLAGS=-I$(PREFIX)/include
-PRELIBS=-lrt -Wl,-rpath -Wl,$(PREFIX)/lib -L$(PREFIX)/lib -lprofiler
+PRELIBS=$(PREFIX)/lib/libprofiler.a
 endif
 programname=../devel/nlna
 

@@ -74,7 +74,11 @@ extern Timer_t GravQFTm, GravHFTm;;
 #ifdef AMD6100
 #define GHZ 2.30e9
 #else
+#ifdef XK6
+#define GHZ 2.20e9
+#else
 #define GHZ 2.668e9
+#endif
 #endif
 
 int
@@ -156,6 +160,7 @@ main(int argc, char *argv[])
     int identsort_output = 0;
     int do_test = 0;
     int do_profile = 0;
+    int do_profile_proc = 0;
     cosmology cosmo;
     int n_outlist = 12;
     double *a_outlist;
@@ -186,6 +191,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "nimage", &nimage, 2);
     SDFgetintOrDefault(csdfp, "do_test", &do_test, 0);
     SDFgetintOrDefault(csdfp, "do_profile", &do_profile, 0);
+    SDFgetintOrDefault(csdfp, "do_profile_proc", &do_profile_proc, MPMY_Nproc()/3);
     SDFgetintOrDefault(csdfp, "fix_cube_ewald", &fix_cube_ewald, 0);
     SDFgetintOrDefault(csdfp, "fix_cube_ewald_le", &fix_cube_ewald_le, 0);
     SDFgetintOrDefault(csdfp, "cosmology", &do_cosmology, 0);
@@ -755,7 +761,7 @@ main(int argc, char *argv[])
 	    singlPrintf("FindForces\n");
 	    StartTimer(&WNTTm);
 #ifdef GPERF
-	    if (do_profile) {
+	    if (do_profile && (do_profile_proc == -1 || do_profile_proc == MPMY_Procnum())) {
 		#include <gperftools/profiler.h>
 		char gperffile[256];
 		sprintf(gperffile, "nlnprof.%04d", MPMY_Procnum());
