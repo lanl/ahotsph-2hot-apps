@@ -9,8 +9,9 @@
 #include "tree.h"
 #include "key.h"
 #include "timers.h"
+#include "vec.h"
 
-/* #define SAVE_ACC */
+#define SAVE_ACC
 /* #define BODY_HAS_KEY */
 
 #ifdef USE_PH
@@ -287,32 +288,40 @@ void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
 typedef void (*grav_f)(const float *p, const float *end, const float *pos0, float *mass0,
 		       float *acc0, float *phi0, const float *eps2p, int *ncut);
 
-#define grav_decl(f) void f(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+#define grav_decl(f) void Arch(f)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 
-grav_decl(do_gravdq_sse4);
-grav_decl(do_gravdh_sse4);
-grav_decl(do_gravdh_amd6100_sse4);
+grav_decl(do_gravdq);
+grav_decl(do_gravdh);
+grav_decl(do_gravdh_amd6100);
 
-void do_gravh_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravh_amd6100_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravq_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_grav_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravh)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravh_amd6100)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravq)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_grav)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void do_grav_sse16_ivec_asm(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravsU_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravsF1_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravsF2_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravsK1_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravsS_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravsCP_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravsU)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravsF1)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravsF2)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravsK1)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravsS)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravsCP)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
-void do_gravph_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravph_amd6100_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravpq_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-void do_gravp_sse4(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravph)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravph_amd6100)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+
 void pHinteract(const float *p, float *accp, const int n, const int stride, 
 		const float *f, const int source_n);
 void pQinteract(const float *p, float *accp, const int n, const int stride, 
 		const float *f, const int source_n);
+
+#ifdef CUDA
+void CUDA_Init(void);
+void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
+		   const float *f, const int source_n, const int sz);
+#endif
+
 
 /* In ewald.c */
 void ewald(double *x, double L, double *f, double *phi);

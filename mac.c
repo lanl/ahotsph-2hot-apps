@@ -95,13 +95,6 @@ SetGravOffset(float *off, int n)
     }
 }
 
-#ifdef __AVX__
-#define NSSE 8 /* Number of floats in an SSE register */
-#define Arch(a) a##_avx8
-#else
-#define NSSE 4 /* Number of floats in an SSE register */
-#define Arch(a) a##_sse4
-#endif
 /* costs of interaction relative to monopole */
 #define QUAD_COST 3
 #define HEXA_COST 9
