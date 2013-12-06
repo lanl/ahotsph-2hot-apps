@@ -33,9 +33,11 @@ $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 
 .PHONY: version.proto
 version.proto:
-	@echo char Version\[\] = \"`git describe --dirty`\"\; > version.proto
+	@echo char Version\[\] = \"`git describe --tags --dirty`\"\; > version.proto
+	@echo char Arch\[\] = \"`printenv ARCH`\"\; >> version.proto
 	@echo char Compiled_date\[\] = __DATE__\; >> version.proto
 	@echo char Compiled_time\[\] = __TIME__\; >> version.proto
+	@echo char Compiler\[\] = __VERSION__\; >> version.proto
 
 version.c: version.proto
 	@cmp -s $< $@ || cp -p $< $@
