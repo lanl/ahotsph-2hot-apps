@@ -1101,6 +1101,9 @@ static SDF *startup(int argc, char **argv){
 		MPMY_Nproc());
     singlPrintf("Version %s\n", Version);
     singlPrintf("Compiled %s %s\n", Compiled_date, Compiled_time);
+    singlPrintf("Compiler %s\n", Compiler);
+    singlPrintf("Arch %s\n", Arch);
+
 #ifdef SAVE_ACC
     singlPrintf("Saving phi and acc\n");
 #endif
