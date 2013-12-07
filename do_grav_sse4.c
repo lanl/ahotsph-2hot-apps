@@ -885,8 +885,6 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
 void
 do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v4sf t, r2, rinv;
-    v4sf x, y, z;
     v4sf a0 = {0.0f, 0.0f, 0.0f, 0.0f};
     v4sf a1 = {0.0f, 0.0f, 0.0f, 0.0f};
     v4sf a2 = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -896,25 +894,28 @@ do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, f
     const v4sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2]};
     const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
     const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
+    const v4sf eps2 = {*e**e, *e**e, *e**e, *e**e};
 
     while (f < fend) {
-	x = ppos0 - xp;
-	y = ppos1 - yp;
-	z = ppos2 - zp;
+	v4sf x = ppos0 - xp;
+	v4sf y = ppos1 - yp;
+	v4sf z = ppos2 - zp;
 
-	r2 = x*x + y*y + z*z;
+	v4sf r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps(r2);
+	v4sf rinv = __builtin_ia32_rsqrtps(r2);
+	v4sf mask = __builtin_ia32_cmpleps(eps2, r2);
 
 	/* Newton-Raphson */
-	t = rinv;
+	v4sf t = rinv;
 	r2 *= rinv;
 	rinv *= r2;
 	rinv -= three;
 	rinv *= t;
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
+	rinv = __builtin_ia32_andps(mask, rinv);
 
 	t = rinv*rinv;
 	rinv *= mass;

@@ -85,13 +85,16 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     VS(center, += 0.5f*cellsz);
     
     /* Count daughters. */
+    /* Set bptr if all daughters are bodies */
     for(i=0; i<(1<<NDIM); i++){
 	if (daughters[i] == NULL)
 	  continue;
 	if (Sub_Flags(daughters[i]) == 0) {
 	    bp = daughters[i]->ptr;
+	    if (cmp->ndaughters == 0) cmp->bptr = bp;
 	    cmp->ndaughters++;
 	} else {
+	    cmp->bptr = NULL;
 	    dp = daughters[i]->ptr;
 	    cmp->ndaughters += dp->ndaughters;
 	} 
@@ -226,6 +229,7 @@ void *CellFromCofm(cofmdata *cmp)
     cp->bmax = cmp->bmax;
     cp->level = cmp->level;
     cp->daughters = cmp->ndaughters;
+    cp->bptr = cmp->bptr;
     /* cp->R = 0.5f*cmp->sz; */
     if (mac->type == AREL_MAC) {
 	float abs_rcrit;

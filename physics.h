@@ -116,6 +116,7 @@ typedef struct {
     float rcrit, bmax;
     int64_t level : 16;
     int64_t daughters : 48;
+    body *bptr;
 } cell, *cellptr;
 
 typedef struct {
@@ -124,6 +125,7 @@ typedef struct {
     float rcrit_m, bmax;
     int64_t level : 16;
     int64_t daughters : 48;
+    body *bptr;
     float rcrit_q, pad;
 #ifdef DIPOLE
     float qx, qy, qz;
@@ -139,6 +141,7 @@ typedef struct {
     float rcrit_m, bmax;
     int64_t level : 16;
     int64_t daughters : 48;
+    body *bptr;
     float rcrit_q, rcrit_h;
 #ifdef DIPOLE
     float qx, qy, qz;
@@ -160,6 +163,7 @@ typedef struct{
     double sz;
     int64_t level : 16;
     int64_t ndaughters : 48;
+    body *bptr;
 #ifdef QUAD
     double x, y, z;
     double x2, xy, y2, xz, yz, z2;
