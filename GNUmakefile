@@ -4,7 +4,7 @@ treedir_sed=\.\.
 
 ifdef PROFILE
 EXTRACFLAGS=-I$(PREFIX)/include
-PRELIBS=$(PREFIX)/lib/libprofiler.a
+PRELIBS=-lrt -Wl,-rpath -Wl,$(PREFIX)/lib -L$(PREFIX)/lib -lprofiler
 endif
 programname=../devel/nlna
 
@@ -19,13 +19,17 @@ include $(treedir)/Make-common/Make.$(ARCH)
 
 include $(treedir)/Make-common/Make.generic
 
-$(objdir)/grav$(objsuf) : grav.c
-	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c grav.c
-	mv grav$(objsuf) $(objdir)
+$(objdir)/pgrav_vec$(objsuf) : pgrav_vec.c
+	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c pgrav_vec.c
+	mv pgrav_vec$(objsuf) $(objdir)
 
 $(objdir)/do_grav_sse4$(objsuf) : do_grav_sse4.c
 	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c do_grav_sse4.c
 	mv do_grav_sse4$(objsuf) $(objdir)
+
+$(objdir)/do_grav_avx8$(objsuf) : do_grav_avx8.c
+	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c do_grav_avx8.c
+	mv do_grav_avx8$(objsuf) $(objdir)
 
 $(objdir)/ewald_le2$(objsuf) : ewald_le2.c
 	$(defaultCC) $(CFLAGS) $(AGGRESSIVE_OPT) -c ewald_le2.c

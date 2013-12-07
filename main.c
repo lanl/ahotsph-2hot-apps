@@ -1197,6 +1197,8 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BC2Int, "Body-quad");
     EnableCounter(&BC4Int, "Body-hexa");
     EnableCounter(&FBC4Int, "Body-hexaF");
+    EnableCounter(&MACcnt, "MAC");
+    EnableCounter(&BBMACcnt, "BB MAC");
     EnableCounter(&CEmpty, "Cube Empty");
     EnableCounter(&MCAnti, "Cube Anti");
     EnableCounter(&MCCorr, "Cube Corr");

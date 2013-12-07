@@ -14,8 +14,7 @@
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
 Counter_t CEmpty, MCAnti, MCCorr;
 Counter_t FBC2Int, FBC4Int;
-Counter_t CCIntRej;
-Counter_t TranslateCnt;
+Counter_t MACcnt, BBMACcnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm;
@@ -907,6 +906,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
     float dr2;
     Vxd(float r);
 
+    AddCounter(&MACcnt, n);
     StartTimer(&MACTm);
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
@@ -953,6 +953,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    }
 	} else {
 	    /* body-body */
+	    AddCounter(&BBMACcnt, 1);
 	    dr2 = ddot(r, sink->pos);
 	    if (dr2 > Eps2) {
 		appendMvec(cp, cp->mass);

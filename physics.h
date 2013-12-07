@@ -269,8 +269,7 @@ extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACsw
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t CEmpty, MCCorr, MCAnti;
 extern Counter_t FBC2Int, FBC4Int;
-extern Counter_t CCIntRej;
-extern Counter_t TranslateCnt;
+extern Counter_t MACcnt, BBMACcnt;
 
 void SetupGrav(float newton_const, float eps, int64_t gnobj, mac_s *mac,
 	       float particle_mass, int smoothing_type);
