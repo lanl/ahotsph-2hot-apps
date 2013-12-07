@@ -770,8 +770,8 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 	    Mvec[sink->mcnt/NSSE].x = Mbuf[1];				\
 	    Mvec[sink->mcnt/NSSE].y = Mbuf[2];				\
 	    Mvec[sink->mcnt/NSSE].z = Mbuf[3];				\
-	    sink->mcnt += NSSE;						\
 	    mcnt = 0;							\
+	    sink->mcnt += NSSE;						\
 	}								\
     } while(0)
 
@@ -919,12 +919,12 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 
     StartTimer(&MACTm);
     int nn = sink->mcnt % NSSE;	/* left over from previous call */
+    sink->mcnt -= nn;
     vsf *v = (vsf *)Mvec + sink->mcnt;
     for (int i = 0; i < nn; i++) {
 	Mbuf[i] = v[sink->mcnt+i];
     }
     mcnt += nn;
-    sink->mcnt -= nn;
 
     AddCounter(&MACcnt, n);
     for (int i = 0; i < n; i++) {
@@ -1032,6 +1032,10 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    }
 	}
     }
+    v = (vsf *)Mvec + sink->mcnt;
+    for (int i = 0; i < mcnt; i++) {
+	v[sink->mcnt++] = Mbuf[i];
+    }
     StopTimer(&MACTm);
     
     if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
@@ -1051,12 +1055,12 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 
     StartTimer(&MACTm);
     int nn = sink->mcnt % NSSE;	/* left over from previous call */
+    sink->mcnt -= nn;
     vsf *v = (vsf *)Mvec + sink->mcnt;
     for (int i = 0; i < nn; i++) {
 	Mbuf[i] = v[sink->mcnt+i];
     }
     mcnt += nn;
-    sink->mcnt -= nn;
 
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
@@ -1087,6 +1091,14 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 		result[i] = MAC_ACCEPT;
 	    } else {
 		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+		/* Optimization of terminal traversal */
+		if (result[i] == MAC_SPLIT_SRC && cp->bptr) {
+		    result[i] = MAC_ACCEPT;
+		    sink->interactions += cp->daughters;
+		    for (int ii = 0; ii < cp->daughters; ii++) {
+			appendMMvec(cp->bptr+ii);
+		    }
+		}
 	    }
 	} else {
 	    /* body-body */
@@ -1094,6 +1106,10 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
 	}
+    }
+    v = (vsf *)Mvec + sink->mcnt;
+    for (int i = 0; i < mcnt; i++) {
+	v[sink->mcnt++] = Mbuf[i];
     }
     StopTimer(&MACTm);
     
