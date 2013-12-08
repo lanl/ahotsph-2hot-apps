@@ -382,20 +382,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	VV(acc, += accd); phi += phid;
 #endif
 	StartTimer(&GravMTm);
-	int ii = from->mcnt % NSSE;	/* left over */
-	if (ii) {
-	    vsf zero = vsf_scalar(0.0);
-	    vsf *v = (vsf *)Mvec + from->mcnt;
-	    for (int i = ii; i < NSSE; i++) {
-		v[i] = zero;
-	    }
-	    _MM_TRANSPOSE4_PS(v[0], v[1], v[2], v[3]);
-	    Mvec[from->mcnt/NSSE].mass = v[0];
-	    Mvec[from->mcnt/NSSE].x = v[1];
-	    Mvec[from->mcnt/NSSE].y = v[2];
-	    Mvec[from->mcnt/NSSE].z = v[3];
+	nn = from->mcnt;
+	while (nn % NSSE) {
+	    Mvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].z[nn%NSSE] = 0.0f;
+	    nn++;
 	}
-	nn = from->mcnt + ii;
 	if ((long long)&Mvec[0] & 0xF || (long long)&Mvec[1] & 0xF)
 	  Error("Mvec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
@@ -761,18 +755,15 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 #endif
 }
 
-#define appendMMvec(p)							\
-    do {								\
-	Mbuf[mcnt++] = __builtin_ia32_loadups((const float *)(p));	\
-	if (mcnt >= NSSE) {						\
-	    _MM_TRANSPOSE4_PS(Mbuf[0], Mbuf[1], Mbuf[2], Mbuf[3]);	\
-	    Mvec[sink->mcnt/NSSE].mass = Mbuf[0];			\
-	    Mvec[sink->mcnt/NSSE].x = Mbuf[1];				\
-	    Mvec[sink->mcnt/NSSE].y = Mbuf[2];				\
-	    Mvec[sink->mcnt/NSSE].z = Mbuf[3];				\
-	    mcnt = 0;							\
-	    sink->mcnt += NSSE;						\
-	}								\
+#define appendMvec(p, m)				\
+    do { \
+      int _i = sink->mcnt/NSSE; \
+      int _j = sink->mcnt%NSSE;	 \
+      Mvec[_i].mass[_j] = m; \
+      Mvec[_i].x[_j] = r0; \
+      Mvec[_i].y[_j] = r1; \
+      Mvec[_i].z[_j] = r2; \
+      sink->mcnt++; \
     } while(0)
 
 #define appendSvec(p) \
@@ -914,19 +905,9 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 {
     float dr2;
     Vxd(float r);
-    vsf Mbuf[NSSE];
-    int mcnt = 0;
-
-    StartTimer(&MACTm);
-    int nn = sink->mcnt % NSSE;	/* left over from previous call */
-    sink->mcnt -= nn;
-    vsf *v = (vsf *)Mvec + sink->mcnt;
-    for (int i = 0; i < nn; i++) {
-	Mbuf[i] = v[sink->mcnt+i];
-    }
-    mcnt += nn;
 
     AddCounter(&MACcnt, n);
+    StartTimer(&MACTm);
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
 	if (!sf && !sink->isbody) {
@@ -973,8 +954,9 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	} else {
 	    /* body-body */
 	    AddCounter(&BBMACcnt, 1);
-	    appendMMvec(cp);
+	    appendMvec(cp, cp->mass);
 	    sink->fmass += cp->mass;
+	    DebugWatchKey("  %12g %12g Mvec 1 %s\n", cp->mass, sqrt(dr2), PrintKey(source_vec[i]->key));
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
 	    if (!bs) {
@@ -985,29 +967,24 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		    fabsf(mxyz[2]-sink->cen[1]) > sink->cr ||
 		    fabsf(mxyz[3]-sink->cen[2]) > sink->cr) {
 		    mxyz[0] = -mac->rho0*cellsz*cellsz*cellsz;
-		    appendMMvec(mxyz);
+		    appendMvec(mxyz, mxyz[0]);
 		    sink->fmass += mxyz[0];
 		    AddCounter(&MCAnti, 1);
+		    DebugWatchKey("b %12g %12g Mvec anti\n", mxyz[0], sqrt(ddot(r, sink->cen)));
 		} else {
+		    DebugWatchKey("  %12g %12g Mvec anti Near %s \n", 0.0, sqrt(ddot(r, sink->cen)), PrintKey(source_vec[i]->key));
 		    sink->near++;
 		}
 	    }
 	}
-	/* Optimization of terminal traversal */
-	if (result[i] == MAC_SPLIT_SRC && cp->bptr) {
-	    result[i] = MAC_ACCEPT;
-	    sink->interactions += cp->daughters;
-	    for (int ii = 0; ii < cp->daughters; ii++) {
-		appendMMvec(cp->bptr+ii);
-	    }
-	}
 	if (result[i] == MAC_SPLIT_SRC && !bs) {
 	    if (cp->level >= sink->clevel) {
-		float um[4] = {-ucell[cp->level].mass, cp->pos[0], cp->pos[1], cp->pos[2]};
-		appendMMvec(um);
-		sink->fmass += um[0];
+		float um = -ucell[cp->level].mass;
+		appendMvec(cp, um);
+		sink->fmass += um;
 		AddCounter(&MCCorr, 1);
 		flags_vec[i] |= BACKGROUND_FLAG;
+		DebugWatchKey("  %12g %12g Cvec %ld %s\n", um, sqrt(dr2), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } else if (sf != (1<<MAXNSUB) - 1) {
 		Key_t k = KeyLshift(source_vec[i]->key, NDIM);
 		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
@@ -1019,7 +996,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 			    fabsf(mxyz[2]-sink->cen[1]) > sink->cr ||
 			    fabsf(mxyz[3]-sink->cen[2]) > sink->cr) {
 			    mxyz[0] = -ucell[cp->level+1].mass;
-			    appendMMvec(mxyz);
+			    appendMvec(mxyz, mxyz[0]);
 			    sink->fmass += mxyz[0];
 			    AddCounter(&CEmpty, 1);
 			    DebugWatchKey("  %12g %12g %12g %12g Mvec empty %s %d\n", mxyz[0], mxyz[1]-sink->cen[0], mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], PrintKey(k), offset_index(flags_vec[i]));
@@ -1031,10 +1008,15 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		}
 	    }
 	}
-    }
-    v = (vsf *)Mvec + sink->mcnt;
-    for (int i = 0; i < mcnt; i++) {
-	v[sink->mcnt++] = Mbuf[i];
+	/* Optimization of terminal traversal */
+	if (result[i] == MAC_SPLIT_SRC && cp->bptr) {
+	    result[i] = MAC_ACCEPT;
+	    sink->interactions += cp->daughters;
+	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
+		VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+		appendMvec(b, b->mass);
+	    }
+	}
     }
     StopTimer(&MACTm);
     
@@ -1050,18 +1032,8 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 {
     float dr2;
     Vxd(float r);
-    vsf Mbuf[NSSE];
-    int mcnt = 0;
 
     StartTimer(&MACTm);
-    int nn = sink->mcnt % NSSE;	/* left over from previous call */
-    sink->mcnt -= nn;
-    vsf *v = (vsf *)Mvec + sink->mcnt;
-    for (int i = 0; i < nn; i++) {
-	Mbuf[i] = v[sink->mcnt+i];
-    }
-    mcnt += nn;
-
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
 	if (!sf && !sink->isbody) {
@@ -1078,7 +1050,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
 	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
 	    if (dr2 > Square(cp->rcrit + cp->bmax)) {
-		appendMMvec(cp);
+		appendMvec(cp, cp->mass);
 		sink->interactions += cp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else if (isquad && dr2 > Square(qcp->rcrit_q + qcp->bmax)) {
@@ -1091,25 +1063,14 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 		result[i] = MAC_ACCEPT;
 	    } else {
 		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
-		/* Optimization of terminal traversal */
-		if (result[i] == MAC_SPLIT_SRC && cp->bptr) {
-		    result[i] = MAC_ACCEPT;
-		    sink->interactions += cp->daughters;
-		    for (int ii = 0; ii < cp->daughters; ii++) {
-			appendMMvec(cp->bptr+ii);
-		    }
-		}
 	    }
 	} else {
 	    /* body-body */
-	    appendMMvec(cp);
+	    if (dr2 > Eps2) appendMvec(cp, cp->mass);
+	    else if (dr2 > 0.0f) appendSvec(cp);
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
 	}
-    }
-    v = (vsf *)Mvec + sink->mcnt;
-    for (int i = 0; i < mcnt; i++) {
-	v[sink->mcnt++] = Mbuf[i];
     }
     StopTimer(&MACTm);
     
