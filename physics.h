@@ -116,6 +116,7 @@ typedef struct {
     float rcrit, bmax;
     int64_t level : 16;
     int64_t daughters : 48;
+    body *bptr;
 } cell, *cellptr;
 
 typedef struct {
@@ -124,6 +125,7 @@ typedef struct {
     float rcrit_m, bmax;
     int64_t level : 16;
     int64_t daughters : 48;
+    body *bptr;
     float rcrit_q, pad;
 #ifdef DIPOLE
     float qx, qy, qz;
@@ -139,6 +141,7 @@ typedef struct {
     float rcrit_m, bmax;
     int64_t level : 16;
     int64_t daughters : 48;
+    body *bptr;
     float rcrit_q, rcrit_h;
 #ifdef DIPOLE
     float qx, qy, qz;
@@ -160,6 +163,7 @@ typedef struct{
     double sz;
     int64_t level : 16;
     int64_t ndaughters : 48;
+    body *bptr;
 #ifdef QUAD
     double x, y, z;
     double x2, xy, y2, xz, yz, z2;
@@ -220,14 +224,8 @@ typedef struct mac_s {
     float nx;
     float ptol_boost;
     float stol_max;
-    union {
-	int p2cut;
-	int qcut;
-    };
-    union {
-	int p4cut;
-	int hcut;
-    };
+    int p2cut;
+    int p4cut;
     int p8cut;
     int geometric_center;
     int subtract_background;
@@ -269,8 +267,7 @@ extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACsw
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t CEmpty, MCCorr, MCAnti;
 extern Counter_t FBC2Int, FBC4Int;
-extern Counter_t CCIntRej;
-extern Counter_t TranslateCnt;
+extern Counter_t MACcnt, BBMACcnt;
 
 void SetupGrav(float newton_const, float eps, int64_t gnobj, mac_s *mac,
 	       float particle_mass, int smoothing_type);

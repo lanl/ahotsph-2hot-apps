@@ -795,36 +795,37 @@ do_gravq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 void
 do_grav_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+    v8sf a0 = vsf_scalar(0.0f);
+    v8sf a1 = vsf_scalar(0.0f);
+    v8sf a2 = vsf_scalar(0.0f);
+    v8sf phi = vsf_scalar(0.0f);
+    const v8sf ppos0 = vsf_scalar(pos0[0]);
+    const v8sf ppos1 = vsf_scalar(pos0[1]);
+    const v8sf ppos2 = vsf_scalar(pos0[2]);
+    const v8sf three = vsf_scalar(3.0f);
+    const v8sf half = vsf_scalar(0.5f);
+    const v8sf eps2 = vsf_scalar(*e**e);
 
     while (f < fend) {
-	x = ppos0 - xp;
-	y = ppos1 - yp;
-	z = ppos2 - zp;
+	v8sf x = ppos0 - xp;
+	v8sf y = ppos1 - yp;
+	v8sf z = ppos2 - zp;
 
-	r2 = x*x + y*y + z*z;
+	v8sf r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	v8sf rinv = __builtin_ia32_rsqrtps256(r2);
+	v8sf mask = __builtin_ia32_cmpps256(eps2, r2, 0x12); /* _CMP_LE_0Q_ */
 
 	/* Newton-Raphson */
-	t = rinv;
+	v8sf t = rinv;
 	r2 *= rinv;
 	rinv *= r2;
 	rinv -= three;
 	rinv *= t;
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
+	rinv = (vsf)((vsi)mask & (vsi)rinv);
 
 	t = rinv*rinv;
 	rinv *= mass;
@@ -900,25 +901,13 @@ do_gravsS_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 
 	tm = u2 * (u2 * (c48o5 - c32o5*r) - c16o3) + c14o5;
 	tp = u2 * ((u2 * (c32o15*r - c48o5) + c16*r) - c32o3) - c1o15*rinv + c16o5;
-#ifdef __AVX__
 	t = __builtin_ia32_blendvps256(tm, tp, mask);
-#else
-	tm = __builtin_ia32_andps(mask, tm);
-	tp = __builtin_ia32_andnps(mask, tp);
-	t = __builtin_ia32_orps(tm, tp);
-#endif
 
 	phi -= mass * eps_inv * t;
 
 	tm = u2 * (c32*r - c192o5) + c32o3;
 	tp = u2 * (c192o5 - c32o3*r) - c48*r + c64o3 - c1o15*rinv*rinv*rinv;
-#ifdef __AVX__
 	t = __builtin_ia32_blendvps256(tm, tp, mask);
-#else
-	tm = __builtin_ia32_andps(mask, tm);
-	tp = __builtin_ia32_andnps(mask, tp);
-	t = __builtin_ia32_orps(tm, tp);
-#endif
 	
 	t *= mass * eps_inv * eps_inv * eps_inv;
 	f += 4;
@@ -1136,7 +1125,7 @@ do_gravsK2_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 	u2 = x*x + y*y + z*z;
 	u2 *= eps_inv * eps_inv;
 	u2 -= one;
-	u2 = __builtin_ia32_andps256(mask, u2);
+	u2 = (vsf)((vsi)mask & (vsi)u2);
 
 	__asm__("prefetcht0 512(%rdi)");
 
@@ -1206,7 +1195,7 @@ do_gravsK3_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 	u2 = x*x + y*y + z*z;
 	u2 *= eps_inv * eps_inv;
 	u2 -= one;
-	u2 = __builtin_ia32_andps256(mask, u2);
+	u2 = (vsf)((vsi)mask & (vsi)u2);
 
 	__asm__("prefetcht0 512(%rdi)");
 
