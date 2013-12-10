@@ -448,8 +448,8 @@ main(int argc, char *argv[])
     SDFgetfloatOrDefault(csdfp, "DLmax", &mac.dlmax, 10000.0);
     SDFgetfloatOrDefault(csdfp, "ptol_boost", &mac.ptol_boost, 0.0);
     SDFgetfloatOrDefault(csdfp, "stol_max", &mac.stol_max, 0.0);
-    SDFgetintOrDefault(csdfp, "quad_ncut", &mac.qcut, 7);
-    SDFgetintOrDefault(csdfp, "hexa_ncut", &mac.hcut, 20);
+    SDFgetintOrDefault(csdfp, "quad_ncut", &mac.p2cut, 7);
+    SDFgetintOrDefault(csdfp, "hexa_ncut", &mac.p4cut, 20);
     SDFgetintOrDefault(csdfp, "geometric_center", &mac.geometric_center, 0);
     SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
     SDFgetintOrDefault(csdfp, "mxn_hblock", &mxn_hblock, 4*1024);
@@ -542,8 +542,8 @@ main(int argc, char *argv[])
     singlPrintf("float DLmax = %g;\n", mac.dlmax);
     singlPrintf("float frac_tol = %g;\n", mac.rel_tol);
     singlPrintf("float frac_tol0 = %g;\n", mac.rel_tol0);
-    singlPrintf("int quad_ncut = %d;\n", mac.qcut);
-    singlPrintf("int hexa_ncut = %d;\n", mac.hcut);
+    singlPrintf("int quad_ncut = %d;\n", mac.p2cut);
+    singlPrintf("int hexa_ncut = %d;\n", mac.p4cut);
     singlPrintf("int geometric_center = %d;\n", mac.geometric_center);
     singlPrintf("int subtract_background = %d;\n", mac.subtract_background);
     singlPrintf("int mxn_hblock = %d;\n", mxn_hblock);

@@ -85,13 +85,16 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     VS(center, += 0.5f*cellsz);
     
     /* Count daughters. */
+    /* Set bptr if all daughters are bodies */
     for(i=0; i<(1<<NDIM); i++){
 	if (daughters[i] == NULL)
 	  continue;
 	if (Sub_Flags(daughters[i]) == 0) {
 	    bp = daughters[i]->ptr;
+	    if (cmp->ndaughters == 0) cmp->bptr = bp;
 	    cmp->ndaughters++;
 	} else {
+	    cmp->bptr = NULL;
 	    dp = daughters[i]->ptr;
 	    cmp->ndaughters += dp->ndaughters;
 	} 
@@ -194,9 +197,9 @@ CellSz(void *p)
 {
     const cell *cp = p;
 
-    if (mac->hcut && (cp->daughters >= mac->hcut)) {
+    if (mac->p4cut && (cp->daughters >= mac->p4cut)) {
 	return sizeof(hexacell);
-    } else if (mac->qcut && (cp->daughters >= mac->qcut)) {
+    } else if (mac->p2cut && (cp->daughters >= mac->p2cut)) {
 	return sizeof(quadcell);
     } else {
 	return sizeof(cell);
@@ -211,11 +214,11 @@ void *CellFromCofm(cofmdata *cmp)
     hexacell *hcp = NULL;
     cofmdata u;
 
-    if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
+    if (mac->p4cut && (cmp->ndaughters >= mac->p4cut)) {
 	cp = ChnAlloc(&mac->tree->cell4chn);
 	qcp = (quadcell *)cp;
 	hcp = (hexacell *)cp;
-    } else if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
+    } else if (mac->p2cut && (cmp->ndaughters >= mac->p2cut)) {
 	cp = ChnAlloc(&mac->tree->cell2chn);
 	qcp = (quadcell *)cp;
     } else {
@@ -226,6 +229,7 @@ void *CellFromCofm(cofmdata *cmp)
     cp->bmax = cmp->bmax;
     cp->level = cmp->level;
     cp->daughters = cmp->ndaughters;
+    cp->bptr = cmp->bptr;
     /* cp->R = 0.5f*cmp->sz; */
     if (mac->type == AREL_MAC) {
 	float abs_rcrit;
@@ -297,7 +301,7 @@ void *CellFromCofm(cofmdata *cmp)
 	memcpy(&u, cmp, sizeof(u));
 	if (mac->subtract_background) mpole_add_cube(cmp->sz, -mac->rho0, &u);
 
-	if (mac->qcut && (cmp->ndaughters >= mac->qcut)) {
+	if (mac->p2cut && (cmp->ndaughters >= mac->p2cut)) {
 	    if (mac->subtract_background && cmp->ndaughters > 8) {
 		B3 = (fabs(cmp->x3) + 3*fabs(cmp->x2y) + 3*fabs(cmp->xy2) + fabs(cmp->y3) + 3*fabs(cmp->x2z) + 6*fabs(cmp->xyz) + 3*fabs(cmp->y2z) + 3*fabs(cmp->xz2) + 3*fabs(cmp->yz2) + fabs(cmp->z3))/9.0;
 		B4 = 0.0;
@@ -366,7 +370,7 @@ void *CellFromCofm(cofmdata *cmp)
 #endif
 
 #ifdef HEXA
-	if (mac->hcut && (cmp->ndaughters >= mac->hcut)) {
+	if (mac->p4cut && (cmp->ndaughters >= mac->p4cut)) {
 	    if (mac->subtract_background && cmp->ndaughters > 8) {
 		B5 = (fabs(cmp->x5) + 5*fabs(cmp->x4y) + 10*fabs(cmp->x3y2) + 10*fabs(cmp->x2y3) + 5*fabs(cmp->xy4) + fabs(cmp->y5) + 5*fabs(cmp->x4z) + 20*fabs(cmp->x3yz) + 30*fabs(cmp->x2y2z) + 20*fabs(cmp->xy3z) + 5*fabs(cmp->y4z) + 10*fabs(cmp->x3z2) + 30*fabs(cmp->x2yz2) + 30*fabs(cmp->xy2z2) + 10*fabs(cmp->y3z2) + 10*fabs(cmp->x2z3) + 20*fabs(cmp->xyz3) + 10*fabs(cmp->y2z3) + 5*fabs(cmp->xz4) + 5*fabs(cmp->yz4) + fabs(cmp->z5))/27.0;
 		B6 = 0.0;

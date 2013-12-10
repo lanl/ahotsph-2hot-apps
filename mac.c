@@ -921,8 +921,8 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
 	if (sf) {
 	    float bmax;
-	    int isquad = mac->qcut && cp->daughters >= mac->qcut;
-	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
+	    int isquad = mac->p2cut && cp->daughters >= mac->p2cut;
+	    int ishexa = mac->p4cut && cp->daughters >= mac->p4cut;
 	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
 	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
 	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
@@ -954,10 +954,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	} else {
 	    /* body-body */
 	    AddCounter(&BBMACcnt, 1);
-	    dr2 = ddot(r, sink->pos);
-	    if (dr2 > Eps2) {
-		appendMvec(cp, cp->mass);
-	    } else if (dr2 > 0.0f) appendSvec(cp);
+	    appendMvec(cp, cp->mass);
 	    sink->fmass += cp->mass;
 	    DebugWatchKey("  %12g %12g Mvec 1 %s\n", cp->mass, sqrt(dr2), PrintKey(source_vec[i]->key));
 	    sink->interactions++;
@@ -1011,6 +1008,19 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		}
 	    }
 	}
+	/* Optimization of terminal traversal */
+	if (result[i] == MAC_SPLIT_SRC && cp->bptr && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
+	    result[i] = MAC_ACCEPT;
+	    sink->interactions += cp->daughters;
+	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
+		VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+		if (b->mass != Btab[0].mass) {
+		    Error("Bad particle mass %f type %d %s\n", 
+			  b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
+		}
+		appendMvec(b, b->mass);
+	    }
+	}
     }
     StopTimer(&MACTm);
     
@@ -1038,10 +1048,10 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 	const quadcell *qcp = source_vec[i]->ptr;
 	const hexacell *hcp = source_vec[i]->ptr;
 	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
-	dr2 = ddot(r, sink->pos);
 	if (sf) {
-	    int isquad = mac->qcut && cp->daughters >= mac->qcut;
-	    int ishexa = mac->hcut && cp->daughters >= mac->hcut;
+	    dr2 = ddot(r, sink->pos);
+	    int isquad = mac->p2cut && cp->daughters >= mac->p2cut;
+	    int ishexa = mac->p4cut && cp->daughters >= mac->p4cut;
 	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
 	    if (dr2 > Square(cp->rcrit + cp->bmax)) {
 		appendMvec(cp, cp->mass);
@@ -1060,10 +1070,22 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 	    }
 	} else {
 	    /* body-body */
-	    if (dr2 > Eps2) appendMvec(cp, cp->mass);
-	    else if (dr2 > 0.0f) appendSvec(cp);
+	    appendMvec(cp, cp->mass);
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
+	}
+        /* Optimization of terminal traversal */
+        if (result[i] == MAC_SPLIT_SRC && cp->bptr && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
+            result[i] = MAC_ACCEPT;
+            sink->interactions += cp->daughters;
+            for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
+                VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+                if (b->mass != Btab[0].mass) {
+                    Error("Bad particle mass %f type %d %s\n",
+                          b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
+                }
+                appendMvec(b, b->mass);
+	    }
 	}
     }
     StopTimer(&MACTm);
