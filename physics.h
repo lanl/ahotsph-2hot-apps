@@ -239,6 +239,14 @@ typedef struct mac_s {
     float cr;
 } mac_s;
 
+typedef struct mxn_s {
+    int hblock;
+    int min_sink;
+    int min_qsrc;
+    int min_hsrc;
+    int do_pQ;
+    int do_pH;
+} mxn_s;
 
 /* Prototypes for all the functions which are "friends" of physics.h */
 #include "physics_generic.h"
@@ -276,7 +284,7 @@ void DLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n
 void DLRcritMACsb(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void SetGravOffset(float *off, int nimage);
-void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock);
+void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
 void WalkInitSrcPeriodic(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);

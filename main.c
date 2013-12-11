@@ -106,7 +106,6 @@ main(int argc, char *argv[])
     float comov_eps, comov_eps_Zmin;
     float this_eps, this_eps_scaled;
     float CWfac;
-    int mxn_hblock;
     int ntimer_detail;
     int light_cone = 0;
     float lc_origin[NDIM] = {0.0f, 0.0f, 0.0f};
@@ -173,6 +172,12 @@ main(int argc, char *argv[])
 
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
+#ifdef CUDA
+    mxn_s mxn = {.hblock=4*4096, .min_sink=64, .min_qsrc=512, .min_hsrc=512, .do_pQ=1, .do_pH=1};
+    CUDA_Init();
+#else
+    mxn_s mxn = {.hblock=4096, .min_sink=256, .min_qsrc=512, .min_hsrc=512};
+#endif
     /* Attempt to get a contiguous chunk of heap */
     SDFgetintOrDefault( csdfp, "memory_tune_MB", &memory_tune_MB, 0);
     if (memory_tune_MB) {
@@ -452,7 +457,12 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "hexa_ncut", &mac.p4cut, 20);
     SDFgetintOrDefault(csdfp, "geometric_center", &mac.geometric_center, 0);
     SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
-    SDFgetintOrDefault(csdfp, "mxn_hblock", &mxn_hblock, 4*1024);
+    SDFgetint(csdfp, "mxn_hblock", &mxn.hblock);
+    SDFgetint(csdfp, "mxn_min_sink", &mxn.min_sink);
+    SDFgetint(csdfp, "mxn_min_qsrc", &mxn.min_qsrc);
+    SDFgetint(csdfp, "mxn_min_hsrc", &mxn.min_hsrc);
+    SDFgetint(csdfp, "mxn_do_pQ", &mxn.do_pQ);
+    SDFgetint(csdfp, "mxn_do_pH", &mxn.do_pH);
     SDFgetfloatOrDie(csdfp, "dt", &dt_base); dt = dt_base;
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
     SDFgetintOrDefault(csdfp, "Ztol", &Ztol, 0);
@@ -546,7 +556,12 @@ main(int argc, char *argv[])
     singlPrintf("int hexa_ncut = %d;\n", mac.p4cut);
     singlPrintf("int geometric_center = %d;\n", mac.geometric_center);
     singlPrintf("int subtract_background = %d;\n", mac.subtract_background);
-    singlPrintf("int mxn_hblock = %d;\n", mxn_hblock);
+    singlPrintf("int mxn_hblock = %d;\n", mxn.hblock);
+    singlPrintf("int mxn_min_sink = %d;\n", mxn.min_sink);
+    singlPrintf("int mxn_min_qsrc = %d;\n", mxn.min_qsrc);
+    singlPrintf("int mxn_min_hsrc = %d;\n", mxn.min_hsrc);
+    singlPrintf("int mxn_do_pQ = %d;\n", mxn.do_pQ);
+    singlPrintf("int mxn_do_pH = %d;\n", mxn.do_pH);
     singlPrintf("int body_size = %d;\n", sizeof(body));
     singlPrintf("int outbody_size = %d;\n", sizeof(outbody));
     singlPrintf("int cell_size = %d;\n", sizeof(cell));
@@ -753,7 +768,7 @@ main(int argc, char *argv[])
 	    EwaldForces(btab, nobj, n2_sample_frac, &ranstate);
 	} else {
 	    StartTimer(&WITm);
-	    WalkInitSink(&thetree, btab, nobj, mxn_hblock);
+	    WalkInitSink(&thetree, btab, nobj, &mxn);
 	    WalkInit(&thetree, &thetree, sizeof(Sink), walk_init_src, mac.rcrit_func, 
 		     walk_inherit);
 	    StopTimer(&WITm);

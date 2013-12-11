@@ -49,16 +49,14 @@ static float Eps2, Eps;
 static int Smooth_type;
 static float GNewt;
 static const mac_s *mac;
+static const mxn_s *MxN;
 static int Nimage = 1;
 static float offset_array[MAX_IMAGE][NDIM];
 static tree_t *SinkTree;
 static body *Btab;
 
+static void mxn_quad(Sink *to, hcell *pp);
 static void mxn_hexa(Sink *to, hcell *pp);
-static int MxN_hblock = 4*1024;
-static int MxN_min_sink = 256;
-static int MxN_min_hsrc = 512;
-static int MxN_do_pH = 0;
 
 static grav_f Sinteract;
 static grav_f Minteract;
@@ -202,12 +200,12 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 void Nlognmacv(Sink *sink, const hcell **source_vec, int *result, int);
 
 void
-WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock)
+WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn)
 {
     SinkTree = tp;
     Btab = btab;
     Nobj = nobj;
-    MxN_hblock = mxn_hblock;
+    MxN = mxn;
 }
 
 void
@@ -438,9 +436,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    VV(acc, += accd);
 	    DebugWatchId("ca %12g - %g %g %g\n", from->cr, r[0], r[1], r[2]);
 	    DebugWatchId("c %12g %12g %12g\n", accd[0], accd[1], accd[2]);
+#if 0
 	    double cmass = -mac->rho0*pow3(2.0f*from->cr);
 	    DebugWatchId("fmass %12g cmass %12g\n", from->fmass, cmass);
-#if 0
 	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
 		if (Nwarn++ < 2) SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 	    if (from->near != 27) {
@@ -532,8 +530,8 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
 #endif
-	if (MxN_hblock && to->daughters >= MxN_min_sink && 
-	    to->hcnt-to->hcnt_done >= MxN_min_hsrc) {
+	if (MxN->hblock && to->daughters >= MxN->min_sink && 
+	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
 	    mxn_hexa(to, pp);
 	}
     } else {
@@ -572,17 +570,22 @@ mxn_hexa(Sink *to, hcell *pp)
     StartTimer(&GravHFTm);
     n0 = to->hcnt_done/NSSE;
     n1 = to->hcnt/NSSE;
-    /* Size MxN_hblock for appropriate WalkPoll() latency */
-    /* If Walk Defer timer is large, make MxN_hblock smaller */
-    if (n1-n0 > MxN_hblock) m_block = 1;
+    /* Size MxN->hblock for appropriate WalkPoll() latency */
+    /* If Walk Defer timer is large, make MxN->hblock smaller */
+    if (n1-n0 > MxN->hblock) m_block = 1;
     else if (n1 == n0) Error("mxn_hexa called with n == 0\n");
-    else m_block = MxN_hblock / (n1-n0);
+    else m_block = MxN->hblock / (n1-n0);
     block = m_block;
     for (p = first; p < last; p += m_block) {
 	if (p + block > last) block = last-p;
-	if (MxN_do_pH) {
+	if (MxN->do_pH) {
+#ifdef CUDA
+	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			  (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)));
+#else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 		       (float *)&Hvec[n0], n1-n0);
+#endif
 	} else {
 	    float mtot = 0.0f;
 	    float e = 0.0f;
