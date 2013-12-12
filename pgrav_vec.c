@@ -3,6 +3,8 @@
  */
 #include "vec.h"
 
+/* Assumes -DDIPPOLE */
+
 #define mass f[j+0]
 #define xp f[j+1]
 #define yp f[j+2]
@@ -88,15 +90,25 @@ pHinteract(const float *p, float *accp, const int n, const int stride,
 	    t = rinv;
 	    eqe = t*mass;
 	    rinv2 = t*t;
-	    t *= rinv2;
 	    phi += eqe;
 	    eqe *= rinv2;
 	    a0 += x*eqe;
 	    a1 += y*eqe;
 	    a2 += z*eqe;
+
+	    t *= R*rinv2;
+	    eq0 = t*qx;
+	    eq1 = t*qy;
+	    eq2 = t*qz;
+	    eqe = x*eq0 + y*eq1 + z*eq2;
+	    phi += eqe;
+	    eqe *= three*rinv2;
+	    a0 += x*eqe - eq0;
+	    a1 += y*eqe - eq1;
+	    a2 += z*eqe - eq2;
 	    
 	    __asm__("prefetcht0 704(%rdi)");
-	    t *= three*rinv2*R*R;
+	    t *= three*rinv2*R;
 	    eq0 = t*(qxx*x + qxy*y + qxz*z);
 	    eq1 = t*(qyy*y + qxy*x + qyz*z);
 	    eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
@@ -200,15 +212,25 @@ pQinteract(const float *p, float *accp, const int n, const int stride,
 	    t = rinv;
 	    eqe = t*mass;
 	    rinv2 = t*t;
-	    t *= rinv2;
 	    phi += eqe;
 	    eqe *= rinv2;
 	    a0 += x*eqe;
 	    a1 += y*eqe;
 	    a2 += z*eqe;
+
+	    t *= R*rinv2;
+	    eq0 = t*qx;
+	    eq1 = t*qy;
+	    eq2 = t*qz;
+	    eqe = x*eq0 + y*eq1 + z*eq2;
+	    phi += eqe;
+	    eqe *= three*rinv2;
+	    a0 += x*eqe - eq0;
+	    a1 += y*eqe - eq1;
+	    a2 += z*eqe - eq2;
 	    
 	    __asm__("prefetcht0 704(%rdi)");
-	    t *= three*rinv2*R*R;
+	    t *= three*rinv2*R;
 	    eq0 = t*(qxx*x + qxy*y + qxz*z);
 	    eq1 = t*(qyy*y + qxy*x + qyz*z);
 	    eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
