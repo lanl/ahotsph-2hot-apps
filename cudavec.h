@@ -8,7 +8,7 @@
 #define LPAREN (
 #define RPAREN )
 
-#define VECWIDTH 4
+#define VECWIDTH 1
 #define NSSE 8
 
 /* map float4 to accp */
@@ -21,6 +21,35 @@
 #define X .y
 #define Y .z
 #define Z .w
+
+#if VECWIDTH == 1
+
+#define VS(a, b) do { \
+      a[0] b; \
+    } while (0)
+
+#define VV(a, b) do { \
+      a[0] b[0]; \
+    } while (0)
+
+#define VVS(a, b, c) do { \
+      a[0] b[0] c; \
+    } while (0)
+
+
+#define VVV(a, b, c) do { \
+      a[0] b[0] c[0]; \
+    } while (0)
+
+#define VVVV(a, b, c, d) do { \
+      a[0] b[0] c[0] d[0];   \
+    } while (0)
+
+#define Vdecl(a, s) \
+    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2], a[(s)*(index*VECWIDTH+0)+3]}
+#define V4decl(a) {a[index]}
+
+#endif
 
 #if VECWIDTH == 2
 
@@ -46,7 +75,7 @@
     } while (0)
 
 #define VVVV(a, b, c, d) do { \
-      a[0] b[0] c[0] c[0];   \
+      a[0] b[0] c[0] d[0];   \
       a[1] b[1] c[1] d[1];   \
     } while (0)
 

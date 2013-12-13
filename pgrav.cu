@@ -5,6 +5,7 @@
 
 #include <cuda.h>
 #include "cudavec.h"
+#include "stdio.h"
 
 typedef unsigned long long ticks;
 
@@ -15,11 +16,11 @@ static __inline__ ticks getticks(void)
      return ((ticks)a) | (((ticks)d) << 32); 
 }
 
-
 #define mass f[ii+0*NSSE]
 #define xp f[ii+1*NSSE]
 #define yp f[ii+2*NSSE]
 #define zp f[ii+3*NSSE]
+#define MSZ 4
 #define R  f[ii+4*NSSE]
 #define qx f[ii+5*NSSE]
 #define qy f[ii+6*NSSE]
@@ -104,7 +105,7 @@ pH(const float *p, float *ret, const int n, const int stride, const float *f, co
 	VV(eq2, += qxz * x);
 	VV(eq0, += qxz * z);
 	VV(eq1, += qyz * z);
-	VV(eq2, += qyz * z);
+	VV(eq2, += qyz * y);
 	VV(eq0, *= t);
 	VV(eq1, *= t);
 	VV(eq2, *= t);
@@ -142,7 +143,6 @@ pH(const float *p, float *ret, const int n, const int stride, const float *f, co
         VV(eq0, += qxyy * yy);
         VV(eq1, += qxxy * xx);
         VV(eq2, -= LPAREN qxxy + qyyy RPAREN * yz);
-        VV(eq2, -= qyyy * yz);
         VV(eq0, += qxxy * xy);
         VV(eq1, += qyyy * yy);
         VV(eq2, += qxxz * xx);
@@ -293,6 +293,49 @@ pQ(const float *p, float *ret, const int n, const int stride,
     }
 }
 
+__global__ void
+pM(const float *p, float *ret, const int n, const int stride, 
+   const float *f, const int source_n)
+{
+    int i, ii;
+    float t[VECWIDTH], r2[VECWIDTH], rinv[VECWIDTH], rinv2[VECWIDTH];
+    float x[VECWIDTH], y[VECWIDTH], z[VECWIDTH];
+    float eqe[VECWIDTH];
+    float4 accp[VECWIDTH] = {};
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    const float4 ppos[VECWIDTH] = Vdecl(p, stride);
+
+    if (VECWIDTH*index >= n) return;
+
+    for (i = 0; i < source_n; i++) {
+	ii = (i/NSSE)*NSSE*QSZ + i%NSSE;
+    	VVS(x, = ppos, X - xp);	
+    	VVS(y, = ppos, Y - yp);	
+    	VVS(z, = ppos, Z - zp);	
+	VVV(r2, = x, * x);
+	VVV(r2, += y, * y);
+	VVV(r2, += z, * z);
+	VVS(rinv, = -rsqrtf LPAREN r2, RPAREN);
+	
+	VV(t, = rinv);
+	VV(eqe, = mass * t);
+	VVV(rinv2, = t, * t);
+	VV(accp, Phi += eqe);
+	VV(eqe, *= rinv2);
+	VVV(accp, Ax += x, * eqe);
+	VVV(accp, Ay += y, * eqe);
+	VVV(accp, Az += z, * eqe);
+    }
+    for (i = 0; i < VECWIDTH; i++) {
+	if (index+i < n) {
+	    ret[stride*(index*VECWIDTH+i)+0] += accp[i] Ax;
+	    ret[stride*(index*VECWIDTH+i)+1] += accp[i] Ay;
+	    ret[stride*(index*VECWIDTH+i)+2] += accp[i] Az;
+	    ret[stride*(index*VECWIDTH+i)+3] += accp[i] Phi;
+	}
+    }
+}
+
 #include <stdio.h>
 #include <unistd.h>
 #include "error.h"
@@ -325,9 +368,8 @@ check_cudaq(void)
 	for (i = 0; i < NQ; i++) {
 	    if (cudaq[i].inuse) {
 		err = cudaStreamQuery(cudaq[i].stream);
-		err = cudaSuccess;
 		if (err == cudaSuccess) {
-		    /* memcpy(cudaq[i].p, cudaq[i].hostp, cudaq[i].p_nbytes); */
+		    memcpy(cudaq[i].p, cudaq[i].hostp, cudaq[i].p_nbytes);
 		    err = cudaStreamDestroy(cudaq[i].stream);
 		    if (err != cudaSuccess) 
 			Error("cudaStreamDestroy failed, %d %s\n", err, cudaGetErrorString(err));
@@ -348,23 +390,42 @@ check_cudaq(void)
 	err = cudaMallocHost((void **)&cudaq[i].hostp, cudaq[i].p_size);
 	if (err != cudaSuccess) 
 	    Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
-	printf("cudaMallocHost\n");
     }
     if (cudaq[i].devp_size == 0) {
 	cudaq[i].devp_size = 16*1024*1024;
 	err = cudaMalloc((void **)&cudaq[i].devp, cudaq[i].devp_size);
 	if (err != cudaSuccess) 
 	    Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
-	printf("cudaMalloc\n");
     }
     if (cudaq[i].devf_size == 0) {
 	cudaq[i].devf_size = 16*1024*1024;
 	err = cudaMalloc((void **)&cudaq[i].devf, cudaq[i].devf_size);
 	if (err != cudaSuccess) 
 	    Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
-	printf("cudaMalloc\n");
     }
     return i;
+}
+
+extern "C" void
+CUDA_Sync(void)
+{
+    int i;
+    cudaError_t err;
+
+    for (i = 0; i < NQ; i++) {
+	if (cudaq[i].inuse) {
+	    err = cudaStreamSynchronize(cudaq[i].stream);
+	    if (err == cudaSuccess) {
+		memcpy(cudaq[i].p, cudaq[i].hostp, cudaq[i].p_nbytes);
+		err = cudaStreamDestroy(cudaq[i].stream);
+		if (err != cudaSuccess) 
+		    Error("cudaStreamDestroy failed, %d %s\n", err, cudaGetErrorString(err));
+		cudaq[i].inuse = 0;
+	    } else if (err != cudaErrorNotReady) {
+		Error("cudaStreamQuery failed, %d %s\n", err, cudaGetErrorString(err));
+	    }
+	}
+    }
 }
 
 
@@ -419,13 +480,17 @@ pinteractCUDA(const float *p, float *accp, const int n, const int stride,
 	threads = (n+blocks*VECWIDTH-1)/(blocks*VECWIDTH);
     }
 
-    if (sz == QSZ) {
+    if (sz == MSZ) {
+	Msg_do("M %d sinks, %d sources, %d blocks, %d threads\n",
+	       n, source_n, blocks, threads);
+	pM<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].devp, cudaq[i].devp+(accp-p), n, stride, cudaq[i].devf, source_n);
+    } else if (sz == QSZ) {
 	Msg_do("Q %d sinks, %d sources, %d blocks, %d threads\n",
 	       n, source_n, blocks, threads);
 	pQ<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].devp, cudaq[i].devp+(accp-p), n, stride, cudaq[i].devf, source_n);
     } else if (sz == HSZ) {
-	Msg_do("H %d sinks, %d sources, %d blocks, %d threads\n",
-	       n, source_n, blocks, threads);
+	// Msg_do("H %d sinks, %d sources, %d blocks, %d threads\n",
+	// n, source_n, blocks, threads);
 	pH<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].devp, cudaq[i].devp+(accp-p), n, stride, cudaq[i].devf, source_n);
     } else Error("Unknown size %d\n", sz);
 

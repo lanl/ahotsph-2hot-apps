@@ -448,6 +448,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 
 	/* Make sure these are initialized to zero externally */
+#ifdef CUDA
+	CUDA_Sync();		/* make sure CUDA is done with *bp */
+#endif
 	bp->phi += from->M0;
 	bp->phi += phi;
 	bp->phi *= GNewt;
@@ -597,6 +600,7 @@ mxn_hexa(Sink *to, hcell *pp)
 	}
 	WalkPoll();
     }
+    // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
     to->hcnt_done = n1*NSSE;
 

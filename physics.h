@@ -316,15 +316,18 @@ void Arch(do_gravph_amd6100)(const float *f, const float *fend, const float *pos
 void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
-void pHinteract(const float *p, float *accp, const int n, const int stride, 
-		const float *f, const int source_n);
-void pQinteract(const float *p, float *accp, const int n, const int stride, 
-		const float *f, const int source_n);
+void pHinteract(const float *p, float *accp, const int m, const int stride, 
+		const float *f, const int n);
+void pQinteract(const float *p, float *accp, const int m, const int stride, 
+		const float *f, const int n);
+void pMinteract(const float *p, float *accp, const int m, const int stride, 
+		const float *f, const int n);
 
 #ifdef CUDA
 void CUDA_Init(void);
 void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
 		   const float *f, const int source_n, const int sz);
+void CUDA_Sync(void);
 #endif
 
 
