@@ -8,7 +8,7 @@
 #define LPAREN (
 #define RPAREN )
 
-#define VECWIDTH 1
+#define VECWIDTH 4
 #define NSSE 8
 
 /* map float4 to accp */
@@ -46,7 +46,7 @@
     } while (0)
 
 #define Vdecl(a, s) \
-    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2], a[(s)*(index*VECWIDTH+0)+3]}
+    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2]}
 #define V4decl(a) {a[index]}
 
 #endif
@@ -79,7 +79,9 @@
       a[1] b[1] c[1] d[1];   \
     } while (0)
 
-#define Vdecl(a) {a[4*VECWIDTH*index], a[4*VECWIDTH*index+VECWIDTH]}
+#define Vdecl(a, s) { \
+    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2]}, \
+    {a[(s)*(index*VECWIDTH+1)+0], a[(s)*(index*VECWIDTH+1)+1], a[(s)*(index*VECWIDTH+1)+2]}
 #define V4decl(a) {a[index], a[index+1]}
 
 #endif
@@ -117,7 +119,9 @@
       a[2] b[2] c[2] d[2]; \
     } while (0)
 
-#define Vdecl(a) {a[4*VECWIDTH*index], a[4*VECWIDTH*index+VECWIDTH], a[4*VECWIDTH*index+2*VECWIDTH]}
+#define Vdecl(a, s) { \
+    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2]}, \
+    {a[(s)*(index*VECWIDTH+1)+0], a[(s)*(index*VECWIDTH+1)+1], a[(s)*(index*VECWIDTH+1)+2]}
 #define V4decl(a) {a[index], a[index+1], a[index+2]}
 
 #endif
@@ -162,10 +166,10 @@
     } while (0)
 
 #define Vdecl(a, s) { \
-    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2], a[(s)*(index*VECWIDTH+0)+3]}, \
-    {a[(s)*(index*VECWIDTH+1)+0], a[(s)*(index*VECWIDTH+1)+1], a[(s)*(index*VECWIDTH+1)+2], a[(s)*(index*VECWIDTH+1)+3]}, \
-    {a[(s)*(index*VECWIDTH+2)+0], a[(s)*(index*VECWIDTH+2)+1], a[(s)*(index*VECWIDTH+2)+2], a[(s)*(index*VECWIDTH+1)+3]}, \
-    {a[(s)*(index*VECWIDTH+3)+0], a[(s)*(index*VECWIDTH+3)+1], a[(s)*(index*VECWIDTH+3)+2], a[(s)*(index*VECWIDTH+1)+3]}}
+    {a[(s)*(index*VECWIDTH+0)+0], a[(s)*(index*VECWIDTH+0)+1], a[(s)*(index*VECWIDTH+0)+2]}, \
+    {a[(s)*(index*VECWIDTH+1)+0], a[(s)*(index*VECWIDTH+1)+1], a[(s)*(index*VECWIDTH+1)+2]}, \
+    {a[(s)*(index*VECWIDTH+2)+0], a[(s)*(index*VECWIDTH+2)+1], a[(s)*(index*VECWIDTH+2)+2]}, \
+    {a[(s)*(index*VECWIDTH+3)+0], a[(s)*(index*VECWIDTH+3)+1], a[(s)*(index*VECWIDTH+3)+2]}}
 
 #define V4decl(a) {a[index], a[index+1], a[index+2], a[index+3]}
 

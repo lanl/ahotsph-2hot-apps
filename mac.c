@@ -17,7 +17,7 @@ Counter_t FBC2Int, FBC4Int;
 Counter_t MACcnt, BBMACcnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
-Timer_t MACTm;
+Timer_t MACTm, CUDAWtTm;
 
 #if 0
 int64_t WatchId = 7310803995;
@@ -206,6 +206,19 @@ WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn)
     Btab = btab;
     Nobj = nobj;
     MxN = mxn;
+    WalkInitSinkCUDA(btab, sizeof(body)/sizeof(float), nobj);
+}
+
+void
+WalkTerminateSink(tree_t *tp, body *btab, int64_t nobj)
+{
+    WalkTerminateSinkCUDA(btab, sizeof(body)/sizeof(float), nobj);
+
+    /* scale by GNewt */
+    for (int64_t i = 0; i < nobj; i++) {
+	btab[i].phi *= GNewt;
+	VS(btab[i].acc, *= GNewt);
+    }
 }
 
 void
@@ -448,16 +461,11 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 
 	/* Make sure these are initialized to zero externally */
-#ifdef CUDA
-	CUDA_Sync();		/* make sure CUDA is done with *bp */
-#endif
 	bp->phi += from->M0;
 	bp->phi += phi;
-	bp->phi *= GNewt;
 	VV(bp->acc, -= from->M1);
 	VV(bp->acc, += acc);
 	DebugWatchId("a %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
-	VS(bp->acc, *= GNewt);
 	DebugWatchId("g %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
 	bp->nterms += from->nterms + from->scnt + from->mcnt 
 #ifdef QUAD
@@ -587,7 +595,7 @@ mxn_hexa(Sink *to, hcell *pp)
 			  (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)));
 #else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-		       (float *)&Hvec[n0], n1-n0);
+		       (float *)&Hvec[n0], n1-n0, p-Btab);
 #endif
 	} else {
 	    float mtot = 0.0f;

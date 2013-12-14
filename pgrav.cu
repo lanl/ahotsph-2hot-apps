@@ -50,7 +50,7 @@ static __inline__ ticks getticks(void)
 #define HSZ 29
 
 __global__ void
-pH(const float *p, float *ret, const int n, const int stride, const float *f, const int source_n)
+pH(const float *p, float *ret, const int n, const int stride, const float *f, const int source_n, int offset)
 {
     int i, ii;
     float t[VECWIDTH], r2[VECWIDTH], rinv[VECWIDTH], rinv2[VECWIDTH];
@@ -60,15 +60,15 @@ pH(const float *p, float *ret, const int n, const int stride, const float *f, co
     float eqe[VECWIDTH], eq0[VECWIDTH], eq1[VECWIDTH], eq2[VECWIDTH];
     float4 accp[VECWIDTH] = {};
     int index = threadIdx.x + blockIdx.x * blockDim.x;
-    const float4 ppos[VECWIDTH] = Vdecl(p, stride);
+    const float3 ppos[VECWIDTH] = Vdecl(p, 3);
 
     if (VECWIDTH*index >= n) return;
 
     for (i = 0; i < source_n; i++) {
 	ii = (i/NSSE)*NSSE*HSZ + i%NSSE;
-    	VVS(x, = ppos, X - xp);	
-    	VVS(y, = ppos, Y - yp);	
-    	VVS(z, = ppos, Z - zp);	
+    	VVS(x, = ppos, .x - xp);	
+    	VVS(y, = ppos, .y - yp);	
+    	VVS(z, = ppos, .z - zp);	
 	VVV(r2, = x, * x);
 	VVV(r2, += y, * y);
 	VVV(r2, += z, * z);
@@ -224,15 +224,15 @@ pQ(const float *p, float *ret, const int n, const int stride,
     float eqe[VECWIDTH], eq0[VECWIDTH], eq1[VECWIDTH], eq2[VECWIDTH];
     float4 accp[VECWIDTH] = {};
     int index = threadIdx.x + blockIdx.x * blockDim.x;
-    const float4 ppos[VECWIDTH] = Vdecl(p, stride);
+    const float3 ppos[VECWIDTH] = Vdecl(p, 3);
 
     if (VECWIDTH*index >= n) return;
 
     for (i = 0; i < source_n; i++) {
 	ii = (i/NSSE)*NSSE*QSZ + i%NSSE;
-    	VVS(x, = ppos, X - xp);	
-    	VVS(y, = ppos, Y - yp);	
-    	VVS(z, = ppos, Z - zp);	
+    	VVS(x, = ppos, .x - xp);	
+    	VVS(y, = ppos, .y - yp);	
+    	VVS(z, = ppos, .z - zp);	
 	VVV(r2, = x, * x);
 	VVV(r2, += y, * y);
 	VVV(r2, += z, * z);
@@ -303,15 +303,15 @@ pM(const float *p, float *ret, const int n, const int stride,
     float eqe[VECWIDTH];
     float4 accp[VECWIDTH] = {};
     int index = threadIdx.x + blockIdx.x * blockDim.x;
-    const float4 ppos[VECWIDTH] = Vdecl(p, stride);
+    const float3 ppos[VECWIDTH] = Vdecl(p, 3);
 
     if (VECWIDTH*index >= n) return;
 
     for (i = 0; i < source_n; i++) {
 	ii = (i/NSSE)*NSSE*QSZ + i%NSSE;
-    	VVS(x, = ppos, X - xp);	
-    	VVS(y, = ppos, Y - yp);	
-    	VVS(z, = ppos, Z - zp);	
+    	VVS(x, = ppos, .x - xp);	
+    	VVS(y, = ppos, .y - yp);	
+    	VVS(z, = ppos, .z - zp);	
 	VVV(r2, = x, * x);
 	VVV(r2, += y, * y);
 	VVV(r2, += z, * z);
@@ -344,17 +344,14 @@ pM(const float *p, float *ret, const int n, const int stride,
 typedef struct cudaq_t {
     int inuse;
     cudaStream_t stream;
-    int p_size;
-    int devp_size;
     int devf_size;
-    int p_nbytes;
-    float *p;
-    float *hostp;		/* pinned */
-    float *devp;
+    float *hostf;
     float *devf;
+    float *pos;
+    float *accp;
 } cudaq_t;
 
-#define NQ 4
+#define NQ 32
 static cudaq_t cudaq[NQ];
 
 static int
@@ -369,7 +366,6 @@ check_cudaq(void)
 	    if (cudaq[i].inuse) {
 		err = cudaStreamQuery(cudaq[i].stream);
 		if (err == cudaSuccess) {
-		    memcpy(cudaq[i].p, cudaq[i].hostp, cudaq[i].p_nbytes);
 		    err = cudaStreamDestroy(cudaq[i].stream);
 		    if (err != cudaSuccess) 
 			Error("cudaStreamDestroy failed, %d %s\n", err, cudaGetErrorString(err));
@@ -385,20 +381,12 @@ check_cudaq(void)
 	    if (!cudaq[i].inuse) break;
 	}
     } while (i == NQ);
-    if (cudaq[i].p_size == 0) {
-	cudaq[i].p_size = 16*1024*1024;
-	err = cudaMallocHost((void **)&cudaq[i].hostp, cudaq[i].p_size);
-	if (err != cudaSuccess) 
-	    Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
-    }
-    if (cudaq[i].devp_size == 0) {
-	cudaq[i].devp_size = 16*1024*1024;
-	err = cudaMalloc((void **)&cudaq[i].devp, cudaq[i].devp_size);
-	if (err != cudaSuccess) 
-	    Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
-    }
+
     if (cudaq[i].devf_size == 0) {
 	cudaq[i].devf_size = 16*1024*1024;
+	err = cudaMallocHost((void **)&cudaq[i].hostf, cudaq[i].devf_size);
+	if (err != cudaSuccess) 
+	    Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
 	err = cudaMalloc((void **)&cudaq[i].devf, cudaq[i].devf_size);
 	if (err != cudaSuccess) 
 	    Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
@@ -406,8 +394,8 @@ check_cudaq(void)
     return i;
 }
 
-extern "C" void
-CUDA_Sync(void)
+static void
+wait_cudaq(void)
 {
     int i;
     cudaError_t err;
@@ -416,21 +404,104 @@ CUDA_Sync(void)
 	if (cudaq[i].inuse) {
 	    err = cudaStreamSynchronize(cudaq[i].stream);
 	    if (err == cudaSuccess) {
-		memcpy(cudaq[i].p, cudaq[i].hostp, cudaq[i].p_nbytes);
 		err = cudaStreamDestroy(cudaq[i].stream);
 		if (err != cudaSuccess) 
 		    Error("cudaStreamDestroy failed, %d %s\n", err, cudaGetErrorString(err));
 		cudaq[i].inuse = 0;
-	    } else if (err != cudaErrorNotReady) {
-		Error("cudaStreamQuery failed, %d %s\n", err, cudaGetErrorString(err));
+	    } else {
+		Error("cudaStreamSynchronize failed, %d %s\n", err, cudaGetErrorString(err));
 	    }
 	}
     }
 }
 
+static float *devpos, *devaccp;
+static float *Btab;
 
 extern "C" void
-pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
+WalkInitSinkCUDA(float *btab, int stride, int64_t nobj)
+{
+    float *hostpos;		// pinned
+    size_t pos_bytes = 3 * sizeof(float) * nobj;
+    size_t accp_bytes = 4 * sizeof(float) * nobj;
+    cudaError_t err;
+
+    Btab = btab;
+
+    /* Copy x, y, z to device through host buffer */
+    err = cudaMalloc((void **)&devpos, pos_bytes);
+    if (err != cudaSuccess) 
+	Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
+
+    /* Allocate ax, ay, az, phi and initialize to zero */
+    err = cudaMalloc((void **)&devaccp, accp_bytes);
+    if (err != cudaSuccess) 
+	Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaMallocHost((void **)&hostpos, pos_bytes);
+    if (err != cudaSuccess) 
+	Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
+
+    for (int64_t i = 0; i < nobj; i++) {
+	hostpos[i*3+0] = btab[i*stride+1];
+	hostpos[i*3+1] = btab[i*stride+2];
+	hostpos[i*3+2] = btab[i*stride+3];
+    }
+
+    err = cudaMemcpy(devpos, hostpos, pos_bytes, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) 
+	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaFreeHost(hostpos);
+    if (err != cudaSuccess) 
+	Error("cudaFreeHost failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaMemset(devaccp, 0, accp_bytes);
+    if (err != cudaSuccess) 
+	Error("cudaMemset failed, %d %s\n", err, cudaGetErrorString(err));
+}
+
+extern "C" void
+WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj)
+{
+    float *hostaccp;		// pinned
+    size_t accp_bytes = 4 * sizeof(float) * nobj;
+    cudaError_t err;
+
+    wait_cudaq();
+
+    err = cudaFree(devpos);
+    if (err != cudaSuccess) 
+	Error("cudaFree failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaMallocHost((void **)&hostaccp, accp_bytes);
+    if (err != cudaSuccess) 
+	Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaMemcpy(hostaccp, devaccp, accp_bytes, cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess) 
+	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaFree(devaccp);
+    if (err != cudaSuccess) 
+	Error("cudaFree failed, %d %s\n", err, cudaGetErrorString(err));
+
+    /* Add accp to btab */
+    for (int64_t i = 0; i < nobj; i++) {
+	btab[i*stride+7] += hostaccp[i*4+0];
+	btab[i*stride+8] += hostaccp[i*4+1];
+	btab[i*stride+9] += hostaccp[i*4+2];
+	btab[i*stride+10] += hostaccp[i*4+3];
+    }
+
+    err = cudaFreeHost(hostaccp);
+    if (err != cudaSuccess) 
+	Error("cudaFreeHost failed, %d %s\n", err, cudaGetErrorString(err));
+}
+
+
+extern "C" void
+pinteractCUDA(const float *p, float *accp, const int m, const int stride, 
 	      const float *f, const int source_n, const int sz)
 {
     cudaError_t err;
@@ -441,60 +512,52 @@ pinteractCUDA(const float *p, float *accp, const int n, const int stride,
     err = cudaStreamCreate(&cudaq[i].stream);
     if (err != cudaSuccess) 
 	Error("cudaStreamCreate failed, %d %s\n", err, cudaGetErrorString(err));
-    if (cudaq[i].p_size < n*stride*sizeof(float)) {
-	Error("p_size too small\n");
-    }
-    cudaq[i].p_nbytes = n*stride*sizeof(float);
-    cudaq[i].p = (float *)p;
-    memcpy(cudaq[i].hostp, cudaq[i].p, n*stride*sizeof(float));
-    if (cudaq[i].devp_size < n*stride*sizeof(float)) {
-	Error("devp_size too small\n");
-    }
-    err = cudaMemcpyAsync(cudaq[i].devp, cudaq[i].p, n*stride*sizeof(float), cudaMemcpyHostToDevice, cudaq[i].stream);
-    if (err != cudaSuccess) 
-	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
     if (cudaq[i].devf_size < source_n*sz*sizeof(float)) {
 	Error("devf_size too small\n");
     }
-    err = cudaMemcpyAsync(cudaq[i].devf, f, source_n*sz*sizeof(float), cudaMemcpyHostToDevice, cudaq[i].stream);
+    memcpy(cudaq[i].hostf, f, source_n*sz*sizeof(float));
+    err = cudaMemcpyAsync(cudaq[i].devf, cudaq[i].hostf, source_n*sz*sizeof(float), 
+			  cudaMemcpyHostToDevice, cudaq[i].stream);
     if (err != cudaSuccess) 
 	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
 
-    if (n <= 512) {
+    cudaq[i].pos = devpos + 3*(p-Btab)/stride;
+    cudaq[i].accp = devaccp + 4*(p-Btab)/stride;;
+
+    if (m <= 512) {
 	blocks = 1;
-	threads = (n+VECWIDTH-1)/(VECWIDTH);
-    } else if (n <= 1024) {
+	threads = (m+VECWIDTH-1)/(VECWIDTH);
+    } else if (m <= 1024) {
 	blocks = 2;
-	threads = (n+2*VECWIDTH-1)/(2*VECWIDTH);
-    } else if (n <= 2048) {
+	threads = (m+2*VECWIDTH-1)/(2*VECWIDTH);
+    } else if (m <= 2048) {
 	blocks = 4;
-	threads = (n+4*VECWIDTH-1)/(4*VECWIDTH);
-    } else if (n <= 4096) {
+	threads = (m+4*VECWIDTH-1)/(4*VECWIDTH);
+    } else if (m <= 4096) {
 	blocks = 8;
-	threads = (n+8*VECWIDTH-1)/(8*VECWIDTH);
-    } else if (n <= 8192) {
+	threads = (m+8*VECWIDTH-1)/(8*VECWIDTH);
+    } else if (m <= 8192) {
 	blocks = 16;
-	threads = (n+16*VECWIDTH-1)/(16*VECWIDTH);
+	threads = (m+16*VECWIDTH-1)/(16*VECWIDTH);
     } else {
-	blocks = n/32;
-	threads = (n+blocks*VECWIDTH-1)/(blocks*VECWIDTH);
+	blocks = m/32;
+	threads = (m+blocks*VECWIDTH-1)/(blocks*VECWIDTH);
     }
 
     if (sz == MSZ) {
-	Msg_do("M %d sinks, %d sources, %d blocks, %d threads\n",
-	       n, source_n, blocks, threads);
-	pM<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].devp, cudaq[i].devp+(accp-p), n, stride, cudaq[i].devf, source_n);
+	Msg_do("M %d sinks, %d sources, %d blocks, %d threads. Offset %ld\n",
+	       m, source_n, blocks, threads, (p-Btab)/stride);
+	pM<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n);
     } else if (sz == QSZ) {
-	Msg_do("Q %d sinks, %d sources, %d blocks, %d threads\n",
-	       n, source_n, blocks, threads);
-	pQ<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].devp, cudaq[i].devp+(accp-p), n, stride, cudaq[i].devf, source_n);
+	Msg_do("Q %d sinks, %d sources, %d blocks, %d thread.  Offset %ld\n",
+	       m, source_n, blocks, threads, (p-Btab)/stride);
+	pQ<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n);
     } else if (sz == HSZ) {
-	// Msg_do("H %d sinks, %d sources, %d blocks, %d threads\n",
-	// n, source_n, blocks, threads);
-	pH<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].devp, cudaq[i].devp+(accp-p), n, stride, cudaq[i].devf, source_n);
+	Msg_do("H %d sinks, %d sources, %d blocks, %d threads.  Offset %ld\n",
+	       m, source_n, blocks, threads, (p-Btab)/stride);
+	pH<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n, (p-Btab)/stride);
     } else Error("Unknown size %d\n", sz);
 
-    err = cudaMemcpyAsync((void *)cudaq[i].hostp, cudaq[i].devp, n*stride*sizeof(float), cudaMemcpyDeviceToHost,cudaq[i].stream);
-    if (err != cudaSuccess) 
-	Error("cudaMemcpyAsync failed, %d %s\n", err, cudaGetErrorString(err));
+    // wait_cudaq();
 }

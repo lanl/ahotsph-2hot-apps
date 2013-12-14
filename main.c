@@ -793,8 +793,8 @@ main(int argc, char *argv[])
 
 	    StartTimer(&WTermTm);
 	    WalkTerminate();
+	    WalkTerminateSink(&thetree, btab, nobj);
 	    StopTimer(&WTermTm);
-
 	}
 	StopTimer(&FindForcesTm);
 	singlPrintf("FindForces done %d (%d)\n", maxmem(), maxheap());
@@ -1204,6 +1204,7 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&GravHFTm, "HexaF Time");
     EnableCPUTimer(&GravTm, "Grav Time");
     EnableCPUTimer(&MACTm, "MAC Time");
+    EnableTimer(&CUDAWtTm, "CUDA Wait");
     EnableTimer(&WalkDeferTm, "Walk Defer");
     EnableTimer(&WTermTm, "WalkTerm");
     EnableTimer(&WNTTm, "WalkNT");

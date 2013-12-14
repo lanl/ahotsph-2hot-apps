@@ -271,7 +271,7 @@ char *PrintBodyContentsLong(const body *vp);
 char *PrintBranch(const cofmdata *cmp);
 
 /* In mac.c */
-extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm;
+extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm, CUDAWtTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t CEmpty, MCCorr, MCAnti;
 extern Counter_t FBC2Int, FBC4Int;
@@ -288,6 +288,7 @@ void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
 void WalkInitSrcPeriodic(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
+void WalkTerminateSink(tree_t *tp, body *btab, int64_t nobj);
 
 /* In grav.c */
 typedef void (*grav_f)(const float *p, const float *end, const float *pos0, float *mass0,
@@ -317,19 +318,24 @@ void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float
 void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
 void pHinteract(const float *p, float *accp, const int m, const int stride, 
-		const float *f, const int n);
+		const float *f, const int n, int offset);
 void pQinteract(const float *p, float *accp, const int m, const int stride, 
 		const float *f, const int n);
 void pMinteract(const float *p, float *accp, const int m, const int stride, 
 		const float *f, const int n);
 
+
 #ifdef CUDA
 void CUDA_Init(void);
 void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
-		   const float *f, const int source_n, const int sz);
-void CUDA_Sync(void);
+const float *f, const int source_n, const int sz);
+void WalkInitSinkCUDA(body *btab, int stride, int64_t nobj);
+void WalkTerminateSinkCUDA(body *btab, int stride, int64_t nobj);
+#else
+#define CUDA_Init()
+#define WalkInitSinkCUDA(a, b, c) {}
+#define WalkTerminateSinkCUDA(a, b, c) {}
 #endif
-
 
 /* In ewald.c */
 void ewald(double *x, double L, double *f, double *phi);
