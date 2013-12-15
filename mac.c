@@ -531,11 +531,17 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (to->scnt >= NSSE*SVECSZ) Error("svec overflow\n");
 	to->mcnt = from->mcnt;
 	if (to->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
+	{
+	    int qsrc = from->qcnt-from->qcnt_done;
+	    int hsrc = from->hcnt-from->hcnt_done;
+	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
+		Msgf(("%ld q %d h %d\n", to->daughters, qsrc, hsrc));
+	}
 #ifdef QUAD
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
 	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
-	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_sink && 
+	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
 	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
 	    mxn_quad(to, pp);
 	}
@@ -544,7 +550,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt = from->hcnt;
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
-	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_sink && 
+	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_hsink && 
 	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
 	    mxn_hexa(to, pp);
 	}
@@ -588,7 +594,7 @@ mxn_quad(Sink *to, hcell *pp)
     /* Size MxN->hblock for appropriate WalkPoll() latency */
     /* If Walk Defer timer is large, make MxN->hblock smaller */
     if (n1-n0 > MxN->hblock) m_block = 1;
-    else if (n1 == n0) Error("mxn_hexa called with n == 0\n");
+    else if (n1 == n0) Error("mxn_quad called with n == 0\n");
     else m_block = MxN->hblock / (n1-n0);
     block = m_block;
     for (p = first; p < last; p += m_block) {

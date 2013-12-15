@@ -241,7 +241,8 @@ typedef struct mac_s {
 
 typedef struct mxn_s {
     int hblock;
-    int min_sink;
+    int min_qsink;
+    int min_hsink;
     int min_qsrc;
     int min_hsrc;
     int do_pQ;

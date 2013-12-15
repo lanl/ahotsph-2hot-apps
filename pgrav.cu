@@ -7,15 +7,6 @@
 #include "cudavec.h"
 #include "stdio.h"
 
-typedef unsigned long long ticks;
-
-static __inline__ ticks getticks(void)
-{
-     unsigned a, d; 
-     __asm__ volatile("rdtsc" : "=a" (a), "=d" (d)); 
-     return ((ticks)a) | (((ticks)d) << 32); 
-}
-
 #define mass f[ii+0*NSSE]
 #define xp f[ii+1*NSSE]
 #define yp f[ii+2*NSSE]
@@ -546,16 +537,16 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
     }
 
     if (sz == MSZ) {
-	Msg_do("M %d sinks, %d sources, %d blocks, %d threads. Offset %ld\n",
-	       m, source_n, blocks, threads, (p-Btab)/stride);
+	Msgf(("M %d sinks, %d sources, %d blocks, %d threads. Offset %ld\n",
+	      m, source_n, blocks, threads, (p-Btab)/stride));
 	pM<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n);
     } else if (sz == QSZ) {
-	Msg_do("Q %d sinks, %d sources, %d blocks, %d thread.  Offset %ld\n",
-	       m, source_n, blocks, threads, (p-Btab)/stride);
+	Msgf(("Q %d sinks, %d sources, %d blocks, %d thread.  Offset %ld\n",
+	      m, source_n, blocks, threads, (p-Btab)/stride));
 	pQ<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n);
     } else if (sz == HSZ) {
-	Msg_do("H %d sinks, %d sources, %d blocks, %d threads.  Offset %ld\n",
-	       m, source_n, blocks, threads, (p-Btab)/stride);
+	Msgf(("H %d sinks, %d sources, %d blocks, %d threads.  Offset %ld\n",
+	      m, source_n, blocks, threads, (p-Btab)/stride));
 	pH<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n);
     } else Error("Unknown size %d\n", sz);
 

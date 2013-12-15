@@ -173,10 +173,11 @@ main(int argc, char *argv[])
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
 #ifdef CUDA
-    mxn_s mxn = {.hblock=16*1024*1024, .min_sink=64, .min_qsrc=512, .min_hsrc=512, .do_pQ=1, .do_pH=1};
+    mxn_s mxn = {.hblock=16*1024*1024, .min_qsink=512, .min_hsink=64,
+		 .min_qsrc=128, .min_hsrc=128, .do_pQ=1, .do_pH=1};
     CUDA_Init();
 #else
-    mxn_s mxn = {.hblock=4096, .min_sink=256, .min_qsrc=512, .min_hsrc=512};
+    mxn_s mxn = {.hblock=4096, .min_qsink=64, .min_hsink=64, .min_qsrc=512, .min_hsrc=512};
 #endif
     /* Attempt to get a contiguous chunk of heap */
     SDFgetintOrDefault( csdfp, "memory_tune_MB", &memory_tune_MB, 0);
@@ -458,7 +459,8 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "geometric_center", &mac.geometric_center, 0);
     SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
     SDFgetint(csdfp, "mxn_hblock", &mxn.hblock);
-    SDFgetint(csdfp, "mxn_min_sink", &mxn.min_sink);
+    SDFgetint(csdfp, "mxn_min_qsink", &mxn.min_qsink);
+    SDFgetint(csdfp, "mxn_min_hsink", &mxn.min_hsink);
     SDFgetint(csdfp, "mxn_min_qsrc", &mxn.min_qsrc);
     SDFgetint(csdfp, "mxn_min_hsrc", &mxn.min_hsrc);
     SDFgetint(csdfp, "mxn_do_pQ", &mxn.do_pQ);
@@ -557,7 +559,8 @@ main(int argc, char *argv[])
     singlPrintf("int geometric_center = %d;\n", mac.geometric_center);
     singlPrintf("int subtract_background = %d;\n", mac.subtract_background);
     singlPrintf("int mxn_hblock = %d;\n", mxn.hblock);
-    singlPrintf("int mxn_min_sink = %d;\n", mxn.min_sink);
+    singlPrintf("int mxn_min_qsink = %d;\n", mxn.min_qsink);
+    singlPrintf("int mxn_min_hsink = %d;\n", mxn.min_hsink);
     singlPrintf("int mxn_min_qsrc = %d;\n", mxn.min_qsrc);
     singlPrintf("int mxn_min_hsrc = %d;\n", mxn.min_hsrc);
     singlPrintf("int mxn_do_pQ = %d;\n", mxn.do_pQ);
