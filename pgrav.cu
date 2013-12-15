@@ -269,7 +269,7 @@ pQ(const float *p, float *ret, const int n, const int stride,
 	VV(eq2, += qxz * x);
 	VV(eq0, += qxz * z);
 	VV(eq1, += qyz * z);
-	VV(eq2, += qyz * z);
+	VV(eq2, += qyz * y);
 	VV(eq0, *= t);
 	VV(eq1, *= t);
 	VV(eq2, *= t);
