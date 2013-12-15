@@ -50,7 +50,7 @@ static __inline__ ticks getticks(void)
 #define HSZ 29
 
 __global__ void
-pH(const float *p, float *ret, const int n, const int stride, const float *f, const int source_n, int offset)
+pH(const float *p, float *ret, const int n, const int stride, const float *f, const int source_n)
 {
     int i, ii;
     float t[VECWIDTH], r2[VECWIDTH], rinv[VECWIDTH], rinv2[VECWIDTH];
@@ -351,7 +351,7 @@ typedef struct cudaq_t {
     float *accp;
 } cudaq_t;
 
-#define NQ 32
+#define NQ 16
 static cudaq_t cudaq[NQ];
 
 static int
@@ -383,7 +383,7 @@ check_cudaq(void)
     } while (i == NQ);
 
     if (cudaq[i].devf_size == 0) {
-	cudaq[i].devf_size = 16*1024*1024;
+	cudaq[i].devf_size = 1024*1024;
 	err = cudaMallocHost((void **)&cudaq[i].hostf, cudaq[i].devf_size);
 	if (err != cudaSuccess) 
 	    Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
@@ -556,7 +556,7 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
     } else if (sz == HSZ) {
 	Msg_do("H %d sinks, %d sources, %d blocks, %d threads.  Offset %ld\n",
 	       m, source_n, blocks, threads, (p-Btab)/stride);
-	pH<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n, (p-Btab)/stride);
+	pH<<<blocks,threads,0,cudaq[i].stream>>>(cudaq[i].pos, cudaq[i].accp, m, 4, cudaq[i].devf, source_n);
     } else Error("Unknown size %d\n", sz);
 
     // wait_cudaq();

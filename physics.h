@@ -318,7 +318,7 @@ void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float
 void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
 void pHinteract(const float *p, float *accp, const int m, const int stride, 
-		const float *f, const int n, int offset);
+		const float *f, const int n);
 void pQinteract(const float *p, float *accp, const int m, const int stride, 
 		const float *f, const int n);
 void pMinteract(const float *p, float *accp, const int m, const int stride, 

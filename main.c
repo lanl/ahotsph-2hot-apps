@@ -65,7 +65,7 @@ Counter_t NbodyCnt;
 Counter_t MemCnt, Ncell, Nquadcell, Nhexacell;
 Counter_t Ncell_local, Nquadcell_local, Nhexacell_local, Ntbody, Nhcell;
 Counter_t HeapCnt_;	/* HeapCnt is in the SunOS name space?! */
-Counter_t KNtermsCnt, Scycles, Mcycles, Qcycles, Hcycles, FHcycles;
+Counter_t KNtermsCnt, Scycles, Mcycles, Qcycles, FQcycles, Hcycles, FHcycles;
 
 Timer_t WITm,WTermTm,WNTTm,WITm;
 
@@ -173,7 +173,7 @@ main(int argc, char *argv[])
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
 #ifdef CUDA
-    mxn_s mxn = {.hblock=4*4096, .min_sink=64, .min_qsrc=512, .min_hsrc=512, .do_pQ=1, .do_pH=1};
+    mxn_s mxn = {.hblock=16*1024*1024, .min_sink=64, .min_qsrc=512, .min_hsrc=512, .do_pQ=1, .do_pH=1};
     CUDA_Init();
 #else
     mxn_s mxn = {.hblock=4096, .min_sink=256, .min_qsrc=512, .min_hsrc=512};
@@ -977,6 +977,8 @@ main(int argc, char *argv[])
 	    AddCounter(&Mcycles, 10.0*GHZ*ReadTimer(&GravMTm)/ReadCounter(&BCInt));
 	if (ReadCounter(&BC2Int))
 	    AddCounter(&Qcycles, 10.0*GHZ*ReadTimer(&GravQTm)/ReadCounter(&BC2Int));
+	if (ReadCounter(&FBC2Int))
+	    AddCounter(&FQcycles, 10.0*GHZ*ReadTimer(&GravQFTm)/ReadCounter(&FBC2Int));
 	if (ReadCounter(&BC4Int))
 	    AddCounter(&Hcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
 	if (ReadCounter(&FBC4Int))
@@ -1200,6 +1202,7 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&GravSTm, "Smth Time");
     EnableCPUTimer(&GravMTm, "Mono Time");
     EnableCPUTimer(&GravQTm, "Quad Time");
+    EnableCPUTimer(&GravQFTm, "QuadF Time");
     EnableCPUTimer(&GravHTm, "Hexa Time");
     EnableCPUTimer(&GravHFTm, "HexaF Time");
     EnableCPUTimer(&GravTm, "Grav Time");
@@ -1211,6 +1214,7 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BSInt, "Body-smth");
     EnableCounter(&BCInt, "Body-mono");
     EnableCounter(&BC2Int, "Body-quad");
+    EnableCounter(&FBC2Int, "Body-quadF");
     EnableCounter(&BC4Int, "Body-hexa");
     EnableCounter(&FBC4Int, "Body-hexaF");
     EnableCounter(&MACcnt, "MAC");
@@ -1222,6 +1226,7 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&Scycles, "Smth cycles");
     EnableCounter(&Mcycles, "Mono cycles");
     EnableCounter(&Qcycles, "Quad cycles");
+    EnableCounter(&FQcycles, "QuadF cycles");
     EnableCounter(&Hcycles, "Hexa cycles");
     EnableCounter(&FHcycles, "HexaF cycles");
     EnableCounter(&KNtermsCnt, "KNterms");

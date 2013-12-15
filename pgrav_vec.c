@@ -42,7 +42,7 @@ extern void WalkPoll(void);
 
 void
 pHinteract(const float *p, float *accp, const int n, const int stride, 
-	   const vsf *f, const int source_n, int offset)
+	   const vsf *f, const int source_n)
 {
     int i, j;
     vsf t, r2, rinv, rinv2;

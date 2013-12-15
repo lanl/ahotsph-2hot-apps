@@ -535,16 +535,20 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
 	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
+	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_sink && 
+	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
+	    mxn_quad(to, pp);
+	}
 #endif
 #ifdef HEXA
 	to->hcnt = from->hcnt;
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
-#endif
-	if (MxN->hblock && to->daughters >= MxN->min_sink && 
+	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_sink && 
 	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
 	    mxn_hexa(to, pp);
 	}
+#endif
     } else {
 	to->interactions = 0;
 	to->nterms = 0;
@@ -565,6 +569,60 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt = to->hcnt_done = 0;
 #endif
     }
+}
+
+static void
+mxn_quad(Sink *to, hcell *pp)
+{
+    body *p;
+    body *first = FirstBody(pp);
+    body *last = LastBody(pp)+1;
+    int i, n0, n1, m_block, block;
+
+    if (!first || !last) return;
+    if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
+    StartTimer(&GravTm);
+    StartTimer(&GravQFTm);
+    n0 = to->qcnt_done/NSSE;
+    n1 = to->qcnt/NSSE;
+    /* Size MxN->hblock for appropriate WalkPoll() latency */
+    /* If Walk Defer timer is large, make MxN->hblock smaller */
+    if (n1-n0 > MxN->hblock) m_block = 1;
+    else if (n1 == n0) Error("mxn_hexa called with n == 0\n");
+    else m_block = MxN->hblock / (n1-n0);
+    block = m_block;
+    for (p = first; p < last; p += m_block) {
+	if (p + block > last) block = last-p;
+	if (MxN->do_pQ) {
+#ifdef CUDA
+	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			  (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)));
+#else
+	    pQinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+		       (float *)&Qvec[n0], n1-n0);
+#endif
+	} else {
+	    float mtot = 0.0f;
+	    float e = 0.0f;
+	    int ijunk = 0;
+	    for (i = 0; i < block; i++) {
+		Qinteract((float *)&Qvec[n0], (float *)&Qvec[n1],
+			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+	    }
+	}
+	WalkPoll();
+    }
+    // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
+    AddCounter(&FBC2Int, (last-first)*(n1-n0)*NSSE);
+    to->qcnt_done = n1*NSSE;
+
+    if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
+	Error("bad results from do_grav for %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
+	      first->ident, first->pos[0], first->pos[1], first->pos[2],
+	      first->acc[0], first->acc[1], first->acc[2], first->phi);
+    }
+    StopTimer(&GravQFTm);
+    StopTimer(&GravTm);
 }
 
 static void
@@ -595,7 +653,7 @@ mxn_hexa(Sink *to, hcell *pp)
 			  (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)));
 #else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-		       (float *)&Hvec[n0], n1-n0, p-Btab);
+		       (float *)&Hvec[n0], n1-n0);
 #endif
 	} else {
 	    float mtot = 0.0f;
