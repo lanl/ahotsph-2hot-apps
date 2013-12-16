@@ -11,11 +11,6 @@ ifeq ($(ARCH),$(filter $(ARCH), cudaxk7 cudaxk7-g cudai7))
 cusrc = cuda.cu pgrav.cu
 endif
 
-ifeq ($(ARCH),cudai7)
-cusrc = cuda.cu pgrav.cu
-PRELIBS=-Wl,-rpath -Wl,/opt/cudatoolkit-5.5/lib64 -L/opt/cudatoolkit-5.5/lib64 -lcudart
-endif
-
 programname=../devel/nlna-cuda
 
 src = cofm.c grav.c mac.c main.c physics.c print.c output.c integrate.c ewald_le2.c do_grav_sse4.c do_grav_avx8.c pgrav_vec.c ewald.c grav_n2.c version.c
