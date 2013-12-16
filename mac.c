@@ -537,15 +537,6 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
 		Msgf(("%ld q %d h %d\n", to->daughters, qsrc, hsrc));
 	}
-#ifdef QUAD
-	to->qcnt = from->qcnt;
-	to->qcnt_done = from->qcnt_done;
-	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
-	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
-	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
-	    mxn_quad(to, pp);
-	}
-#endif
 #ifdef HEXA
 	to->hcnt = from->hcnt;
 	to->hcnt_done = from->hcnt_done;
@@ -553,6 +544,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_hsink && 
 	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
 	    mxn_hexa(to, pp);
+	}
+#endif
+#ifdef QUAD
+	to->qcnt = from->qcnt;
+	to->qcnt_done = from->qcnt_done;
+	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
+	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
+	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
+	    mxn_quad(to, pp);
 	}
 #endif
     } else {
@@ -601,8 +601,14 @@ mxn_quad(Sink *to, hcell *pp)
 	if (p + block > last) block = last-p;
 	if (MxN->do_pQ) {
 #ifdef CUDA
+	    int q;
+	    StartTimer(&CUDAWtTm);
+	    while ((q = qallocCUDA()) < 0) {
+		/* WalkPoll(); */
+	    }
+	    StopTimer(&CUDAWtTm);
 	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			  (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)));
+			  (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)), q);
 #else
 	    pQinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 		       (float *)&Qvec[n0], n1-n0);
@@ -655,8 +661,14 @@ mxn_hexa(Sink *to, hcell *pp)
 	if (p + block > last) block = last-p;
 	if (MxN->do_pH) {
 #ifdef CUDA
+	    int q;
+	    StartTimer(&CUDAWtTm);
+	    while ((q = qallocCUDA()) < 0) {
+		/* WalkPoll(); */
+	    }
+	    StopTimer(&CUDAWtTm);
 	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			  (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)));
+			  (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
 #else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 		       (float *)&Hvec[n0], n1-n0);

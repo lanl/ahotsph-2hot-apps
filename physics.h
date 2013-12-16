@@ -328,8 +328,9 @@ void pMinteract(const float *p, float *accp, const int m, const int stride,
 
 #ifdef CUDA
 void CUDA_Init(void);
+int qallocCUDA(void);
 void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
-const float *f, const int source_n, const int sz);
+		   const float *f, const int source_n, const int sz, int q);
 void WalkInitSinkCUDA(body *btab, int stride, int64_t nobj);
 void WalkTerminateSinkCUDA(body *btab, int stride, int64_t nobj);
 #else
