@@ -373,7 +373,7 @@ check_cudaq(void)
 
     if (cudaq[i].devf_size == 0) {
 	cudaq[i].devf_size = 256*1024;
-	err = cudaMallocHost((void **)&cudaq[i].hostf, cudaq[i].devf_size, cudaHostAllocWriteCombined);
+	err = cudaMallocHost((void **)&cudaq[i].hostf, cudaq[i].devf_size, cudaHostAllocDefault);
 	if (err != cudaSuccess) 
 	    Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
 	err = cudaMalloc((void **)&cudaq[i].devf, cudaq[i].devf_size);
@@ -427,7 +427,7 @@ WalkInitSinkCUDA(float *btab, int stride, int64_t nobj)
     if (err != cudaSuccess) 
 	Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
 
-    err = cudaMallocHost((void **)&hostpos, pos_bytes, cudaHostAllocWriteCombined);
+    err = cudaMallocHost((void **)&hostpos, pos_bytes, cudaHostAllocDefault);
     if (err != cudaSuccess) 
 	Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
 
