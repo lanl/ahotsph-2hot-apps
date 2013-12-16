@@ -537,15 +537,6 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
 		Msgf(("%ld q %d h %d\n", to->daughters, qsrc, hsrc));
 	}
-#ifdef HEXA
-	to->hcnt = from->hcnt;
-	to->hcnt_done = from->hcnt_done;
-	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
-	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_hsink && 
-	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
-	    mxn_hexa(to, pp);
-	}
-#endif
 #ifdef QUAD
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
@@ -553,6 +544,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
 	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
 	    mxn_quad(to, pp);
+	}
+#endif
+#ifdef HEXA
+	to->hcnt = from->hcnt;
+	to->hcnt_done = from->hcnt_done;
+	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
+	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_hsink && 
+	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
+	    mxn_hexa(to, pp);
 	}
 #endif
     } else {
