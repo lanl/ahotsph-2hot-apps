@@ -663,12 +663,22 @@ mxn_hexa(Sink *to, hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while ((q = qallocCUDA()) < 0) {
+	    while ((q = qallocCUDA()) < 0 && block > 384) {
 		/* WalkPoll(); */
 	    }
 	    StopTimer(&CUDAWtTm);
-	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			  (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
+	    if (q >= 0) {
+		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
+	    } else {
+		float mtot = 0.0f;
+		float e = 0.0f;
+		int ijunk = 0;
+		for (i = 0; i < block; i++) {
+		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+		}
+	    }
 #else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 		       (float *)&Hvec[n0], n1-n0);
