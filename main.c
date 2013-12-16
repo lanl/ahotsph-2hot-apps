@@ -173,7 +173,7 @@ main(int argc, char *argv[])
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
 #ifdef CUDA
-    mxn_s mxn = {.hblock=16*1024*1024, .min_qsink=512, .min_hsink=64,
+    mxn_s mxn = {.hblock=16*1024*1024, .min_qsink=384, .min_hsink=384,
 		 .min_qsrc=128, .min_hsrc=128, .do_pQ=1, .do_pH=1};
     CUDA_Init();
 #else
