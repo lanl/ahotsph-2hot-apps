@@ -342,7 +342,7 @@ typedef struct cudaq_t {
     float *accp;
 } cudaq_t;
 
-#define NQ 16
+#define NQ 8
 static cudaq_t cudaq[NQ];
 
 static int
