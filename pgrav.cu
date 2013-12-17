@@ -456,8 +456,21 @@ WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj)
     float *hostaccp;		// pinned
     size_t accp_bytes = 4 * sizeof(float) * nobj;
     cudaError_t err;
+    int i;
 
     wait_cudaq();
+
+    for (i = 0; i < NQ; i++) {
+	if (cudaq[i].devf_size) {
+	    cudaq[i].devf_size = 0;
+	    err = cudaFreeHost(cudaq[i].hostf);
+	    if (err != cudaSuccess) 
+		Error("cudaFreeHost failed, %d %s\n", err, cudaGetErrorString(err));
+	    err = cudaFree(cudaq[i].devf);
+	    if (err != cudaSuccess) 
+		Error("cudaFree failed, %d %s\n", err, cudaGetErrorString(err));
+	}
+    }
 
     err = cudaFree(devpos);
     if (err != cudaSuccess) 
