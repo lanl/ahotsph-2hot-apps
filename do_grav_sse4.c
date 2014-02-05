@@ -2,7 +2,480 @@
  * Copyright 2012 Michael S. Warren. All Rights Reserved.
  */
 #ifndef __AVX__
+#include "order.h"
 typedef float v4sf __attribute__ ((vector_size (16)));
+
+#define mass f[0]
+#define xp f[1]
+#define yp f[2]
+#define zp f[3]
+#define R  f[4]
+#define qx f[5]
+#define qy f[6]
+#define qz f[7]
+#define qxx f[8]
+#define qxy f[9]
+#define qyy f[10]
+#define qxz f[11]
+#define qyz f[12]
+#define QSZ 13
+#define qxxx f[13]
+#define qxxy f[14]
+#define qxyy f[15]
+#define qyyy f[16]
+#define qxxz f[17]
+#define qxyz f[18]
+#define qyyz f[19]
+#define qxxxx f[20]
+#define qxxxy f[21]
+#define qxxyy f[22]
+#define qxyyy f[23]
+#define qyyyy f[24]
+#define qxxxz f[25]
+#define qxxyz f[26]
+#define qxyyz f[27]
+#define qyyyz f[28]
+#define HSZ 29
+
+/* 217 flops, 100 bytes */
+void
+do_gravdh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+{
+    v4sf t, r2, rinv, rinv2;
+    v4sf x, y, z;
+    v4sf xx, xy, yy, xz, yz, zz;
+    v4sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    v4sf eqe, eq0, eq1, eq2;
+    v4sf a0 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a1 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a2 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf phi = {0.0f, 0.0f, 0.0f, 0.0f};
+    const v4sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0]};
+    const v4sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1]};
+    const v4sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2]};
+    const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
+    const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
+    const v4sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
+    const v4sf quarter = {0.25f, 0.25f, 0.25f, 0.25f};
+    const v4sf five = {5.0f, 5.0f, 5.0f, 5.0f};
+    const v4sf seven = {7.0f, 7.0f, 7.0f, 7.0f};
+    const v4sf nine = {9.0f, 9.0f, 9.0f, 9.0f};
+
+    while (f < fend) {
+	x = ppos0 - xp;
+	y = ppos1 - yp;
+	z = ppos2 - zp;
+
+	r2 = x*x + y*y + z*z;
+
+	/* Prefetching improves uncached performance by 10-20% */
+	__asm__("prefetcht0 512(%rdi)");
+	rinv = __builtin_ia32_rsqrtps(r2);
+
+	__asm__("prefetcht0 576(%rdi)");
+	/* Newton-Raphson */
+	t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+	
+	__asm__("prefetcht0 640(%rdi)");
+	t = rinv;
+	eqe = t*mass;
+	rinv2 = t*t;
+	phi += eqe;
+	eqe *= rinv2;
+	a0 += x*eqe;
+	a1 += y*eqe;
+	a2 += z*eqe;
+
+        t *= R*rinv2;
+        eq0 = t*qx;
+        eq1 = t*qy;
+        eq2 = t*qz;
+        eqe = x*eq0 + y*eq1 + z*eq2;
+        phi += eqe;
+        eqe *= three*rinv2;
+        a0 += x*eqe - eq0;
+        a1 += y*eqe - eq1;
+        a2 += z*eqe - eq2;
+
+	__asm__("prefetcht0 704(%rdi)");
+        t *= three*rinv2*R;
+        eq0 = t*(qxx*x + qxy*y + qxz*z);
+        eq1 = t*(qyy*y + qxy*x + qyz*z);
+        eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
+        eqe = half*(eq0*x + eq1*y + eq2*z);
+	phi += eqe;
+	eqe *= five*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+
+	__asm__("prefetcht0 768(%rdi)");
+        t *= five*rinv2*R;
+        xx = half*x*x;
+        xy = x*y;
+        xz = x*z;
+        yy = half*y*y;
+        yz = y*z;
+        zz = half*z*z;
+        xxx = x*(third*xx - zz);
+        xxz = z*(xx - third*zz);
+        yyy = y*(third*yy - zz);
+        yyz = z*(yy - third*zz);
+        xx -= zz;
+        yy -= zz;
+
+	__asm__("prefetcht0 832(%rdi)");
+        eq0 = t*(qxxx*xx + qxyy*yy + qxxy*xy + qxxz*xz + qxyz*yz);
+        eq1 = t*(qxyy*xy + qxxy*xx + qyyy*yy + qyyz*yz + qxyz*xz);
+        eq2 = t*(-(qxxx + qxyy)*xz - (qxxy + qyyy)*yz + qxxz*xx + qyyz*yy + qxyz*xy);
+        eqe = third*(eq0*x + eq1*y + eq2*z);
+	phi += eqe;
+	eqe *= seven*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+
+	__asm__("prefetcht0 896(%rdi)");
+        t *= seven*rinv2*R;
+        xxy = y*xx;
+        xyy = x*yy;
+        xyz = xy*z;
+        eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
+        eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
+        eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
+	f += HSZ;
+        eqe = quarter*(eq0*x + eq1*y + eq2*z);
+	phi += eqe;
+	eqe *= nine*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+    }
+    phi = __builtin_ia32_haddps(phi, phi);
+    a0 = __builtin_ia32_haddps(a0, a0);
+    a1 = __builtin_ia32_haddps(a1, a1);
+    a2 = __builtin_ia32_haddps(a2, a2);
+    *phi0 += __builtin_ia32_haddps(phi, phi)[0];
+    acc[0] += __builtin_ia32_haddps(a0, a0)[0];
+    acc[1] += __builtin_ia32_haddps(a1, a1)[0];
+    acc[2] += __builtin_ia32_haddps(a2, a2)[0];
+}
+
+void
+do_gravdh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+{
+    v4sf t, r2, rinv, rinv2;
+    v4sf x, y, z;
+    v4sf xx, xy, yy, xz, yz, zz;
+    v4sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    v4sf eqe, eq0, eq1, eq2;
+    v4sf a0 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a1 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a2 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf phi = {0.0f, 0.0f, 0.0f, 0.0f};
+    const v4sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0]};
+    const v4sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1]};
+    const v4sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2]};
+    const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
+    const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
+    const v4sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
+    const v4sf quarter = {0.25f, 0.25f, 0.25f, 0.25f};
+    const v4sf five = {5.0f, 5.0f, 5.0f, 5.0f};
+    const v4sf seven = {7.0f, 7.0f, 7.0f, 7.0f};
+    const v4sf nine = {9.0f, 9.0f, 9.0f, 9.0f};
+
+    while (f < fend) {
+	x = ppos0 - xp;
+	y = ppos1 - yp;
+	z = ppos2 - zp;
+
+	r2 = x*x + y*y + z*z;
+
+	/* Prefetching improves uncached performance by 10-20% */
+	__asm__("prefetcht0 512(%rdi)");
+	rinv = __builtin_ia32_rsqrtps(r2);
+
+	__asm__("prefetcht0 576(%rdi)");
+	/* Newton-Raphson */
+	t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+	
+	__asm__("prefetcht0 640(%rdi)");
+	t = rinv;
+	eqe = t*mass;
+	rinv2 = t*t;
+	phi += eqe;
+	eqe *= rinv2;
+	a0 += x*eqe;
+	a1 += y*eqe;
+	a2 += z*eqe;
+
+	t *= R*rinv2;
+        eq0 = t*qx;
+        eq1 = t*qy;
+        eq2 = t*qz;
+        eqe = x*eq0;
+	eqe += y*eq1;
+	eqe += z*eq2;
+        phi += eqe;
+        eqe *= three;
+	eqe *= rinv2;
+        a0 += x*eqe - eq0;
+        a1 += y*eqe - eq1;
+        a2 += z*eqe - eq2;
+
+	__asm__("prefetcht0 704(%rdi)");
+        t *= three;
+        t *= rinv2;
+        t *= R;
+        eq0 = qxx*x;
+        eq1 = qyy*y;
+        eq2 = -qxx;
+        eq2 -= qyy;
+        eq2 *= z;
+        eq0 += qxy*y;
+        eq1 += qxy*x;
+        eq2 += qxz*x;
+        eq0 += qxz*z;
+        eq1 += qyz*z;
+        eq2 += qyz*y;
+	eq0 *= t;
+        eq1 *= t;
+        eq2 *= t;
+        eqe = eq0*x;
+        eqe += eq1*y;
+        eqe += eq2*z;
+        eqe *= half;
+	phi += eqe;
+	eqe *= five;
+	eqe *= rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+
+	__asm__("prefetcht0 768(%rdi)");
+        t *= five;
+        t *= rinv2;
+        t *= R;
+        xx = half*x*x;
+        xy = x*y;
+        xz = x*z;
+        yy = half*y*y;
+        yz = y*z;
+        zz = half*z*z;
+        xxx = x*(third*xx - zz);
+        xxz = z*(xx - third*zz);
+        yyy = y*(third*yy - zz);
+        yyz = z*(yy - third*zz);
+        xx -= zz;
+        yy -= zz;
+
+	__asm__("prefetcht0 832(%rdi)");
+        eq0 = qxxx*xx;
+        eq1 = qxyy*xy;
+        eq2 = -(qxxx + qxyy);
+	eq2 *= xz;
+        eq0 += qxyy*yy;
+        eq1 += qxxy*xx;
+        eq2 -= (qxxy + qyyy)*yz;
+        eq0 += qxxy*xy;
+        eq1 += qyyy*yy;
+        eq2 += qxxz*xx;
+        eq0 += qxxz*xz;
+        eq1 += qyyz*yz;
+        eq2 += qyyz*yy;
+        eq0 += qxyz*yz;
+        eq1 += qxyz*xz;
+        eq2 += qxyz*xy;
+        eq0 *= t;
+        eq1 *= t;
+        eq2 *= t;
+        eqe = eq0*x;
+        eqe += eq1*y;
+	eqe += eq2*z;
+	eqe *= third;
+	phi += eqe;
+	eqe *= seven*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+
+	__asm__("prefetcht0 896(%rdi)");
+        t *= seven*rinv2*R;
+        xxy = y*xx;
+        xyy = x*yy;
+        xyz = xy*z;
+        eq2 = -qxxxx*xxz;
+        eq0 = qxxxx*xxx;
+        eq1 = qxyyy*xyy;
+        eq2 -= (qxyyy + qxxxy)*xyz;
+        eq0 += qxyyy*yyy;
+        eq1 += qxxxy*xxx;
+        eq2 -= qyyyy*yyz;
+        eq0 += qxxxy*xxy;
+        eq1 += qyyyy*yyy;
+        eq2 += qxxxz*xxx;
+        eq0 += qxxxz*xxz;
+        eq1 += qyyyz*yyz;
+        eq2 += qyyyz*yyy;
+        eq0 += qxxyy*xyy;
+        eq1 += qxxyy*xxy;
+	eq2 -= qxxyy*(xxz + yyz);
+        eq0 += qxxyz*xyz;
+        eq1 += qxxyz*xxz;
+	eq2 += qxxyz*xxy;
+        eq0 += qxyyz*yyz;
+        eq1 += qxyyz*xyz;
+	eq2 += qxyyz*xyy;
+	eq0 *= t;
+	eq1 *= t;
+        eq2 *= t;
+	f += HSZ;
+        eqe = eq0*x;
+        eqe += eq1*y;
+        eqe += eq2*z;
+        eqe *= quarter;
+	phi += eqe;
+	eqe *= nine*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+    }
+    phi = __builtin_ia32_haddps(phi, phi);
+    a0 = __builtin_ia32_haddps(a0, a0);
+    a1 = __builtin_ia32_haddps(a1, a1);
+    a2 = __builtin_ia32_haddps(a2, a2);
+    *phi0 += __builtin_ia32_haddps(phi, phi)[0];
+    acc[0] += __builtin_ia32_haddps(a0, a0)[0];
+    acc[1] += __builtin_ia32_haddps(a1, a1)[0];
+    acc[2] += __builtin_ia32_haddps(a2, a2)[0];
+}
+
+/* 66 flops, 40 bytes */
+void
+do_gravdq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+{
+    v4sf t, r2, rinv, rinv2;
+    v4sf x, y, z;
+    v4sf eqe, eq0, eq1, eq2;
+    v4sf a0 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a1 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a2 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf phi = {0.0f, 0.0f, 0.0f, 0.0f};
+    const v4sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0]};
+    const v4sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1]};
+    const v4sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2]};
+    const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
+    const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
+    const v4sf five = {5.0f, 5.0f, 5.0f, 5.0f};
+
+    while (f < fend) {
+	x = ppos0 - xp;
+	y = ppos1 - yp;
+	z = ppos2 - zp;
+
+	r2 = x*x + y*y + z*z;
+
+	__asm__("prefetcht0 512(%rdi)");
+	rinv = __builtin_ia32_rsqrtps(r2);
+
+	__asm__("prefetcht0 576(%rdi)");
+	/* Newton-Raphson */
+	t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+	
+	__asm__("prefetcht0 640(%rdi)");
+	t = rinv;
+	eqe = t*mass;
+	rinv2 = t*t;
+	t *= rinv2;
+	phi += eqe;
+	eqe *= rinv2;
+	a0 += x*eqe;
+	a1 += y*eqe;
+	a2 += z*eqe;
+
+        t *= R;
+        eq0 = t*qx;
+        eq1 = t*qy;
+        eq2 = t*qz;
+        eqe = x*eq0 + y*eq1 + z*eq2;
+        phi += eqe;
+        eqe *= three*rinv2;
+        a0 += x*eqe - eq0;
+        a1 += y*eqe - eq1;
+        a2 += z*eqe - eq2;
+
+        t *= three*rinv2*R;
+        eq0 = t*(qxx*x + qxy*y + qxz*z);
+        eq1 = t*(qyy*y + qxy*x + qyz*z);
+        eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
+	f += QSZ;
+        eqe = half*(eq0*x + eq1*y + eq2*z);
+	phi -= eqe;
+	eqe *= five*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+    }
+    phi = __builtin_ia32_haddps(phi, phi);
+    a0 = __builtin_ia32_haddps(a0, a0);
+    a1 = __builtin_ia32_haddps(a1, a1);
+    a2 = __builtin_ia32_haddps(a2, a2);
+    *phi0 += __builtin_ia32_haddps(phi, phi)[0];
+    acc[0] += __builtin_ia32_haddps(a0, a0)[0];
+    acc[1] += __builtin_ia32_haddps(a1, a1)[0];
+    acc[2] += __builtin_ia32_haddps(a2, a2)[0];
+}
+
+#ifndef DIPOLE
+#undef mass
+#undef xp
+#undef yp
+#undef zp
+#undef R
+#undef qx
+#undef qy
+#undef qz
+#undef qxx
+#undef qxy
+#undef qyy
+#undef qxz
+#undef qyz
+#undef QSZ
+#undef qxxx
+#undef qxxy
+#undef qxyy
+#undef qyyy
+#undef qxxz
+#undef qxyz
+#undef qyyz
+#undef qxxxx
+#undef qxxxy
+#undef qxxyy
+#undef qxyyy
+#undef qyyyy
+#undef qxxxz
+#undef qxxyz
+#undef qxyyz
+#undef qyyyz
+#undef HSZ
 
 #define mass f[0]
 #define xp f[1]
@@ -14,6 +487,7 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 #define qyy f[7]
 #define qxz f[8]
 #define qyz f[9]
+#define QSZ 10
 #define qxxx f[10]
 #define qxxy f[11]
 #define qxyy f[12]
@@ -30,6 +504,8 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 #define qxxyz f[23]
 #define qxyyz f[24]
 #define qyyyz f[25]
+#define HSZ 26
+#endif
 
 /* 217 flops, 100 bytes */
 void
@@ -133,7 +609,7 @@ do_gravh_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
         eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
         eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
-	f += 26;
+	f += HSZ;
         eqe = quarter*(eq0*x + eq1*y + eq2*z);
 	phi += eqe;
 	eqe *= nine*rinv2;
@@ -313,7 +789,7 @@ do_gravh_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float 
 	eq0 *= t;
 	eq1 *= t;
         eq2 *= t;
-	f += 26;
+	f += HSZ;
         eqe = eq0*x;
         eqe += eq1*y;
         eqe += eq2*z;
@@ -387,7 +863,7 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
         eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
-	f += 10;
+	f += QSZ;
         eqe = half*(eq0*x + eq1*y + eq2*z);
 	phi -= eqe;
 	eqe *= five*rinv2;
@@ -405,13 +881,10 @@ do_gravq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, 
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
 
-
 /* 26 flops, 16 bytes */
 void
 do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v4sf t, r2, rinv;
-    v4sf x, y, z;
     v4sf a0 = {0.0f, 0.0f, 0.0f, 0.0f};
     v4sf a1 = {0.0f, 0.0f, 0.0f, 0.0f};
     v4sf a2 = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -421,25 +894,28 @@ do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, f
     const v4sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2]};
     const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
     const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
+    const v4sf eps2 = {*e**e, *e**e, *e**e, *e**e};
 
     while (f < fend) {
-	x = ppos0 - xp;
-	y = ppos1 - yp;
-	z = ppos2 - zp;
+	v4sf x = ppos0 - xp;
+	v4sf y = ppos1 - yp;
+	v4sf z = ppos2 - zp;
 
-	r2 = x*x + y*y + z*z;
+	v4sf r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps(r2);
+	v4sf rinv = __builtin_ia32_rsqrtps(r2);
+	v4sf mask = __builtin_ia32_cmpleps(eps2, r2);
 
 	/* Newton-Raphson */
-	t = rinv;
+	v4sf t = rinv;
 	r2 *= rinv;
 	rinv *= r2;
 	rinv -= three;
 	rinv *= t;
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
+	rinv = __builtin_ia32_andps(mask, rinv);
 
 	t = rinv*rinv;
 	rinv *= mass;
@@ -989,7 +1465,7 @@ do_gravph_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
         eq0 = t*(qxxxx*xxx + qxyyy*yyy + qxxxy*xxy + qxxxz*xxz + qxxyy*xyy + qxxyz*xyz + qxyyz*yyz);
         eq1 = t*(qxyyy*xyy + qxxxy*xxx + qyyyy*yyy + qyyyz*yyz + qxxyy*xxy + qxxyz*xxz + qxyyz*xyz);
         eq2 = t*(-qxxxx*xxz - (qxyyy + qxxxy)*xyz - qyyyy*yyz + qxxxz*xxx + qyyyz*yyy  - qxxyy*(xxz + yyz) + qxxyz*xxy + qxyyz*xyy);
-	f += 26;
+	f += HSZ;
         eqe = quarter*(eq0*x + eq1*y + eq2*z);
 	phi += eqe;
 	eqe *= nine*rinv2;
@@ -1170,7 +1646,7 @@ do_gravph_amd6100_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float
 	eq0 *= t;
 	eq1 *= t;
         eq2 *= t;
-	f += 26;
+	f += HSZ;
         eqe = eq0*x;
         eqe += eq1*y;
         eqe += eq2*z;
@@ -1244,7 +1720,7 @@ do_gravpq_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0,
         eq0 = t*(qxx*x + qxy*y + qxz*z);
         eq1 = t*(qyy*y + qxy*x + qyz*z);
         eq2 = t*(-(qxx + qyy)*z + qxz*x + qyz*y);
-	f += 10;
+	f += QSZ;
         eqe = half*(eq0*x + eq1*y + eq2*z);
 	phi -= eqe;
 	eqe *= five*rinv2;

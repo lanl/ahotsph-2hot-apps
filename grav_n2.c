@@ -27,6 +27,7 @@ EwaldSetup(double box_length, double Gnewt)
     G = Gnewt;
 }
 
+#if 0
 static void
 set_body(void *o, void *p)
 {
@@ -73,6 +74,7 @@ grav_ewald(void *p0, void *list, int bsize, int n)
     VV(q->acc, += acc);
     q->phi += phi;
 }
+#endif
 
 static int Qgnobj;
 

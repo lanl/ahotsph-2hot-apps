@@ -6,7 +6,7 @@
 /* Make this return a ptr to static data so we can finesse the */
 /* problem of what kind of FILE *! */
 char *
-PrintCellContents(const hexacell *p)
+PrintCellContents(const cell *p)
 {
     static char contents_string[256];
 
@@ -15,7 +15,7 @@ PrintCellContents(const hexacell *p)
     }else{
 	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.2g\n"
 		"\t" Sinfix("%.4f", " "), 
-		Mass(p), p->daughters, p->bmax, p->rcrit, Vinfix(Pos(p), COMMA));
+		p->mass, (long int)p->daughters, p->bmax, p->rcrit, Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -30,9 +30,9 @@ PrintCellContents4(const hexacell *p)
     }else{
 	sprintf(contents_string, "\tmass: %.4g, nd:%ld, bmax:%.2g, rcrit:%.4g %.4g %.4g\n"
 		"\t" Sinfix("%.4f", " "), 
-		Mass(p), p->daughters, p->bmax, p->rcrit, 
+		p->mass, (long int)p->daughters, p->bmax, p->rcrit_m, 
 		p->rcrit_q, p->rcrit_h,
-		Vinfix(Pos(p), COMMA));
+		Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -48,8 +48,8 @@ PrintBodyContents(const body *p)
     }else{
 	sprintf(contents_string, "\tid:%ld, mass:%.4g\n"
 		"\t" Sinfix("%.4f", " "),
-		p->ident, Mass(p), 
-		Vinfix(Pos(p), COMMA));
+		p->ident, p->mass, 
+		Vinfix(p->pos, COMMA));
     }
     return contents_string;
 }
@@ -66,7 +66,7 @@ PrintBodyContentsLong(const body *p)
 	sprintf(contents_string, "\t@%#lx %7.4g\n"
 		"\t" Sinfix("%14.10f", " ")
 		" " Sinfix("%x", " "),
-		(unsigned long)p, Mass(p), Vinfix(Pos(p), COMMA),
+		(unsigned long)p, p->mass, Vinfix(p->pos, COMMA),
 		Vinfix( *(int *)&p->pos, COMMA));
     }
     return contents_string;
@@ -75,8 +75,8 @@ PrintBodyContentsLong(const body *p)
 char *PrintBranch(const cofmdata *cmp){
     static char ret[512];
     sprintf(ret, "Br: mass: %.3g, ndaughters=%ld, pos=(%.3f %.3f %.3f), bmax:%.2g\n",
-	   cmp->mass, cmp->ndaughters, 
-	    cmp->pos[0], cmp->pos[1], cmp->pos[2],
+	    cmp->m, (long int)cmp->ndaughters, 
+	    cmp->center[0], cmp->center[1], cmp->center[2],
 	    cmp->bmax);
     return ret;
 }

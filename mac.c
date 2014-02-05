@@ -9,40 +9,60 @@
 #include "timers.h"
 #include "stk.h"
 #include "mpmy.h"
+#include "ewald_le.h"
 
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
+Counter_t CEmpty, MCAnti, MCCorr;
 Counter_t FBC2Int, FBC4Int;
-Counter_t CCIntRej;
-Counter_t TranslateCnt;
+Counter_t MACcnt, BBMACcnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
-Timer_t MACTm;
+Timer_t MACTm, CUDAWtTm;
 
+#if 0
+int64_t WatchId = 7310803995;
+Key_t WatchKey = {.k = {781836800001, 0}};
+#include <stdio.h>
+/* #define Msg_do printf */
+#define DebugWatchId(a, ...) \
+   if (bp->ident == WatchId) \
+       Msg_do(a, __VA_ARGS__)
+#define DebugWatchKey(a, ...) \
+   if (KeyContained(sink->key, WatchKey, NDIM)) \
+       Msg_do(a, __VA_ARGS__)
+#else
+#define DebugWatchId(a, ...)
+#define DebugWatchKey(a, ...)
+int WatchId = -1;
+Key_t WatchKey = {.k = {-1, -1}};
+#endif
+int Nwarn;
+
+#define BACKGROUND_FLAG (1<<10)
+#define OFFSET_MASK (BACKGROUND_FLAG-1) /* needs to hold MAX_IMAGE */
+#define MAX_IMAGE 125
+#define offset_index(f) ((f) & OFFSET_MASK)
+
+static vsf Eps2v;
 static int64_t GNobj, Nobj;
 static float Eps2, Eps;
 static int Smooth_type;
 static float GNewt;
-static float DLfac, DLmax;
-static int Quad_Ncut = 7;
-static int Hexa_Ncut = 20;
-#define MAX_IMAGE 125
-#define OFFSET_MASK 255
 #define offset_index(f) ((f) & OFFSET_MASK)
+static const mac_s *mac;
+static const mxn_s *MxN;
 static int Nimage = 1;
 static float offset_array[MAX_IMAGE][NDIM];
 static tree_t *SinkTree;
 static body *Btab;
 
+static void mxn_quad(Sink *to, hcell *pp);
 static void mxn_hexa(Sink *to, hcell *pp);
-static int MxN_hblock = 4*1024;
-static int MxN_min_sink = 256;
-static int MxN_min_hsrc = 512;
-static int MxN_do_pH = 0;
 
-static grav_t Sinteract;
-static grav_t Minteract;
-static grav_t Qinteract;
-static grav_t Hinteract;
+static grav_f Sinteract;
+static grav_f Minteract;
+static grav_f Qinteract;
+static grav_f Hinteract;
 #ifdef AMD6100
 static int amd6100 = 1;
 #else
@@ -71,85 +91,59 @@ SetGravOffset(float *off, int n)
     }
 }
 
-#ifdef __AVX__
-#define NSSE 8 /* Number of floats in an SSE register */
-#define Arch(a) a##_avx8
-#else
-#define NSSE 4 /* Number of floats in an SSE register */
-#define Arch(a) a##_sse4
-#endif
 /* costs of interaction relative to monopole */
 #define QUAD_COST 3
 #define HEXA_COST 9
 
 #define SVECSZ (5623) /* This should be dynamically extensible */
-struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
+static struct {
+    vsf mass, x, y, z;
 } Svec[SVECSZ];
 
 #define MVECSZ (180073) /* This should be dynamically extensible */
-struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
+static struct {
+    vsf mass, x, y, z;
 } Mvec[MVECSZ];
 
 #ifdef QUAD
 #define QVECSZ (7919)
-struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
-    float R[NSSE];
-    float qxx[NSSE];
-    float qxy[NSSE];
-    float qyy[NSSE];
-    float qxz[NSSE];
-    float qyz[NSSE];
+static struct Qvec {
+    vsf mass, x, y, z;
+    vsf R;
+#ifdef DIPOLE
+    vsf qx, qy, qz;
+#endif
+    vsf qxx, qxy, qyy, qxz, qyz;
 } Qvec[QVECSZ];
 #endif
 
 #ifdef HEXA
 #define HVECSZ (24576*2)
-struct {
-    float mass[NSSE];
-    float pos[NDIM][NSSE];
-    float R[NSSE];
-    float qxx[NSSE];
-    float qxy[NSSE];
-    float qyy[NSSE];
-    float qxz[NSSE];
-    float qyz[NSSE];
-    float qxxx[NSSE];
-    float qxxy[NSSE];
-    float qxyy[NSSE];
-    float qyyy[NSSE];
-    float qxxz[NSSE];
-    float qxyz[NSSE];
-    float qyyz[NSSE];
-    float qxxxx[NSSE];
-    float qxxxy[NSSE];
-    float qxxyy[NSSE];
-    float qxyyy[NSSE];
-    float qyyyy[NSSE];
-    float qxxxz[NSSE];
-    float qxxyz[NSSE];
-    float qxyyz[NSSE];
-    float qyyyz[NSSE];
+static struct Hvec {
+    vsf mass, x, y, z;
+    vsf R;
+#ifdef DIPOLE
+    vsf qx, qy, qz;
+#endif
+    vsf qxx, qxy, qyy, qxz, qyz;
+    vsf qxxx, qxxy, qxyy, qyyy, qxxz, qxyz, qyyz;
+    vsf qxxxx, qxxxy, qxxyy, qxyyy, qyyyy, qxxxz, qxxyz, qxyyz, qyyyz;
 } Hvec[HVECSZ];
 #endif
 
+static struct ucell_s {
+    float halfsz, mass, x4, x2y2;
+} ucell[CHUBITS];
 
 void
-SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max,
-	  int qcut, int hcut, float particle_mass, int smooth_type)
+SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
+	  float particle_mass, int smooth_type)
 {
+    Nwarn = 0;
     GNewt = newton_const;
     Smooth_type = smooth_type;
     GNobj = gnobj;
-    DLfac = dl_fac;
-    DLmax = dl_max;
-    Quad_Ncut = qcut;
-    Hexa_Ncut = hcut;
+    mac = m;
     if (smooth_type == 0) {
 	Eps = e;
 	Sinteract = Minteract = Arch(do_gravp);
@@ -178,21 +172,54 @@ SetupGrav(float newton_const, float e, int64_t gnobj, float dl_fac, float dl_max
 	    Error("Unknown smoothing type\n");
 	}
 	Minteract = Arch(do_grav);
-	Qinteract = Arch(do_gravq);
-	Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
+	if (mac->geometric_center) {
+	    Qinteract = Arch(do_gravdq);
+	    Hinteract = (amd6100) ? Arch(do_gravdh_amd6100) : Arch(do_gravdh);
+	} else {
+	    Qinteract = Arch(do_gravq);
+	    Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
+	}
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
+    Eps2v = (vsf)vsf_scalar(Eps2);
+    float a1 = mac->r0;
+    float a3 = mac->rho0*pow3(2.0f*mac->r0);
+    float a5 = a3*pow2(2.0f*mac->r0);
+    float a7 = a5*pow2(2.0f*mac->r0);
+    for (int i = 0; i < CHUBITS; i++) {
+	ucell[i].halfsz = a1;
+	ucell[i].mass = a3;
+	ucell[i].x4 = -a7/300.;
+	ucell[i].x2y2 = a7/600.;
+	a1 *= 0.5f;
+	a3 *= pow3(0.5f);
+	a5 *= pow3(0.5f)*pow2(0.5f);
+	a7 *= pow3(0.5f)*pow2(0.5f)*pow2(0.5f);
+    }
 }
 
 void Nlognmacv(Sink *sink, const hcell **source_vec, int *result, int);
 
 void
-WalkInitSink(tree_t *tp, body *btab, int64_t nobj, int mxn_hblock)
+WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn)
 {
     SinkTree = tp;
     Btab = btab;
     Nobj = nobj;
-    MxN_hblock = mxn_hblock;
+    MxN = mxn;
+    WalkInitSinkCUDA(btab, sizeof(body)/sizeof(float), nobj);
+}
+
+void
+WalkTerminateSink(tree_t *tp, body *btab, int64_t nobj)
+{
+    WalkTerminateSinkCUDA(btab, sizeof(body)/sizeof(float), nobj);
+
+    /* scale by GNewt */
+    for (int64_t i = 0; i < nobj; i++) {
+	btab[i].phi *= GNewt;
+	VS(btab[i].acc, *= GNewt);
+    }
 }
 
 void
@@ -269,10 +296,13 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	/* must init mtot or else you get quiet exceptions in asm code */
 	float mtot = 0.0f;
 	int ijunk = 0, nn;
-	float acc[NDIM];
-	float phi;
+	float acc[NDIM], phi;
+	float accd[NDIM], phid;
+
 	float e;
 
+	DebugWatchId("   %12g %12g %12g %ld %ld\n", bp->pos[0], bp->pos[1], bp->pos[2], 
+		     pp->key.k[0], pp->key.k[1]);
 	VS(acc, = 0.0f);
 	phi = 0.0f;
 	/* Not symmetric if eps varies, so will not be precisely momentum conserving */
@@ -290,8 +320,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	nn = from->hcnt;
 	while (nn % NSSE) {
 	    Hvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Hvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Hvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    Hvec[nn/NSSE].R[nn%NSSE] = 0.0f;
+#ifdef DIPOLE
+	    Hvec[nn/NSSE].qx[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].qy[nn%NSSE] = 0.0f;
+	    Hvec[nn/NSSE].qz[nn%NSSE] = 0.0f;
+#endif
 	    Hvec[nn/NSSE].qxx[nn%NSSE] = 0.0f;
 	    Hvec[nn/NSSE].qxy[nn%NSSE] = 0.0f;
 	    Hvec[nn/NSSE].qyy[nn%NSSE] = 0.0f;
@@ -317,18 +354,28 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Hvec[0] & 0xF || (long long)&Hvec[1] & 0xF)
 	  Error("Hvec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Hinteract((float *)&Hvec[from->hcnt_done/NSSE], (float *)&Hvec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
 	AddCounter(&BC4Int, from->hcnt-from->hcnt_done);
 	StopTimer(&GravHTm);
+	VV(acc, += accd); phi += phid;
+	DebugWatchId("p4 %12g %12g %12g %d\n", acc[0], acc[1], acc[2], from->hcnt);
 #endif
 #ifdef QUAD
 	StartTimer(&GravQTm);
 	nn = from->qcnt;
 	while (nn % NSSE) {
 	    Qvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Qvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Qvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    Qvec[nn/NSSE].R[nn%NSSE] = 0.0f;
+#ifdef DIPOLE
+	    Qvec[nn/NSSE].qx[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].qy[nn%NSSE] = 0.0f;
+	    Qvec[nn/NSSE].qz[nn%NSSE] = 0.0f;
+#endif
 	    Qvec[nn/NSSE].qxx[nn%NSSE] = 0.0f;
 	    Qvec[nn/NSSE].qxy[nn%NSSE] = 0.0f;
 	    Qvec[nn/NSSE].qyy[nn%NSSE] = 0.0f;
@@ -338,42 +385,55 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Qvec[0] & 0xF || (long long)&Qvec[1] & 0xF)
 	  Error("Qvec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Qinteract((float *)&Qvec[from->qcnt_done/NSSE], (float *)&Qvec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+	DebugWatchId("p2 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->qcnt);
 	AddCounter(&BC2Int, from->qcnt-from->qcnt_done);
 	StopTimer(&GravQTm);
+	VV(acc, += accd); phi += phid;
 #endif
 	StartTimer(&GravMTm);
 	nn = from->mcnt;
 	while (nn % NSSE) {
 	    Mvec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Mvec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Mvec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Mvec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    nn++;
 	}
 	if ((long long)&Mvec[0] & 0xF || (long long)&Mvec[1] & 0xF)
 	  Error("Mvec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Minteract((float *)&Mvec[0], (float *)&Mvec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+	DebugWatchId("p1 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->mcnt);
 	AddCounter(&BCInt, from->mcnt);
 	StopTimer(&GravMTm);
+	VV(acc, += accd); phi += phid;
 	StartTimer(&GravSTm);
 	nn = from->scnt;
 	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
 	while (nn % NSSE) {
 	    Svec[nn/NSSE].mass[nn%NSSE] = 0.0f;
-	    VS(Svec[nn/NSSE].pos,[nn%NSSE] = 0.0f);
+	    Svec[nn/NSSE].x[nn%NSSE] = 0.0f;
+	    Svec[nn/NSSE].y[nn%NSSE] = 0.0f;
+	    Svec[nn/NSSE].z[nn%NSSE] = 0.0f;
 	    nn++;
 	}
 	if ((long long)&Svec[0] & 0xF || (long long)&Svec[1] & 0xF)
 	  Error("Svec not aligned for asm code\n");
+	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Sinteract((float *)&Svec[0], (float *)&Svec[nn/NSSE], 
-			  from->pos, &mtot, acc, &phi, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &ijunk);
 	AddCounter(&BSInt, from->scnt);
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
-	if (!isfinite(acc[0]) || !isfinite(acc[1]) || !isfinite(acc[2]) || !isfinite(phi)) {
-	    Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", from->pos[0], from->pos[1], from->pos[2],
-		  acc[0], acc[1], acc[2], phi);
+	if (!isfinite(accd[0]) || !isfinite(accd[1]) || !isfinite(accd[2]) || !isfinite(phi)) {
+	    SeriousWarning("bad results from do_grav for id %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", bp->ident, from->pos[0], from->pos[1], from->pos[2],
+			   acc[0], acc[1], acc[2], phi);
+	} else {
+	    VV(acc, += accd); phi += phid;
 	}
 	
 	if (Minteract == do_grav_sse16_ivec_asm) {
@@ -381,14 +441,33 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    /* If eps is very small, roundoff becomes a problem */
 	    phi += bp->mass*recipsqrtf(e);
 	}
+	if (mac->subtract_background) {
+	    float r[NDIM];
+	    VVV(r, = from->pos, - from->cen);
+	    VS(accd, = 0.0);
+	    cubic_acc(r, from->cr, accd);
+	    VS(accd, *= -mac->rho0);
+	    VV(acc, += accd);
+	    DebugWatchId("ca %12g - %g %g %g\n", from->cr, r[0], r[1], r[2]);
+	    DebugWatchId("c %12g %12g %12g\n", accd[0], accd[1], accd[2]);
+#if 0
+	    double cmass = -mac->rho0*pow3(2.0f*from->cr);
+	    DebugWatchId("fmass %12g cmass %12g\n", from->fmass, cmass);
+	    if (fabs(from->fmass+cmass) > mac->m0*1e-7 || -cmass < bp->mass) 
+		if (Nwarn++ < 2) SeriousWarning("Background subtraction off by %.2f for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", fabs(from->fmass+cmass)/bp->mass, bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+	    if (from->near != 27) {
+		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
+	    }
+#endif
+	}
 
 	/* Make sure these are initialized to zero externally */
 	bp->phi += from->M0;
 	bp->phi += phi;
-	bp->phi *= GNewt;
 	VV(bp->acc, -= from->M1);
 	VV(bp->acc, += acc);
-	VS(bp->acc, *= GNewt);
+	DebugWatchId("a %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
+	DebugWatchId("g %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
 	bp->nterms += from->nterms + from->scnt + from->mcnt 
 #ifdef QUAD
 	    + QUAD_COST*from->qcnt 
@@ -402,6 +481,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	return;
     }
 
+    cell *ccp = NULL;
     if (Sub_Flags(pp)) {
 	cell *cp = pp->ptr;
 
@@ -409,6 +489,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->bmax = cp->bmax;
 	to->daughters = cp->daughters;
 	to->isbody = 0;
+	if (cp->daughters <= 32 || 4.0f*mac->r0/mac->nx == ucell[cp->level].halfsz) ccp = cp;
     } else {
 	body *bp = pp->ptr;
 	VV(to->pos, = bp->pos);
@@ -418,7 +499,32 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 
     if (from) {
+	if (ccp && from->clevel == CHUBITS) {
+	    to->clevel = ccp->level;
+	    VV(to->cen, = ccp->pos);
+	    to->cr = 3.0f*ucell[ccp->level].halfsz;
+	    to->cr2 = pow2(3.99f*ucell[ccp->level].halfsz);
+	} else {
+	    to->clevel = from->clevel;
+	    VV(to->cen, = from->cen);
+	    to->cr = from->cr;
+	    to->cr2 = from->cr2;
+	} 
+	if (to->isbody && from->clevel == CHUBITS) {
+	    float pos[NDIM], cellsz;
+	    CellCorner(pp->key, pos, &cellsz);
+	    VS(pos, += 0.5f*cellsz);
+	    to->clevel = TreeLevel(pp->key, NDIM);
+	    VV(to->cen, = pos);
+	    to->cr = 1.5f*cellsz;
+	    to->cr2 = pow2(1.995f*cellsz);
+	}
+	to->near = from->near;
+	to->fmass = from->fmass;
+	if ((TreeLevel(pp->key, NDIM) >= 1) && KeyContained(pp->key, WatchKey, NDIM)) 
+	    Msg_do("Inherit to %s, cr %g\n", PrintKey(pp->key), to->cr);
 	to->interactions = from->interactions;
+	to->key = pp->key;
 	to->nterms = from->nterms;
 	to->M0 = from->M0;
 	VV(to->M1, = from->M1);
@@ -426,25 +532,41 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (to->scnt >= NSSE*SVECSZ) Error("svec overflow\n");
 	to->mcnt = from->mcnt;
 	if (to->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
+	{
+	    int qsrc = from->qcnt-from->qcnt_done;
+	    int hsrc = from->hcnt-from->hcnt_done;
+	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
+		Msgf(("%ld q %d h %d\n", to->daughters, qsrc, hsrc));
+	}
 #ifdef QUAD
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
 	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
+	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
+	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
+	    mxn_quad(to, pp);
+	}
 #endif
 #ifdef HEXA
 	to->hcnt = from->hcnt;
 	to->hcnt_done = from->hcnt_done;
 	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
-#endif
-	if (MxN_hblock && to->daughters >= MxN_min_sink && 
-	    to->hcnt-to->hcnt_done >= MxN_min_hsrc) {
+	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_hsink && 
+	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
 	    mxn_hexa(to, pp);
 	}
+#endif
     } else {
 	to->interactions = 0;
 	to->nterms = 0;
 	to->M0 = 0.0f;
 	VS(to->M1, = 0.0f);
+	to->fmass = 0.0;
+	to->near = 0;
+	to->clevel = CHUBITS;
+	VS(to->cen, = 0.0f);
+	to->cr = 0.0f;
+	to->cr2 = 0.0f;
 	to->mcnt = 0;
 	to->scnt = 0;
 #ifdef QUAD
@@ -454,6 +576,66 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->hcnt = to->hcnt_done = 0;
 #endif
     }
+}
+
+static void
+mxn_quad(Sink *to, hcell *pp)
+{
+    body *p;
+    body *first = FirstBody(pp);
+    body *last = LastBody(pp)+1;
+    int i, n0, n1, m_block, block;
+
+    if (!first || !last) return;
+    if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
+    StartTimer(&GravTm);
+    StartTimer(&GravQFTm);
+    n0 = to->qcnt_done/NSSE;
+    n1 = to->qcnt/NSSE;
+    /* Size MxN->hblock for appropriate WalkPoll() latency */
+    /* If Walk Defer timer is large, make MxN->hblock smaller */
+    if (n1-n0 > MxN->hblock) m_block = 1;
+    else if (n1 == n0) Error("mxn_quad called with n == 0\n");
+    else m_block = MxN->hblock / (n1-n0);
+    block = m_block;
+    for (p = first; p < last; p += m_block) {
+	if (p + block > last) block = last-p;
+	if (MxN->do_pQ) {
+#ifdef CUDA
+	    int q;
+	    StartTimer(&CUDAWtTm);
+	    while ((q = qallocCUDA()) < 0) {
+		/* WalkPoll(); */
+	    }
+	    StopTimer(&CUDAWtTm);
+	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			  (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)), q);
+#else
+	    pQinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+		       (float *)&Qvec[n0], n1-n0);
+#endif
+	} else {
+	    float mtot = 0.0f;
+	    float e = 0.0f;
+	    int ijunk = 0;
+	    for (i = 0; i < block; i++) {
+		Qinteract((float *)&Qvec[n0], (float *)&Qvec[n1],
+			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+	    }
+	}
+	WalkPoll();
+    }
+    // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
+    AddCounter(&FBC2Int, (last-first)*(n1-n0)*NSSE);
+    to->qcnt_done = n1*NSSE;
+
+    if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
+	Error("bad results from do_grav for %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
+	      first->ident, first->pos[0], first->pos[1], first->pos[2],
+	      first->acc[0], first->acc[1], first->acc[2], first->phi);
+    }
+    StopTimer(&GravQFTm);
+    StopTimer(&GravTm);
 }
 
 static void
@@ -470,17 +652,38 @@ mxn_hexa(Sink *to, hcell *pp)
     StartTimer(&GravHFTm);
     n0 = to->hcnt_done/NSSE;
     n1 = to->hcnt/NSSE;
-    /* Size MxN_hblock for appropriate WalkPoll() latency */
-    /* If Walk Defer timer is large, make MxN_hblock smaller */
-    if (n1-n0 > MxN_hblock) m_block = 1;
+    /* Size MxN->hblock for appropriate WalkPoll() latency */
+    /* If Walk Defer timer is large, make MxN->hblock smaller */
+    if (n1-n0 > MxN->hblock) m_block = 1;
     else if (n1 == n0) Error("mxn_hexa called with n == 0\n");
-    else m_block = MxN_hblock / (n1-n0);
+    else m_block = MxN->hblock / (n1-n0);
     block = m_block;
     for (p = first; p < last; p += m_block) {
 	if (p + block > last) block = last-p;
-	if (MxN_do_pH) {
+	if (MxN->do_pH) {
+#ifdef CUDA
+	    int q;
+	    StartTimer(&CUDAWtTm);
+	    while ((q = qallocCUDA()) < 0 && block > 384) {
+		/* WalkPoll(); */
+	    }
+	    StopTimer(&CUDAWtTm);
+	    if (q >= 0) {
+		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
+	    } else {
+		float mtot = 0.0f;
+		float e = 0.0f;
+		int ijunk = 0;
+		for (i = 0; i < block; i++) {
+		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+		}
+	    }
+#else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 		       (float *)&Hvec[n0], n1-n0);
+#endif
 	} else {
 	    float mtot = 0.0f;
 	    float e = 0.0f;
@@ -492,12 +695,13 @@ mxn_hexa(Sink *to, hcell *pp)
 	}
 	WalkPoll();
     }
+    // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
     to->hcnt_done = n1*NSSE;
 
     if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
-	Error("bad results from do_grav for (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
-	      first->pos[0], first->pos[1], first->pos[2],
+	Error("bad results from do_grav for %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
+	      first->ident, first->pos[0], first->pos[1], first->pos[2],
 	      first->acc[0], first->acc[1], first->acc[2], first->phi);
     }
     StopTimer(&GravHFTm);
@@ -507,6 +711,7 @@ mxn_hexa(Sink *to, hcell *pp)
 void
 RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 {
+#if 0
     VxdV(float pos_sink, = sink->pos);
     int mcnt = sink->mcnt;
     int scnt = sink->scnt;
@@ -544,12 +749,16 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 	    dr2 = Dotx(dx, dx);
 	    if (dr2 > Eps2) {
 		Mvec[mcnt/NSSE].mass[mcnt%NSSE] = bp->mass;
-		VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
+		Mvec[mcnt/NSSE].x[mcnt%NSSE] = r0;
+		Mvec[mcnt/NSSE].y[mcnt%NSSE] = r1;
+		Mvec[mcnt/NSSE].z[mcnt%NSSE] = r2;
 		mcnt++;
 		if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
 	    } else if (dr2 > 0.0f) {
 		Svec[scnt/NSSE].mass[scnt%NSSE] = bp->mass;
-		VVx(Svec[scnt/NSSE].pos,[scnt%NSSE] = r);
+		Svec[scnt/NSSE].x[scnt%NSSE] = r0;
+		Svec[scnt/NSSE].y[scnt%NSSE] = r1;
+		Svec[scnt/NSSE].z[scnt%NSSE] = r2;
 		scnt++;
 		if (scnt/NSSE >= SVECSZ) Error("svec overflow\n");
 	    }
@@ -564,7 +773,9 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 
 	if (dr2 >= cp->rcrit*cp->rcrit) {
 	    Mvec[mcnt/NSSE].mass[mcnt%NSSE] = cp->mass;
-	    VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
+	    Mvec[mcnt/NSSE].x[mcnt%NSSE] = r0;
+	    Mvec[mcnt/NSSE].y[mcnt%NSSE] = r1;
+	    Mvec[mcnt/NSSE].z[mcnt%NSSE] = r2;
 	    mcnt++;
 	    if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
 	    interactions += cp->daughters;
@@ -573,8 +784,15 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 	} else if (Quad_Ncut && (cp->daughters >= Quad_Ncut) &&
 		   (dr2 > qcp->rcrit_q*qcp->rcrit_q)) {
 	    Qvec[qcnt/NSSE].mass[qcnt%NSSE] = qcp->mass;
-	    VVx(Qvec[qcnt/NSSE].pos,[qcnt%NSSE] = r);
-	    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->R;
+	    Qvec[qcnt/NSSE].x[qcnt%NSSE] = r0;
+	    Qvec[qcnt/NSSE].y[qcnt%NSSE] = r1;
+	    Qvec[qcnt/NSSE].z[qcnt%NSSE] = r2;
+	    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->bmax;
+#ifdef DIPOLE
+	    Qvec[qcnt/NSSE].qx[qcnt%NSSE] = qcp->qx;
+	    Qvec[qcnt/NSSE].qy[qcnt%NSSE] = qcp->qy;
+	    Qvec[qcnt/NSSE].qz[qcnt%NSSE] = qcp->qz;
+#endif
 	    Qvec[qcnt/NSSE].qxx[qcnt%NSSE] = qcp->qxx;
 	    Qvec[qcnt/NSSE].qxy[qcnt%NSSE] = qcp->qxy;
 	    Qvec[qcnt/NSSE].qyy[qcnt%NSSE] = qcp->qyy;
@@ -588,8 +806,15 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 	} else if (Hexa_Ncut && (cp->daughters >= Hexa_Ncut)
 		   && (dr2 > hcp->rcrit_h*hcp->rcrit_h)) {
 	    Hvec[hcnt/NSSE].mass[hcnt%NSSE] = hcp->mass;
-	    VVx(Hvec[hcnt/NSSE].pos,[hcnt%NSSE] = r);
-	    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->R;
+	    Hvec[hcnt/NSSE].x[hcnt%NSSE] = r0;
+	    Hvec[hcnt/NSSE].y[hcnt%NSSE] = r1;
+	    Hvec[hcnt/NSSE].z[hcnt%NSSE] = r2;
+	    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->bmax;
+#ifdef DIPOLE
+	    Hvec[hcnt/NSSE].qx[hcnt%NSSE] = hcp->qx;
+	    Hvec[hcnt/NSSE].qy[hcnt%NSSE] = hcp->qy;
+	    Hvec[hcnt/NSSE].qz[hcnt%NSSE] = hcp->qz;
+#endif
 	    Hvec[hcnt/NSSE].qxx[hcnt%NSSE] = hcp->qxx;
 	    Hvec[hcnt/NSSE].qxy[hcnt%NSSE] = hcp->qxy;
 	    Hvec[hcnt/NSSE].qyy[hcnt%NSSE] = hcp->qyy;
@@ -629,150 +854,346 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
     sink->hcnt = hcnt;
 #endif
     StopTimer(&MACTm);
+#endif
 }
 
+#define appendMvec(p, m)				\
+    do { \
+      int _i = sink->mcnt/NSSE; \
+      int _j = sink->mcnt%NSSE;	 \
+      Mvec[_i].mass[_j] = m; \
+      Mvec[_i].x[_j] = r0; \
+      Mvec[_i].y[_j] = r1; \
+      Mvec[_i].z[_j] = r2; \
+      sink->mcnt++; \
+    } while(0)
+
+#define appendSvec(p) \
+    do { \
+      int _i = sink->scnt/NSSE; \
+      int _j = sink->scnt%NSSE;	 \
+      Svec[_i].mass[_j] = (p)->mass; \
+      Svec[_i].x[_j] = r0; \
+      Svec[_i].y[_j] = r1; \
+      Svec[_i].z[_j] = r2; \
+      sink->scnt++; \
+    } while(0)
+
+#define appendQdvec(p)							\
+    float _m = bs ? (p)->mass + ucell[(p)->level].mass : (p)->mass;	\
+    do {								\
+	int _i = sink->qcnt/NSSE;					\
+	int _j = sink->qcnt%NSSE;					\
+	sink->fmass += _m;						\
+	Qvec[_i].mass[_j] = _m;						\
+	Qvec[_i].x[_j] = r0;						\
+	Qvec[_i].y[_j] = r1;						\
+	Qvec[_i].z[_j] = r2;						\
+	Qvec[_i].R[_j] = (p)->bmax;					\
+	Qvec[_i].qx[_j] = (p)->qx;					\
+	Qvec[_i].qy[_j] = (p)->qy;					\
+	Qvec[_i].qz[_j] = (p)->qz;					\
+	Qvec[_i].qxx[_j] = (p)->qxx;					\
+	Qvec[_i].qxy[_j] = (p)->qxy;					\
+	Qvec[_i].qyy[_j] = (p)->qyy;					\
+	Qvec[_i].qxz[_j] = (p)->qxz;					\
+	Qvec[_i].qyz[_j] = (p)->qyz;					\
+	sink->qcnt++;							\
+    } while(0)
+
+#define appendHdvec(p)						\
+    float _m;							\
+    do {							\
+	int _i = sink->hcnt/NSSE;				\
+	int _j = sink->hcnt%NSSE;				\
+	if (bs) {						\
+	    _m = (p)->umass;					\
+	    sink->fmass += _m;					\
+	    Hvec[_i].mass[_j] = _m;				\
+	    Hvec[_i].qxxxx[_j] = (p)->uxxxx;			\
+	    Hvec[_i].qyyyy[_j] = (p)->uyyyy;			\
+	    Hvec[_i].qxxyy[_j] = (p)->uxxyy;			\
+	} else {						\
+	    _m = (p)->mass;					\
+	    sink->fmass += _m;					\
+	    Hvec[_i].mass[_j] = _m;				\
+	    Hvec[_i].qxxxx[_j] = (p)->qxxxx;			\
+	    Hvec[_i].qyyyy[_j] = (p)->qyyyy;			\
+	    Hvec[_i].qxxyy[_j] = (p)->qxxyy;			\
+	}							\
+	Hvec[_i].x[_j] = r0;					\
+	Hvec[_i].y[_j] = r1;					\
+	Hvec[_i].z[_j] = r2;					\
+	Hvec[_i].R[_j] = (p)->bmax;				\
+	Hvec[_i].qx[_j] = (p)->qx;				\
+	Hvec[_i].qy[_j] = (p)->qy;				\
+	Hvec[_i].qz[_j] = (p)->qz;				\
+	Hvec[_i].qxx[_j] = (p)->qxx;				\
+	Hvec[_i].qxy[_j] = (p)->qxy;				\
+	Hvec[_i].qyy[_j] = (p)->qyy;				\
+	Hvec[_i].qxz[_j] = (p)->qxz;				\
+	Hvec[_i].qyz[_j] = (p)->qyz;				\
+	Hvec[_i].qxxx[_j] = (p)->qxxx;				\
+	Hvec[_i].qxxy[_j] = (p)->qxxy;				\
+	Hvec[_i].qxyy[_j] = (p)->qxyy;				\
+	Hvec[_i].qyyy[_j] = (p)->qyyy;				\
+	Hvec[_i].qxxz[_j] = (p)->qxxz;				\
+	Hvec[_i].qxyz[_j] = (p)->qxyz;				\
+	Hvec[_i].qyyz[_j] = (p)->qyyz;				\
+	Hvec[_i].qxxxy[_j] = (p)->qxxxy;			\
+	Hvec[_i].qxyyy[_j] = (p)->qxyyy;			\
+	Hvec[_i].qxxxz[_j] = (p)->qxxxz;			\
+	Hvec[_i].qxxyz[_j] = (p)->qxxyz;			\
+	Hvec[_i].qxyyz[_j] = (p)->qxyyz;			\
+	Hvec[_i].qyyyz[_j] = (p)->qyyyz;			\
+	sink->hcnt++;						\
+    } while(0)
+
+#define appendQvec(p)				\
+    do {					\
+	int _i = sink->qcnt/NSSE;					\
+	int _j = sink->qcnt%NSSE;					\
+	Qvec[_i].mass[_j] = (p)->mass;					\
+	Qvec[_i].x[_j] = r0;						\
+	Qvec[_i].y[_j] = r1;						\
+	Qvec[_i].z[_j] = r2;						\
+	Qvec[_i].R[_j] = (p)->bmax;					\
+	Qvec[_i].qxx[_j] = (p)->qxx;					\
+	Qvec[_i].qxy[_j] = (p)->qxy;					\
+	Qvec[_i].qyy[_j] = (p)->qyy;					\
+	Qvec[_i].qxz[_j] = (p)->qxz;					\
+	Qvec[_i].qyz[_j] = (p)->qyz;					\
+	sink->qcnt++;							\
+    } while(0)
+
+#define appendHvec(p) \
+    do { \
+      int _i = sink->hcnt/NSSE; \
+      int _j = sink->hcnt%NSSE;	 \
+      Hvec[_i].mass[_j] = (p)->mass; \
+      Hvec[_i].x[_j] = r0; \
+      Hvec[_i].y[_j] = r1; \
+      Hvec[_i].z[_j] = r2; \
+      Hvec[_i].R[_j] = (p)->bmax; \
+      Hvec[_i].qxx[_j] = (p)->qxx; \
+      Hvec[_i].qxy[_j] = (p)->qxy; \
+      Hvec[_i].qyy[_j] = (p)->qyy; \
+      Hvec[_i].qxz[_j] = (p)->qxz; \
+      Hvec[_i].qyz[_j] = (p)->qyz; \
+      Hvec[_i].qxxx[_j] = (p)->qxxx; \
+      Hvec[_i].qxxy[_j] = (p)->qxxy; \
+      Hvec[_i].qxyy[_j] = (p)->qxyy; \
+      Hvec[_i].qyyy[_j] = (p)->qyyy; \
+      Hvec[_i].qxxz[_j] = (p)->qxxz; \
+      Hvec[_i].qxyz[_j] = (p)->qxyz; \
+      Hvec[_i].qyyz[_j] = (p)->qyyz; \
+      Hvec[_i].qxxxx[_j] = (p)->qxxxx; \
+      Hvec[_i].qxxxy[_j] = (p)->qxxxy; \
+      Hvec[_i].qxxyy[_j] = (p)->qxxyy; \
+      Hvec[_i].qxyyy[_j] = (p)->qxyyy; \
+      Hvec[_i].qyyyy[_j] = (p)->qyyyy; \
+      Hvec[_i].qxxxz[_j] = (p)->qxxxz; \
+      Hvec[_i].qxxyz[_j] = (p)->qxxyz; \
+      Hvec[_i].qxyyz[_j] = (p)->qxyyz; \
+      Hvec[_i].qyyyz[_j] = (p)->qyyyz; \
+      sink->hcnt++;		\
+    } while(0)
+
+#define ddot(a, b) (pow2(a##0-b[0])+pow2(a##1-b[1])+pow2(a##2-b[2]))
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
+DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *restrict result, int n)
 {
-    VxdV(float pos_sink, = sink->pos);
-    float bmax = sink->bmax;
-    int scnt = sink->scnt;
-    int mcnt = sink->mcnt;
-#ifdef QUAD
-    int qcnt = sink->qcnt;
-#endif
-#ifdef HEXA
-    int hcnt = sink->hcnt;
-#endif
-    int64_t interactions = 0;
-    int64_t daughters;
     float dr2;
     Vxd(float r);
-    Vxd(float dx);
-    int i;
-    float rcrit;
 
+    AddCounter(&MACcnt, n);
     StartTimer(&MACTm);
-    for (i = 0; i < n; i++) {
-	if (Sub_Flags(source_vec[i])) {
-	    const cell *cp = source_vec[i]->ptr;
-	    daughters = cp->daughters;
-	    VxVV(r, = cp->pos, + offset_array[offset_index(flags[i])]);
-	    VxVxVx(dx, = r, - pos_sink);
-	    rcrit = cp->rcrit;
-	    dr2 = Dotx(dx, dx);
-		
-	    /* bmax is 0 if sink is a body */
-	    if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
-		/* cell-cell or body-cell */
-		Mvec[mcnt/NSSE].mass[mcnt%NSSE] = cp->mass;
-		VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
-		mcnt++;
-		if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
-		interactions += daughters;
-		result[i] = MAC_ACCEPT;
-		continue;
-	    }
-#ifdef QUAD
-	    if (Quad_Ncut && (daughters >= Quad_Ncut)) {
-		const quadcell *qcp = source_vec[i]->ptr;
-		rcrit = qcp->rcrit_q;
-		if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
-		    Qvec[qcnt/NSSE].mass[qcnt%NSSE] = qcp->mass;
-		    VVx(Qvec[qcnt/NSSE].pos,[qcnt%NSSE] = r);
-		    Qvec[qcnt/NSSE].R[qcnt%NSSE] = qcp->R;
-		    Qvec[qcnt/NSSE].qxx[qcnt%NSSE] = qcp->qxx;
-		    Qvec[qcnt/NSSE].qxy[qcnt%NSSE] = qcp->qxy;
-		    Qvec[qcnt/NSSE].qyy[qcnt%NSSE] = qcp->qyy;
-		    Qvec[qcnt/NSSE].qxz[qcnt%NSSE] = qcp->qxz;
-		    Qvec[qcnt/NSSE].qyz[qcnt%NSSE] = qcp->qyz;
-		    qcnt++;
-		    if (qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
-		    interactions += daughters;
-		    result[i] = MAC_ACCEPT;
-		    continue;
-		}
-	    }
-#endif
-#ifdef HEXA
-	    if (Hexa_Ncut && (daughters >= Hexa_Ncut)) {
-		const hexacell *hcp = source_vec[i]->ptr;
-		rcrit = hcp->rcrit_h;
-		if (dr2 > (rcrit + bmax)*(rcrit + bmax)) {
-		    Hvec[hcnt/NSSE].mass[hcnt%NSSE] = hcp->mass;
-		    VVx(Hvec[hcnt/NSSE].pos,[hcnt%NSSE] = r);
-		    Hvec[hcnt/NSSE].R[hcnt%NSSE] = hcp->R;
-		    Hvec[hcnt/NSSE].qxx[hcnt%NSSE] = hcp->qxx;
-		    Hvec[hcnt/NSSE].qxy[hcnt%NSSE] = hcp->qxy;
-		    Hvec[hcnt/NSSE].qyy[hcnt%NSSE] = hcp->qyy;
-		    Hvec[hcnt/NSSE].qxz[hcnt%NSSE] = hcp->qxz;
-		    Hvec[hcnt/NSSE].qyz[hcnt%NSSE] = hcp->qyz;
-		    Hvec[hcnt/NSSE].qxxx[hcnt%NSSE] = hcp->qxxx;
-		    Hvec[hcnt/NSSE].qxxy[hcnt%NSSE] = hcp->qxxy;
-		    Hvec[hcnt/NSSE].qxyy[hcnt%NSSE] = hcp->qxyy;
-		    Hvec[hcnt/NSSE].qyyy[hcnt%NSSE] = hcp->qyyy;
-		    Hvec[hcnt/NSSE].qxxz[hcnt%NSSE] = hcp->qxxz;
-		    Hvec[hcnt/NSSE].qxyz[hcnt%NSSE] = hcp->qxyz;
-		    Hvec[hcnt/NSSE].qyyz[hcnt%NSSE] = hcp->qyyz;
-		    Hvec[hcnt/NSSE].qxxxx[hcnt%NSSE] = hcp->qxxxx;
-		    Hvec[hcnt/NSSE].qxxxy[hcnt%NSSE] = hcp->qxxxy;
-		    Hvec[hcnt/NSSE].qxxyy[hcnt%NSSE] = hcp->qxxyy;
-		    Hvec[hcnt/NSSE].qxyyy[hcnt%NSSE] = hcp->qxyyy;
-		    Hvec[hcnt/NSSE].qyyyy[hcnt%NSSE] = hcp->qyyyy;
-		    Hvec[hcnt/NSSE].qxxxz[hcnt%NSSE] = hcp->qxxxz;
-		    Hvec[hcnt/NSSE].qxxyz[hcnt%NSSE] = hcp->qxxyz;
-		    Hvec[hcnt/NSSE].qxyyz[hcnt%NSSE] = hcp->qxyyz;
-		    Hvec[hcnt/NSSE].qyyyz[hcnt%NSSE] = hcp->qyyyz;
-		    hcnt++;
-		    if (hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
-		    interactions += daughters;
-		    result[i] = MAC_ACCEPT;
-		    continue;
-		}
-	    }
-#endif
-	    if ((bmax > DLmax) || (DLfac * bmax > rcrit)) {
-		result[i] = MAC_SPLIT_SINK;
-		if (sink->isbody) Error("Trying to split body\n");
-	    } else {
-		result[i] = MAC_SPLIT_SRC;
-	    }
-	} else if (sink->isbody) {
-	    /* body-body */
-	    const body *bp = source_vec[i]->ptr;
-	    VxVV(r, = bp->pos, + offset_array[offset_index(flags[i])]);
-	    VxVxVx(dx, = r, - pos_sink);
-	    dr2 = Dotx(dx, dx);
-	    if (dr2 > Eps2) {
-		Mvec[mcnt/NSSE].mass[mcnt%NSSE] = bp->mass;
-		VVx(Mvec[mcnt/NSSE].pos,[mcnt%NSSE] = r);
-		mcnt++;
-		if (mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
-	    } else if (dr2 > 0.0f) {
-		Svec[scnt/NSSE].mass[scnt%NSSE] = bp->mass;
-		VVx(Svec[scnt/NSSE].pos,[scnt%NSSE] = r);
-		scnt++;
-		if (scnt/NSSE >= SVECSZ) Error("svec overflow\n");
-	    }
-	    interactions++;
-	    result[i] = MAC_ACCEPT;
-	    continue;
-	} else {
-	    /* cell-body */
-	    /* Comparing dr2 with Eps2 only works for body-body interactions */
+    for (int i = 0; i < n; i++) {
+	int sf = Sub_Flags(source_vec[i]);
+	if (!sf && !sink->isbody) {
 	    result[i] = MAC_SPLIT_SINK;
+	    continue;
+	}
+	const cell *cp = source_vec[i]->ptr;
+	const quadcell *qcp = source_vec[i]->ptr;
+	const hexacell *hcp = source_vec[i]->ptr;
+	int bs = flags_vec[i] & BACKGROUND_FLAG;
+	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
+	if (sf) {
+	    float bmax;
+	    int isquad = mac->p2cut && cp->daughters >= mac->p2cut;
+	    int ishexa = mac->p4cut && cp->daughters >= mac->p4cut;
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
+	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
+		dr2 = ddot(r, sink->cen);
+		bmax = 1.2f*sink->cr;
+	    } else {
+		dr2 = ddot(r, sink->pos);
+		bmax = sink->bmax;
+	    }
+	    if (!bs && cp->level == sink->clevel && ddot(r, sink->cen) < sink->cr2) {
+		bs = BACKGROUND_FLAG;
+		flags_vec[i] |= bs;
+		sink->near++;
+		DebugWatchKey("b %12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
+	    } 
+	    if (isquad && dr2 > Square(qcp->rcrit_q + bmax)) {
+		appendQdvec(qcp);
+		DebugWatchKey("%s %12g %12g Qvec %ld %s\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)qcp->daughters, PrintKey(source_vec[i]->key));
+		sink->interactions += qcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + bmax)) {
+		appendHdvec(hcp);
+		DebugWatchKey("%s %12g %12g Hvec %ld %s %g %g\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)hcp->daughters, PrintKey(source_vec[i]->key), hcp->rcrit_h, bmax);
+		sink->interactions += hcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else {
+		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+	    }
+	} else {
+	    /* body-body */
+	    AddCounter(&BBMACcnt, 1);
+	    appendMvec(cp, cp->mass);
+	    sink->fmass += cp->mass;
+	    DebugWatchKey("  %12g %12g Mvec 1 %s\n", cp->mass, sqrt(dr2), PrintKey(source_vec[i]->key));
+	    sink->interactions++;
+	    result[i] = MAC_ACCEPT;
+	    if (!bs) {
+		float mxyz[4], cellsz;
+		CellCorner(source_vec[i]->key, mxyz+1, &cellsz);
+		VV((mxyz+1), += 0.5f*cellsz + offset_array[offset_index(flags_vec[i])]);
+		if (fabsf(mxyz[1]-sink->cen[0]) > sink->cr ||
+		    fabsf(mxyz[2]-sink->cen[1]) > sink->cr ||
+		    fabsf(mxyz[3]-sink->cen[2]) > sink->cr) {
+		    mxyz[0] = -mac->rho0*cellsz*cellsz*cellsz;
+		    appendMvec(mxyz, mxyz[0]);
+		    sink->fmass += mxyz[0];
+		    AddCounter(&MCAnti, 1);
+		    DebugWatchKey("b %12g %12g Mvec anti\n", mxyz[0], sqrt(ddot(r, sink->cen)));
+		} else {
+		    DebugWatchKey("  %12g %12g Mvec anti Near %s \n", 0.0, sqrt(ddot(r, sink->cen)), PrintKey(source_vec[i]->key));
+		    sink->near++;
+		}
+	    }
+	}
+	if (result[i] == MAC_SPLIT_SRC && !bs) {
+	    if (cp->level >= sink->clevel) {
+		float um = -ucell[cp->level].mass;
+		appendMvec(cp, um);
+		sink->fmass += um;
+		AddCounter(&MCCorr, 1);
+		flags_vec[i] |= BACKGROUND_FLAG;
+		DebugWatchKey("  %12g %12g Cvec %ld %s\n", um, sqrt(dr2), (long int)cp->daughters, PrintKey(source_vec[i]->key));
+	    } else if (sf != (1<<MAXNSUB) - 1) {
+		Key_t k = KeyLshift(source_vec[i]->key, NDIM);
+		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
+		    if ((sf & 1) == 0) {
+			float mxyz[4], cellsz;
+			CellCorner(k, mxyz+1, &cellsz);
+			VV((mxyz+1), += 0.5f*cellsz + offset_array[offset_index(flags_vec[i])]);
+			if (fabsf(mxyz[1]-sink->cen[0]) > sink->cr ||
+			    fabsf(mxyz[2]-sink->cen[1]) > sink->cr ||
+			    fabsf(mxyz[3]-sink->cen[2]) > sink->cr) {
+			    mxyz[0] = -ucell[cp->level+1].mass;
+			    appendMvec(mxyz, mxyz[0]);
+			    sink->fmass += mxyz[0];
+			    AddCounter(&CEmpty, 1);
+			    DebugWatchKey("  %12g %12g %12g %12g Mvec empty %s %d\n", mxyz[0], mxyz[1]-sink->cen[0], mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], PrintKey(k), offset_index(flags_vec[i]));
+			} else {
+			    DebugWatchKey("  %12g %12g %12g %12g Mvec empty Near %s %d\n", mxyz[0], mxyz[1]-sink->cen[0], mxyz[2]-sink->cen[1], mxyz[3]-sink->cen[2], PrintKey(k), offset_index(flags_vec[i]));
+			    sink->near++;
+			}
+		    }
+		}
+	    }
+	}
+	/* Optimization of terminal traversal */
+	if (result[i] == MAC_SPLIT_SRC && cp->bptr && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
+	    result[i] = MAC_ACCEPT;
+	    sink->interactions += cp->daughters;
+	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
+		VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+		if (b->mass != Btab[0].mass) {
+		    Error("Bad particle mass %f type %d %s\n", 
+			  b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
+		}
+		appendMvec(b, b->mass);
+	    }
 	}
     }
-    sink->interactions += interactions;
-    sink->scnt = scnt;
-    sink->mcnt = mcnt;
-#ifdef QUAD
-    sink->qcnt = qcnt;
-#endif
-#ifdef HEXA
-    sink->hcnt = hcnt;
-#endif
     StopTimer(&MACTm);
+    
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
+}
+
+/* RcritMAC with Don't Laugh-like traversal */
+void
+DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *restrict result, int n)
+{
+    float dr2;
+    Vxd(float r);
+
+    StartTimer(&MACTm);
+    for (int i = 0; i < n; i++) {
+	int sf = Sub_Flags(source_vec[i]);
+	if (!sf && !sink->isbody) {
+	    result[i] = MAC_SPLIT_SINK;
+	    continue;
+	}
+	const cell *cp = source_vec[i]->ptr;
+	const quadcell *qcp = source_vec[i]->ptr;
+	const hexacell *hcp = source_vec[i]->ptr;
+	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
+	if (sf) {
+	    dr2 = ddot(r, sink->pos);
+	    int isquad = mac->p2cut && cp->daughters >= mac->p2cut;
+	    int ishexa = mac->p4cut && cp->daughters >= mac->p4cut;
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    if (dr2 > Square(cp->rcrit + cp->bmax)) {
+		appendMvec(cp, cp->mass);
+		sink->interactions += cp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (isquad && dr2 > Square(qcp->rcrit_q + qcp->bmax)) {
+		appendQvec(qcp);
+		sink->interactions += qcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else if (ishexa && dr2 > Square(hcp->rcrit_h + hcp->bmax)) {
+		appendHvec(hcp);
+		sink->interactions += hcp->daughters;
+		result[i] = MAC_ACCEPT;
+	    } else {
+		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+	    }
+	} else {
+	    /* body-body */
+	    appendMvec(cp, cp->mass);
+	    sink->interactions++;
+	    result[i] = MAC_ACCEPT;
+	}
+        /* Optimization of terminal traversal */
+        if (result[i] == MAC_SPLIT_SRC && cp->bptr && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
+            result[i] = MAC_ACCEPT;
+            sink->interactions += cp->daughters;
+            for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
+                VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+                if (b->mass != Btab[0].mass) {
+                    Error("Bad particle mass %f type %d %s\n",
+                          b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
+                }
+                appendMvec(b, b->mass);
+	    }
+	}
+    }
+    StopTimer(&MACTm);
+    
+    if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
+    if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 }
