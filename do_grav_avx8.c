@@ -895,7 +895,7 @@ do_grav_sK1_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0,
     const vsf ppos2 = vsf_scalar(pos0[2]);
     const vsf three = vsf_scalar(3.0f);
     const vsf half = vsf_scalar(0.5f);
-    const vsf eps2 = vsf_scalar(*e**e);
+    const vsf eps2 = vsf_scalar(1.0f/(*e**e));
 
     while (f < fend) {
 	vsf x = ppos0 - xp;
