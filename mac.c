@@ -151,6 +151,14 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	Qinteract = Arch(do_gravpq);
 	Hinteract = (amd6100) ? Arch(do_gravph_amd6100) : Arch(do_gravph);
     } else {
+	Minteract = Arch(do_grav);
+	if (mac->geometric_center) {
+	    Qinteract = Arch(do_gravdq);
+	    Hinteract = (amd6100) ? Arch(do_gravdh_amd6100) : Arch(do_gravdh);
+	} else {
+	    Qinteract = Arch(do_gravq);
+	    Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
+	}
 	if (smooth_type == 1) {
 	    Eps = 1.6f*e;
 	    Sinteract = Arch(do_gravsU);
@@ -162,6 +170,7 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	    Sinteract = Arch(do_gravsF2);
 	} else if (smooth_type == 4) {
 	    Eps = 3.35f*e;
+	    Minteract = Arch(do_grav_sK1);
 	    Sinteract = Arch(do_gravsK1);
 	} else if (smooth_type == 5) {
 	    Eps = 2.8f*e;
@@ -171,14 +180,6 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	    Sinteract = Arch(do_gravsCP);
 	} else {
 	    Error("Unknown smoothing type\n");
-	}
-	Minteract = Arch(do_grav);
-	if (mac->geometric_center) {
-	    Qinteract = Arch(do_gravdq);
-	    Hinteract = (amd6100) ? Arch(do_gravdh_amd6100) : Arch(do_gravdh);
-	} else {
-	    Qinteract = Arch(do_gravq);
-	    Hinteract = (amd6100) ? Arch(do_gravh_amd6100) : Arch(do_gravh);
 	}
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
@@ -283,7 +284,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	body *bp = pp->ptr;
 	/* must init mtot or else you get quiet exceptions in asm code */
 	float mtot = 0.0f;
-	int ijunk = 0, nn;
+	int nsmoothed = 0, nn;
 	float acc[NDIM], phi;
 	float accd[NDIM], phid;
 
@@ -344,7 +345,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  Error("Hvec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Hinteract((float *)&Hvec[from->hcnt_done/NSSE], (float *)&Hvec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
 	AddCounter(&BC4Int, from->hcnt-from->hcnt_done);
 	StopTimer(&GravHTm);
 	VV(acc, += accd); phi += phid;
@@ -375,7 +376,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  Error("Qvec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Qinteract((float *)&Qvec[from->qcnt_done/NSSE], (float *)&Qvec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
 	DebugWatchId("p2 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->qcnt);
 	AddCounter(&BC2Int, from->qcnt-from->qcnt_done);
 	StopTimer(&GravQTm);
@@ -392,9 +393,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Mvec[0] & 0xF || (long long)&Mvec[1] & 0xF)
 	  Error("Mvec not aligned for asm code\n");
+	if (nsmoothed) Error("nsmoothed nonzero in multipole interaction\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Minteract((float *)&Mvec[0], (float *)&Mvec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
 	DebugWatchId("p1 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->mcnt);
 	AddCounter(&BCInt, from->mcnt);
 	StopTimer(&GravMTm);
@@ -413,8 +415,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  Error("Svec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Sinteract((float *)&Svec[0], (float *)&Svec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &ijunk);
+			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
 	AddCounter(&BSInt, from->scnt);
+	AddCounter(&BSInt, nsmoothed); /* Includes self */
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
 	if (!isfinite(accd[0]) || !isfinite(accd[1]) || !isfinite(accd[2]) || !isfinite(phi)) {
@@ -586,10 +589,10 @@ mxn_hexa(Sink *to, hcell *pp)
 	} else {
 	    float mtot = 0.0f;
 	    float e = 0.0f;
-	    int ijunk = 0;
+	    int nsmoothed = 0;
 	    for (i = 0; i < block; i++) {
 		Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
-			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &nsmoothed);
 	    }
 	}
 	WalkPoll();
@@ -1009,11 +1012,15 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    }
 	}
 	/* Optimization of terminal traversal */
-	if (result[i] == MAC_SPLIT_SRC && cp->bptr) {
+	if (result[i] == MAC_SPLIT_SRC && cp->bptr && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
 	    result[i] = MAC_ACCEPT;
 	    sink->interactions += cp->daughters;
 	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
 		VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+		if (b->mass != Btab[0].mass) {
+		    Error("Bad particle mass %f type %d %s\n", 
+			  b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
+		}
 		appendMvec(b, b->mass);
 	    }
 	}

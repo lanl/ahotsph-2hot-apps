@@ -936,6 +936,112 @@ do_grav_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, f
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
 
+typedef struct {
+    v4sf phi; 
+    v4sf a;
+} sret_s;
+
+/* Dehnen K1 Compensating Kernel */
+static sret_s
+sK1(const v4sf r2, const float e)
+{
+    sret_s r;
+    const v4sf one = {1.0f, 1.0f, 1.0f, 1.0f};
+    const v4sf f1 = {-3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f};
+    const v4sf f2 = {135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f};
+    const v4sf p1 = {-1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f};
+    const v4sf p2 = {3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f};
+    const v4sf p3 = {-45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f};
+    const v4sf eps_inv = {e, e, e, e};
+
+    v4sf u2 = r2 * eps_inv * eps_inv;
+    v4sf mask = __builtin_ia32_cmpleps(u2, one);
+    u2 -= one;
+
+    v4sf t = p3*u2;
+    t += p2;
+    t *= u2;
+    t += p1;
+    t *= u2;
+    t += one;
+    t *= eps_inv;
+    r.phi = -__builtin_ia32_andps(mask, t);
+	
+    t = f2*u2;
+    t += f1;
+    t *= u2;
+    t += one;
+    t *= eps_inv * eps_inv * eps_inv;
+    r.a = -__builtin_ia32_andps(mask, t);
+
+    return r;
+}
+
+void
+do_grav_sK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+{
+    v4sf a0 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a1 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf a2 = {0.0f, 0.0f, 0.0f, 0.0f};
+    v4sf phi = {0.0f, 0.0f, 0.0f, 0.0f};
+    const v4sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0]};
+    const v4sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1]};
+    const v4sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2]};
+    const v4sf three = {3.0f, 3.0f, 3.0f, 3.0f};
+    const v4sf half = {0.5f, 0.5f, 0.5f, 0.5f};
+    const v4sf eps2 = {1.0f/(*e**e), 1.0f/(*e**e), 1.0f/(*e**e), 1.0f/(*e**e)};
+
+    while (f < fend) {
+	v4sf x = ppos0 - xp;
+	v4sf y = ppos1 - yp;
+	v4sf z = ppos2 - zp;
+
+	v4sf r2 = x*x + y*y + z*z;
+
+	__asm__("prefetcht0 512(%rdi)");
+	v4sf rinv = __builtin_ia32_rsqrtps(r2);
+	v4sf mask = __builtin_ia32_cmpleps(eps2, r2);
+	unsigned int nmask = __builtin_popcount(__builtin_ia32_movmskps(mask));
+	if (nmask != 4) {
+	    *ncut += 4-nmask;
+	    sret_s r = sK1(r2, *e);
+	    phi += mass * r.phi;
+	    r.a *= mass;
+	    a0 += x * r.a;
+	    a1 += y * r.a;
+	    a2 += z * r.a;
+	}
+
+	/* Newton-Raphson */
+	v4sf t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+	rinv = __builtin_ia32_andps(mask, rinv);
+
+	t = rinv*rinv;
+	rinv *= mass;
+	f += 4;
+	phi += rinv;
+	t *= rinv;
+	a0 += x*t;
+	a1 += y*t;
+	a2 += z*t;
+
+    }
+    phi = __builtin_ia32_haddps(phi, phi);
+    a0 = __builtin_ia32_haddps(a0, a0);
+    a1 = __builtin_ia32_haddps(a1, a1);
+    a2 = __builtin_ia32_haddps(a2, a2);
+    *phi0 += __builtin_ia32_haddps(phi, phi)[0];
+    acc[0] += __builtin_ia32_haddps(a0, a0)[0];
+    acc[1] += __builtin_ia32_haddps(a1, a1)[0];
+    acc[2] += __builtin_ia32_haddps(a2, a2)[0];
+}
+
 /* Spline Kernel */
 
 void
