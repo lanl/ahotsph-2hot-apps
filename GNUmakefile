@@ -9,6 +9,7 @@ endif
 
 ifeq ($(ARCH),$(filter $(ARCH), cudaxk7 cudaxk7-g cudai7))
 cusrc = cuda.cu pgrav.cu
+PRELIBS=-L/opt/cudatoolkit-5.5/lib64 -lcudart
 endif
 
 programname=../devel/nlna
