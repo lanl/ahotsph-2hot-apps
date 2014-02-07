@@ -39,27 +39,27 @@
 
 /* 217 flops, 100 bytes */
 void
-do_gravdh_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravdh_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf xx, xy, yy, xz, yz, zz;
-    v8sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0), (float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
-    const v8sf quarter = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
-    const v8sf seven = {7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
-    const v8sf nine = {9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf xx, xy, yy, xz, yz, zz;
+    vsf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf third = vsf_scalar((float)(1.0/3.0));
+    const vsf quarter = vsf_scalar(0.25f);
+    const vsf five = vsf_scalar(5.0f);
+    const vsf seven = vsf_scalar(7.0f);
+    const vsf nine = vsf_scalar(9.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -70,7 +70,7 @@ do_gravdh_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 
 	/* Prefetching improves uncached performance by 10-20% */
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -164,27 +164,27 @@ do_gravdh_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 }
 
 void
-do_gravdh_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravdh_amd6100_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf xx, xy, yy, xz, yz, zz;
-    v8sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0), (float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
-    const v8sf quarter = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
-    const v8sf seven = {7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
-    const v8sf nine = {9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf xx, xy, yy, xz, yz, zz;
+    vsf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf third = vsf_scalar((float)(1.0/3.0));
+    const vsf quarter = vsf_scalar(0.25f);
+    const vsf five = vsf_scalar(5.0f);
+    const vsf seven = vsf_scalar(7.0f);
+    const vsf nine = vsf_scalar(9.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -195,7 +195,7 @@ do_gravdh_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float
 
 	/* Prefetching improves uncached performance by 10-20% */
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -356,21 +356,21 @@ do_gravdh_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float
 
 /* 66 flops, 40 bytes */
 void
-do_gravdq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravdq_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf five = vsf_scalar(5.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -380,7 +380,7 @@ do_gravdq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 	r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -433,27 +433,27 @@ do_gravdq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 }
 
 void
-do_gravh_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravh_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf xx, xy, yy, xz, yz, zz;
-    v8sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0), (float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
-    const v8sf quarter = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
-    const v8sf seven = {7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
-    const v8sf nine = {9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf xx, xy, yy, xz, yz, zz;
+    vsf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf third = vsf_scalar((float)(1.0/3.0));
+    const vsf quarter = vsf_scalar(0.25f);
+    const vsf five = vsf_scalar(5.0f);
+    const vsf seven = vsf_scalar(7.0f);
+    const vsf nine = vsf_scalar(9.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -464,7 +464,7 @@ do_gravh_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 
 	/* Prefetching improves uncached performance by 10-20% */
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -548,27 +548,27 @@ do_gravh_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 }
 
 void
-do_gravh_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravh_amd6100_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf xx, xy, yy, xz, yz, zz;
-    v8sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0), (float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
-    const v8sf quarter = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
-    const v8sf seven = {7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
-    const v8sf nine = {9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf xx, xy, yy, xz, yz, zz;
+    vsf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf third = vsf_scalar((float)(1.0/3.0));
+    const vsf quarter = vsf_scalar(0.25f);
+    const vsf five = vsf_scalar(5.0f);
+    const vsf seven = vsf_scalar(7.0f);
+    const vsf nine = vsf_scalar(9.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -579,7 +579,7 @@ do_gravh_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float 
 
 	/* Prefetching improves uncached performance by 10-20% */
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -726,21 +726,21 @@ do_gravh_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float 
 }
 
 void
-do_gravq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravq_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf five = vsf_scalar(5.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -750,7 +750,7 @@ do_gravq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 	r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -793,39 +793,39 @@ do_gravq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 
 
 void
-do_grav_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_grav_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf a0 = vsf_scalar(0.0f);
-    v8sf a1 = vsf_scalar(0.0f);
-    v8sf a2 = vsf_scalar(0.0f);
-    v8sf phi = vsf_scalar(0.0f);
-    const v8sf ppos0 = vsf_scalar(pos0[0]);
-    const v8sf ppos1 = vsf_scalar(pos0[1]);
-    const v8sf ppos2 = vsf_scalar(pos0[2]);
-    const v8sf three = vsf_scalar(3.0f);
-    const v8sf half = vsf_scalar(0.5f);
-    const v8sf eps2 = vsf_scalar(*e**e);
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf eps2 = vsf_scalar(*e**e);
 
     while (f < fend) {
-	v8sf x = ppos0 - xp;
-	v8sf y = ppos1 - yp;
-	v8sf z = ppos2 - zp;
+	vsf x = ppos0 - xp;
+	vsf y = ppos1 - yp;
+	vsf z = ppos2 - zp;
 
-	v8sf r2 = x*x + y*y + z*z;
+	vsf r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	v8sf rinv = __builtin_ia32_rsqrtps256(r2);
-	v8sf mask = __builtin_ia32_cmpps256(eps2, r2, 0x12); /* _CMP_LE_0Q_ */
+	vsf rinv = vsf_rsqrt(r2);
+	vsf mask = vsf_cmple(eps2, r2);
 
 	/* Newton-Raphson */
-	v8sf t = rinv;
+	vsf t = rinv;
 	r2 *= rinv;
 	rinv *= r2;
 	rinv -= three;
 	rinv *= t;
 	rinv *= half;		/* flips sign to avoid storing -0.5 */
 	/* end Newton-Raphson */
-	rinv = (vsf)((vsi)mask & (vsi)rinv);
+	rinv = vsf_and(mask, rinv);
 
 	t = rinv*rinv;
 	rinv *= mass;
@@ -842,40 +842,141 @@ do_grav_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, f
     acc[2] += vsf_hsum(a2);
 }
 
+typedef struct {
+    vsf phi; 
+    vsf a;
+} sret_s;
+
+/* Dehnen K1 Compensating Kernel */
+static sret_s
+sK1(const vsf r2, const float e)
+{
+    sret_s r;
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf f2 = vsf_scalar(135.0f/16.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
+    const vsf p3 = vsf_scalar(-45.0f/32.0f);
+    const vsf eps_inv = vsf_scalar(e);
+
+    vsf u2 = r2 * eps_inv * eps_inv;
+    vsf mask = vsf_cmple(u2, one);
+    u2 -= one;
+
+    vsf t = p3*u2;
+    t += p2;
+    t *= u2;
+    t += p1;
+    t *= u2;
+    t += one;
+    t *= eps_inv;
+    r.phi = -vsf_and(mask, t);
+	
+    t = f2*u2;
+    t += f1;
+    t *= u2;
+    t += one;
+    t *= eps_inv * eps_inv * eps_inv;
+    r.a = -vsf_and(mask, t);
+
+    return r;
+}
+
+void
+do_grav_sK1_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+{
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf eps2 = vsf_scalar(*e**e);
+
+    while (f < fend) {
+	vsf x = ppos0 - xp;
+	vsf y = ppos1 - yp;
+	vsf z = ppos2 - zp;
+
+	vsf r2 = x*x + y*y + z*z;
+
+	__asm__("prefetcht0 512(%rdi)");
+	vsf rinv = vsf_rsqrt(r2);
+	vsf mask = vsf_cmple(eps2, r2);
+	unsigned int nmask = __builtin_popcount(__builtin_ia32_movmskps256(mask));
+	if (nmask != NSSE) {
+	    *ncut += NSSE-nmask;
+	    sret_s r = sK1(r2, *e);
+	    phi += mass * r.phi;
+	    r.a *= mass;
+	    a0 += x * r.a;
+	    a1 += y * r.a;
+	    a2 += z * r.a;
+	}
+
+	/* Newton-Raphson */
+	vsf t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+	rinv = vsf_and(mask, rinv);
+
+	t = rinv*rinv;
+	rinv *= mass;
+	f += 4;
+	phi += rinv;
+	t *= rinv;
+	a0 += x*t;
+	a1 += y*t;
+	a2 += z*t;
+    }
+    *phi0 += vsf_hsum(phi);
+    acc[0] += vsf_hsum(a0);
+    acc[1] += vsf_hsum(a1);
+    acc[2] += vsf_hsum(a2);
+}
+
+
 /* Spline Kernel */
 
 void
-do_gravsS_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsS_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t, rinv, r;
-    v8sf mask, tm, tp;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf minus_half = {-0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf c48o5 = {48.0/5.0, 48.0/5.0, 48.0/5.0, 48.0/5.0, 48.0/5.0, 48.0/5.0, 48.0/5.0, 48.0/5.0};
-    const v8sf c32o5 = {32.0/5.0, 32.0/5.0, 32.0/5.0, 32.0/5.0, 32.0/5.0, 32.0/5.0, 32.0/5.0, 32.0/5.0};
-    const v8sf c16o3 = {16.0/3.0, 16.0/3.0, 16.0/3.0, 16.0/3.0, 16.0/3.0, 16.0/3.0, 16.0/3.0, 16.0/3.0};
-    const v8sf c14o5 = {14.0/5.0, 14.0/5.0, 14.0/5.0, 14.0/5.0, 14.0/5.0, 14.0/5.0, 14.0/5.0, 14.0/5.0};
-    const v8sf c32o15 = {32.0/15.0, 32.0/15.0, 32.0/15.0, 32.0/15.0, 32.0/15.0, 32.0/15.0, 32.0/15.0, 32.0/15.0};
-    const v8sf c16 = {16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0};
-    const v8sf c32o3 = {32.0/3.0, 32.0/3.0, 32.0/3.0, 32.0/3.0, 32.0/3.0, 32.0/3.0, 32.0/3.0, 32.0/3.0};
-    const v8sf c1o15 = {1.0/15.0, 1.0/15.0, 1.0/15.0, 1.0/15.0, 1.0/15.0, 1.0/15.0, 1.0/15.0, 1.0/15.0};
-    const v8sf c16o5 = {16.0/5.0, 16.0/5.0, 16.0/5.0, 16.0/5.0, 16.0/5.0, 16.0/5.0, 16.0/5.0, 16.0/5.0};
-    const v8sf c192o5 = {192.0/5.0, 192.0/5.0, 192.0/5.0, 192.0/5.0, 192.0/5.0, 192.0/5.0, 192.0/5.0, 192.0/5.0};
-    const v8sf c32 = {32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0};
-    const v8sf c48 = {48.0, 48.0, 48.0, 48.0, 48.0, 48.0, 48.0, 48.0};
-    const v8sf c64o3 = {64.0/3.0, 64.0/3.0, 64.0/3.0, 64.0/3.0, 64.0/3.0, 64.0/3.0, 64.0/3.0, 64.0/3.0};
+    vsf u2, t, rinv, r;
+    vsf mask, tm, tp;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf minus_half = vsf_scalar(-0.5f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf c48o5 = vsf_scalar(48.0/5.0);
+    const vsf c32o5 = vsf_scalar(32.0/5.0);
+    const vsf c16o3 = vsf_scalar(16.0/3.0);
+    const vsf c14o5 = vsf_scalar(14.0/5.0);
+    const vsf c32o15 = vsf_scalar(32.0/15.0);
+    const vsf c16 = vsf_scalar(16.0);
+    const vsf c32o3 = vsf_scalar(32.0/3.0);
+    const vsf c1o15 = vsf_scalar(1.0/15.0);
+    const vsf c16o5 = vsf_scalar(16.0/5.0);
+    const vsf c192o5 = vsf_scalar(192.0/5.0);
+    const vsf c32 = vsf_scalar(32.0);
+    const vsf c48 = vsf_scalar(48.0);
+    const vsf c64o3 = vsf_scalar(64.0/3.0);
 	
-
     while (f < fend) {
 	x = ppos0 - xp;
 	y = ppos1 - yp;
@@ -886,7 +987,7 @@ do_gravsS_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 
 	__asm__("prefetcht0 512(%rdi)");
 
-	rinv = __builtin_ia32_rsqrtps256(u2);
+	rinv = vsf_rsqrt(u2);
 	/* Newton-Raphson */
 	t = rinv;
 	rinv *= rinv;
@@ -923,22 +1024,22 @@ do_gravsS_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 }
 
 void
-do_gravsF1_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsF1_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf one = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-    const v8sf f1 = {-3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f};
-    const v8sf p1 = {-1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f};
-    const v8sf p2 = {3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f};
+    vsf u2, t;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -977,24 +1078,24 @@ do_gravsF1_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 /* F2 "Epanechnikov" Kernel */
 
 void
-do_gravsF2_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsF2_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf one = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-    const v8sf f1 = {-3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f};
-    const v8sf f2 = {15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f};
-    const v8sf p1 = {-1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f};
-    const v8sf p2 = {3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f};
-    const v8sf p3 = {-5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f};
+    vsf u2, t;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf f2 = vsf_scalar(15.0f/8.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
+    const vsf p3 = vsf_scalar(-5.0f/16.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1035,24 +1136,24 @@ do_gravsF2_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 
 /* Dehnen K1 Compensating Kernel */
 void
-do_gravsK1_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsK1_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf one = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-    const v8sf f1 = {-3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f};
-    const v8sf f2 = {135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f, 135.0f/16.0f};
-    const v8sf p1 = {-1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f};
-    const v8sf p2 = {3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f};
-    const v8sf p3 = {-45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f, -45.0f/32.0f};
+    vsf u2, t;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf f2 = vsf_scalar(135.0f/16.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
+    const vsf p3 = vsf_scalar(-45.0f/32.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1093,27 +1194,27 @@ do_gravsK1_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 
 /* Dehnen K2 Compensating Kernel */
 void
-do_gravsK2_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsK2_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t, mask;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf zero = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf one = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-    const v8sf f1 = {-3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f};
-    const v8sf f2 = {15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f};
-    const v8sf f3 = {-385.0f/32.0f, -385.0f/32.0f, -385.0f/32.0f, -385.0f/32.0f, -385.0f/32.0f, -385.0f/32.0f, -385.0f/32.0f, -385.0f/32.0f};
-    const v8sf p1 = {-1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f};
-    const v8sf p2 = {3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f};
-    const v8sf p3 = {-5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f};
-    const v8sf p4 = {385.0f/256.0f, 385.0f/256.0f, 385.0f/256.0f, 385.0f/256.0f, 385.0f/256.0f, 385.0f/256.0f, 385.0f/256.0f, 385.0f/256.0f};
+    vsf u2, t, mask;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf zero = vsf_scalar(0.0f);
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf f2 = vsf_scalar(15.0f/8.0f);
+    const vsf f3 = vsf_scalar(-385.0f/32.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
+    const vsf p3 = vsf_scalar(-5.0f/16.0f);
+    const vsf p4 = vsf_scalar(385.0f/256.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1161,29 +1262,29 @@ do_gravsK2_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 
 /* Dehnen K3 Compensating Kernel */
 void
-do_gravsK3_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsK3_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t, mask;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf zero = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf one = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-    const v8sf f1 = {-3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f, -3.0f/2.0f};
-    const v8sf f2 = {15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f, 15.0f/8.0f};
-    const v8sf f3 = {-35.0f/16.0f, -35.0f/16.0f, -35.0f/16.0f, -35.0f/16.0f, -35.0f/16.0f, -35.0f/16.0f, -35.0f/16.0f, -35.0f/16.0f};
-    const v8sf f4 = {4095.0f/256.0f, 4095.0f/256.0f, 4095.0f/256.0f, 4095.0f/256.0f, 4095.0f/256.0f, 4095.0f/256.0f, 4095.0f/256.0f, 4095.0f/256.0f};
-    const v8sf p1 = {-1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f, -1.0f/2.0f};
-    const v8sf p2 = {3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f, 3.0f/8.0f};
-    const v8sf p3 = {-5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f, -5.0f/16.0f};
-    const v8sf p4 = {35.0f/128.0f, 35.0f/128.0f, 35.0f/128.0f, 35.0f/128.0f, 35.0f/128.0f, 35.0f/128.0f, 35.0f/128.0f, 35.0f/128.0f};
-    const v8sf p5 = {-819.0f/512.0f, -819.0f/512.0f, -819.0f/512.0f, -819.0f/512.0f, -819.0f/512.0f, -819.0f/512.0f, -819.0f/512.0f, -819.0f/512.0f};
+    vsf u2, t, mask;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf zero = vsf_scalar(0.0f);
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf f2 = vsf_scalar(15.0f/8.0f);
+    const vsf f3 = vsf_scalar(-35.0f/16.0f);
+    const vsf f4 = vsf_scalar(4095.0f/256.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
+    const vsf p3 = vsf_scalar(-5.0f/16.0f);
+    const vsf p4 = vsf_scalar(35.0f/128.0f);
+    const vsf p5 = vsf_scalar(-819.0f/512.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1237,20 +1338,20 @@ do_gravsK3_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 /* Uniform density F0 kernel */
 
 void
-do_gravsU_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_gravsU_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf u2, t;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps_inv = {*e, *e, *e, *e, *e, *e, *e, *e};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+    vsf u2, t;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps_inv = vsf_scalar(*e);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1285,20 +1386,20 @@ do_gravsU_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 #define fac98pow12 1.0606601717798f
 
 void
-do_gravsCP_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravsCP_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
-    v8sf t, r2, rinv;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps2 = {*eps2p*0.125f, *eps2p*0.125f, *eps2p*0.125f, *eps2p*0.125f, *eps2p*0.125f, *eps2p*0.125f, *eps2p*0.125f, *eps2p*0.125f};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+    vsf t, r2, rinv;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps2 = vsf_scalar(*eps2p*0.125f);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1308,7 +1409,7 @@ do_gravsCP_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 	r2 = x*x + y*y + z*z + eps2;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	/* Newton-Raphson */
 	t = rinv;
@@ -1336,17 +1437,17 @@ do_gravsCP_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0
 
 
 void
-do_grav11bits_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+do_grav11bits_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
-    v8sf t, r2, rinv;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
+    vsf t, r2, rinv;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1356,7 +1457,7 @@ do_grav11bits_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *ma
 	r2 = x*x + y*y + z*z;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	t = rinv*rinv;
 	rinv *= mass;
@@ -1375,28 +1476,28 @@ do_grav11bits_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *ma
 
 
 void
-do_gravph_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravph_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf xx, xy, yy, xz, yz, zz;
-    v8sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps2 = {*eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0), (float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
-    const v8sf quarter = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
-    const v8sf seven = {7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
-    const v8sf nine = {9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf xx, xy, yy, xz, yz, zz;
+    vsf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps2 = vsf_scalar(*eps2p);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf third = vsf_scalar((float)(1.0/3.0));
+    const vsf quarter = vsf_scalar(0.25f);
+    const vsf five = vsf_scalar(5.0f);
+    const vsf seven = vsf_scalar(7.0f);
+    const vsf nine = vsf_scalar(9.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1407,7 +1508,7 @@ do_gravph_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 
 	/* Prefetching improves uncached performance by 10-20% */
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -1491,28 +1592,28 @@ do_gravph_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 }
 
 void
-do_gravph_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravph_amd6100_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf xx, xy, yy, xz, yz, zz;
-    v8sf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps2 = {*eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf third = {(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0), (float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0),(float)(1.0/3.0)};
-    const v8sf quarter = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
-    const v8sf seven = {7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
-    const v8sf nine = {9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f, 9.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf xx, xy, yy, xz, yz, zz;
+    vsf xxx, xxy, xyy, yyy, xxz, xyz, yyz;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps2 = vsf_scalar(*eps2p);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf third = vsf_scalar((float)(1.0/3.0));
+    const vsf quarter = vsf_scalar(0.25f);
+    const vsf five = vsf_scalar(5.0f);
+    const vsf seven = vsf_scalar(7.0f);
+    const vsf nine = vsf_scalar(9.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1523,7 +1624,7 @@ do_gravph_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float
 
 	/* Prefetching improves uncached performance by 10-20% */
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -1670,22 +1771,22 @@ do_gravph_amd6100_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float
 }
 
 void
-do_gravpq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravpq_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
-    v8sf t, r2, rinv, rinv2;
-    v8sf x, y, z;
-    v8sf eqe, eq0, eq1, eq2;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps2 = {*eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
-    const v8sf five = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf eqe, eq0, eq1, eq2;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps2 = vsf_scalar(*eps2p);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf five = vsf_scalar(5.0f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1695,7 +1796,7 @@ do_gravpq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 	r2 = x*x + y*y + z*z + eps2;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	__asm__("prefetcht0 576(%rdi)");
 	/* Newton-Raphson */
@@ -1738,20 +1839,20 @@ do_gravpq_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0,
 
 
 void
-do_gravp_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravp_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
-    v8sf t, r2, rinv;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps2 = {*eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p};
-    const v8sf three = {3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f};
-    const v8sf half = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+    vsf t, r2, rinv;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps2 = vsf_scalar(*eps2p);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1761,7 +1862,7 @@ do_gravp_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 	r2 = x*x + y*y + z*z + eps2;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	/* Newton-Raphson */
 	t = rinv;
@@ -1789,18 +1890,18 @@ do_gravp_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, 
 
 
 void
-do_gravp11bits_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
+do_gravp11bits_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *eps2p, int *ncut)
 {
-    v8sf t, r2, rinv;
-    v8sf x, y, z;
-    v8sf a0 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a1 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf a2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    v8sf phi = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const v8sf ppos0 = {pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0], pos0[0]};
-    const v8sf ppos1 = {pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1], pos0[1]};
-    const v8sf ppos2 = {pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2], pos0[2]};
-    const v8sf eps2 = {*eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p, *eps2p};
+    vsf t, r2, rinv;
+    vsf x, y, z;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf eps2 = vsf_scalar(*eps2p);
 
     while (f < fend) {
 	x = ppos0 - xp;
@@ -1810,7 +1911,7 @@ do_gravp11bits_avx8(const v8sf *f, const v8sf *fend, const float *pos0, float *m
 	r2 = x*x + y*y + z*z + eps2;
 
 	__asm__("prefetcht0 512(%rdi)");
-	rinv = __builtin_ia32_rsqrtps256(r2);
+	rinv = vsf_rsqrt(r2);
 
 	t = rinv*rinv;
 	rinv *= mass;

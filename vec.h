@@ -8,6 +8,8 @@ typedef int vsi __attribute__ ((vector_size (32)));
 #define vsf_hsum(a) (a[0]+a[1]+a[2]+a[3]+a[4]+a[5]+a[6]+a[7])
 #define vsf_scalar(a) {a, a, a, a, a, a, a, a}
 #define vsf_rsqrt(_r2) __builtin_ia32_rsqrtps256(_r2)
+#define vsf_cmple(_eps2, _r2) __builtin_ia32_cmpps256(_eps2, _r2, 0x12)
+#define vsf_and(_a, _b) (vsf)((vsi)_a & (vsi)_b);
 #else
 #define NSSE 4 /* Number of floats in an SSE register */
 #define Arch(a) a##_sse4
@@ -18,6 +20,8 @@ typedef int vsi __attribute__ ((vector_size (16)));
 #define vsf_hsum(a) (a[0]+a[1]+a[2]+a[3])
 #define vsf_scalar(a) {a, a, a, a}
 #define vsf_rsqrt(_r2) __builtin_ia32_rsqrtps(_r2)
+#define vsf_cmpleps(_eps2, _r2) __builtin_ia32_cmpleps(_eps2, _r2)
+#define vsf_and(_a, _b) __builtin_ia32_andps(_a, _b)
 #endif
 
 /* Transpose the 4x4 matrix composed of row[0-3].  */
