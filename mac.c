@@ -415,7 +415,6 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	VV(acc, += accd); phi += phid;
 	StartTimer(&GravSTm);
 	nn = from->scnt;
-	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
 	while (nn % NSSE) {
 	    Svec[nn/NSSE].mass[nn%NSSE] = 0.0f;
 	    Svec[nn/NSSE].x[nn%NSSE] = 0.0f;
@@ -428,7 +427,9 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Sinteract((float *)&Svec[0], (float *)&Svec[nn/NSSE], 
 			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
+	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
 	AddCounter(&BSInt, from->scnt);
+	if (nsmoothed > BSMax.counter) BSMax.counter = nsmoothed;
 	AddCounter(&BSInt, nsmoothed); /* Includes self */
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
