@@ -68,6 +68,10 @@ Counter_t HeapCnt_;	/* HeapCnt is in the SunOS name space?! */
 Counter_t KNtermsCnt, Scycles, Mcycles, Qcycles, FQcycles, Hcycles, FHcycles;
 
 Timer_t WITm,WTermTm,WNTTm,WITm;
+extern Timer_t SharedCellsWaitTm; /* in tree.c */
+extern Timer_t PQSortCommTm, PQSortWaitTm; /* in pqsort.c */
+extern Timer_t PQSortAtoaTm, PQSortAtoavTm;
+extern Counter_t PQSortSends, PQSortRecvs, PQSortMaxn;
 
 extern Timer_t GravQFTm, GravHFTm;;
 
@@ -1194,6 +1198,10 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&StepTot, "Step (CPU)");
     EnableTimer(&BuildTot, "Build Total");
     EnableTimer(&PQSortTm, "PQSort");
+    EnableTimer(&PQSortCommTm, "PQSortComm");
+    EnableTimer(&PQSortWaitTm, "PQSortWait");
+    EnableTimer(&PQSortAtoaTm, "Alltoall");
+    EnableTimer(&PQSortAtoavTm, "Alltoallv");
     EnableTimer(&DecompTm, "Decomp");
     EnableTimer(&DecompCommTm, "DecompComm");
     EnableTimer(&DecompWaitTm, "DecompWait");
@@ -1201,6 +1209,7 @@ static SDF *startup(int argc, char **argv){
     EnableTimer(&MakeTreeTm, "MakeTree");
     EnableTimer(&SharedCellsTm, "SharedCells");
     EnableTimer(&SharedCellsCommTm, "SharedComm");
+    EnableTimer(&SharedCellsWaitTm, "SharedWait");
     EnableTimer(&FindForcesTm, "Force Eval");
     EnableCPUTimer(&GravSTm, "Smth Time");
     EnableCPUTimer(&GravMTm, "Mono Time");
@@ -1214,6 +1223,9 @@ static SDF *startup(int argc, char **argv){
     EnableTimer(&WalkDeferTm, "Walk Defer");
     EnableTimer(&WTermTm, "WalkTerm");
     EnableTimer(&WNTTm, "WalkNT");
+    EnableCounter(&PQSortSends, "PQSort Sends");
+    EnableCounter(&PQSortRecvs, "PQSort Recvs");
+    EnableCounter(&PQSortMaxn, "PQSort Maxn");
     EnableCounter(&BSInt, "Body-smth");
     EnableCounter(&BCInt, "Body-mono");
     EnableCounter(&BC2Int, "Body-quad");
