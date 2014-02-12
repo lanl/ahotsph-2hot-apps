@@ -3,13 +3,13 @@ treedir_sed=\.\.
 ##### Application-specific stuff goes here
 
 ifdef PROFILE
-EXTRACFLAGS=-I$(PREFIX)/include
-PRELIBS=-lrt -Wl,-rpath -Wl,$(PREFIX)/lib -L$(PREFIX)/lib -lprofiler
+EXTRACFLAGS = -I$(PREFIX)/include -DGPERF
+PRELIBS = -lrt -Wl,-rpath -Wl,$(PREFIX)/lib -L$(PREFIX)/lib -lprofiler
 endif
 
 ifeq ($(ARCH),$(filter $(ARCH), cudaxk7 cudaxk7-g cudai7))
 cusrc = cuda.cu pgrav.cu
-PRELIBS=-L/opt/cudatoolkit-5.5/lib64 -lcudart
+PRELIBS +=-L/opt/cudatoolkit-5.5/lib64 -lcudart
 endif
 
 programname=../devel/nlna

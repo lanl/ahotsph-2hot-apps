@@ -136,6 +136,7 @@ main(int argc, char *argv[])
     double mtot;
     MPMY_Comm_request req;
     sortresult_t sortedbtab;
+    int static_decomp = 0;
     tree_t thetree;
     int massconf, xconf, yconf, zconf;
     int vxconf, vyconf, vzconf;
@@ -152,7 +153,11 @@ main(int argc, char *argv[])
     int fix_cube_ewald, fix_cube_ewald_le;
     walkinit_t walk_init_src;
     inherit_t walk_inherit;
+#ifdef BODY_HAS_KEY
+    pq_keyproto *getkey = (pq_keyproto *)GetKeyFromStruct;
+#else
     pq_keyproto *getkey = (pq_keyproto *)GetKey;
+#endif
     float R[NDIM];
     int N[NDIM];
     int timeout;
@@ -213,6 +218,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "write_nfiles", &write_nfiles, 0);
     SDFgetintOrDefault(csdfp, "seed", &seed, 123);
     SDFgetintOrDefault(csdfp, "identsort_output", &identsort_output, 1);
+    SDFgetintOrDefault(csdfp, "static_decomp", &static_decomp, 0);
     SDFgetfloatOrDefault(csdfp, "noise", &noise, 0.0);
     SDFgetintOrDefault(csdfp, "Nx",  &N[0], 0);
     SDFgetintOrDefault(csdfp, "Ny",  &N[1], 0);
@@ -580,6 +586,7 @@ main(int argc, char *argv[])
     singlPrintf("int hash_bits = %d;\n", HASH_BITS);
     singlPrintf("int memory_tune_MB = %d;\n", memory_tune_MB);
     singlPrintf("int identsort_output = %d;\n", identsort_output);
+    if (static_decomp) singlPrintf("int static_decomp = %d;\n", static_decomp);
     singlPrintf("Checkpoint to %s.nnnn, every %d steps or %d seconds\n", 
 		outnamebase, checkpoint_steps_interval, checkpoint_wallclock_interval);
     if (job_max_wallclock > 0) {
@@ -632,7 +639,7 @@ main(int argc, char *argv[])
     SetupTree(&thetree, NDIM, 
 	      sizeof(body), sizeof(cell), sizeof(quadcell), sizeof(hexacell),
 	      TBODYSZ, sizeof(cofmdata), (pq_keyproto)getkey, 
-	      (pq_wgtproto)GetCost, CofmFromDaugh, (cellfromcofm_t)CellFromCofm,
+	      (static_decomp) ? NULL : (pq_wgtproto)GetCost, CofmFromDaugh, (cellfromcofm_t)CellFromCofm,
 	      CellSz);
 
     if (do_periodic) {
@@ -668,6 +675,14 @@ main(int argc, char *argv[])
 	ClearEnabledCounters();
 	StartTimer(&StepTotWC);
 	StartTimer(&StepTot);
+#ifdef GPERF
+        #include <gperftools/profiler.h>
+	if (do_profile && (do_profile_proc == -1 || do_profile_proc == MPMY_Procnum())) {
+	    char gperffile[256];
+	    sprintf(gperffile, "nlnprof_%04d.%04d", iter, MPMY_Procnum());
+	    ProfilerStart(gperffile);
+	}
+#endif
 
 	if (do_cosmology) for (dt = dt_base; dt/tpos > dt_hiz_tol; dt *= 0.5) /* NULL */;
 
@@ -742,7 +757,7 @@ main(int argc, char *argv[])
 	singlPrintf("BuildTree %d (%d), tol=%g\n", maxmem(), maxheap(), mac.this_tol);
 
 	StartTimer(&BuildTot);
-        if (iter == 0) {	/* avoid poor load balance on first step */
+        if (iter == 0 && !static_decomp) {	/* avoid poor load balance on first step */
 	    singlPrintf("preliminary BuildTree\n");
             BuildTree(&thetree, &sortedbtab);
             FreeTree(&thetree);
@@ -782,20 +797,7 @@ main(int argc, char *argv[])
 
 	    singlPrintf("FindForces\n");
 	    StartTimer(&WNTTm);
-#ifdef GPERF
-	    if (do_profile && (do_profile_proc == -1 || do_profile_proc == MPMY_Procnum())) {
-		#include <gperftools/profiler.h>
-		char gperffile[256];
-		sprintf(gperffile, "nlnprof.%04d", MPMY_Procnum());
-		ProfilerStart(gperffile);
-		WalkNT(&thetree);
-		ProfilerStop();
-	    } 
-	    else 
-#endif
-	    {
-		WalkNT(&thetree);
-	    }
+	    WalkNT(&thetree);
 	    StopTimer(&WNTTm);
 
 	    StartTimer(&WTermTm);
@@ -1097,6 +1099,9 @@ main(int argc, char *argv[])
 	    Msg_do("Memory map after iteration %d\n", iter);
 	    malloc_print();
 	}
+#ifdef GPERF
+	if (do_profile && (do_profile_proc == -1 || do_profile_proc == MPMY_Procnum())) ProfilerStop();
+#endif
     }
     singlPrintf("Bye!\n");
     MPMY_Finalize();
