@@ -589,6 +589,8 @@ mxn_quad(Sink *to, hcell *pp)
     body *first = FirstBody(pp);
     body *last = LastBody(pp)+1;
     int i, n0, n1, m_block, block;
+    double this_poll;
+    double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
     if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
@@ -609,7 +611,11 @@ mxn_quad(Sink *to, hcell *pp)
 	    int q;
 	    StartTimer(&CUDAWtTm);
 	    while ((q = qallocCUDA()) < 0) {
-		/* WalkPoll(); */
+		this_poll = MPMY_Wtime();
+		if (this_poll - last_poll > 0.001) {
+		    WalkPoll();
+		    last_poll = this_poll;
+		}
 	    }
 	    StopTimer(&CUDAWtTm);
 	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
@@ -627,7 +633,11 @@ mxn_quad(Sink *to, hcell *pp)
 			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
 	    }
 	}
-	WalkPoll();
+	this_poll = MPMY_Wtime();
+	if (this_poll - last_poll > 0.001) {
+	    WalkPoll();
+	    last_poll = this_poll;
+	}
     }
     // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC2Int, (last-first)*(n1-n0)*NSSE);
@@ -649,6 +659,8 @@ mxn_hexa(Sink *to, hcell *pp)
     body *first = FirstBody(pp);
     body *last = LastBody(pp)+1;
     int i, n0, n1, m_block, block;
+    double this_poll;
+    double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
     if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
@@ -669,7 +681,11 @@ mxn_hexa(Sink *to, hcell *pp)
 	    int q;
 	    StartTimer(&CUDAWtTm);
 	    while ((q = qallocCUDA()) < 0 && block > 384) {
-		/* WalkPoll(); */
+		this_poll = MPMY_Wtime();
+		if (this_poll - last_poll > 0.001) {
+		    WalkPoll();
+		    last_poll = this_poll;
+		}
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
@@ -697,7 +713,11 @@ mxn_hexa(Sink *to, hcell *pp)
 			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &nsmoothed);
 	    }
 	}
-	WalkPoll();
+	this_poll = MPMY_Wtime();
+	if (this_poll - last_poll > 0.001) {
+	    WalkPoll();
+	    last_poll = this_poll;
+	}
     }
     // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
