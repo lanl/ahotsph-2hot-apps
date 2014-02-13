@@ -182,8 +182,8 @@ main(int argc, char *argv[])
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
 #ifdef CUDA
-    mxn_s mxn = {.hblock=16*1024*1024, .min_qsink=384, .min_hsink=384,
-		 .min_qsrc=128, .min_hsrc=128, .do_pQ=1, .do_pH=1};
+    mxn_s mxn = {.hblock=16*1024*1024, .min_qsink=64, .min_hsink=64,
+		 .min_qsrc=64, .min_hsrc=64, .do_pQ=1, .do_pH=1};
     CUDA_Init();
 #else
     mxn_s mxn = {.hblock=4096, .min_qsink=64, .min_hsink=64, .min_qsrc=512, .min_hsrc=512};
@@ -1235,8 +1235,10 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BCInt, "Body-mono");
     EnableCounter(&BC2Int, "Body-quad");
     EnableCounter(&FBC2Int, "Body-quadF");
+    EnableCounter(&FBC2FInt, "Body-quadFF");
     EnableCounter(&BC4Int, "Body-hexa");
     EnableCounter(&FBC4Int, "Body-hexaF");
+    EnableCounter(&FBC4FInt, "Body-hexaFF");
     EnableCounter(&MACcnt, "MAC");
     EnableCounter(&BBMACcnt, "BB MAC");
     EnableCounter(&CEmpty, "Cube Empty");

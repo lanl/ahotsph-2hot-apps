@@ -13,7 +13,7 @@
 
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
 Counter_t CEmpty, MCAnti, MCCorr;
-Counter_t FBC2Int, FBC4Int;
+Counter_t FBC2Int, FBC4Int, FBC2FInt, FBC4FInt;
 Counter_t MACcnt, BBMACcnt;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
@@ -615,11 +615,17 @@ mxn_quad(Sink *to, hcell *pp)
 		if (this_poll - last_poll > 0.001) {
 		    WalkPoll();
 		    last_poll = this_poll;
-		}
+		} else break;
 	    }
 	    StopTimer(&CUDAWtTm);
-	    pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			  (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)), q);
+	    if (q >= 0) {
+		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			      (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)), q);
+	    } else {
+		pQinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			   (float *)&Qvec[n0], n1-n0);
+		AddCounter(&FBC2FInt, block*(n1-n0)*NSSE);
+	    }
 #else
 	    pQinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 		       (float *)&Qvec[n0], n1-n0);
@@ -680,25 +686,21 @@ mxn_hexa(Sink *to, hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while ((q = qallocCUDA()) < 0 && block > 384) {
+	    while ((q = qallocCUDA()) < 0) {
 		this_poll = MPMY_Wtime();
 		if (this_poll - last_poll > 0.001) {
 		    WalkPoll();
 		    last_poll = this_poll;
-		}
+		} else break;
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
 		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
 	    } else {
-		float mtot = 0.0f;
-		float e = 0.0f;
-		int ijunk = 0;
-		for (i = 0; i < block; i++) {
-		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
-			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
-		}
+		pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			   (float *)&Hvec[n0], n1-n0);
+		AddCounter(&FBC4FInt, block*(n1-n0)*NSSE);
 	    }
 #else
 	    pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
