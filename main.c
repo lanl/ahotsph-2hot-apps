@@ -1555,7 +1555,7 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     float p0[NDIM], p1[NDIM], v0[NDIM], v1[NDIM];
     Stk outstk;
     char outname[256];
-    FILE *outfp;
+    static FILE *outfp = NULL;
     int nout, gnout;
     int outsize = 36;
 
@@ -1575,7 +1575,8 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     hubble1 = c->H_at_z(c, 1.0/a1-1.0);
     r1 = c->conformal_distance_at_z(c, 1.0/a1-1.0);
     if (r1 < 0.0) r1 = 0.0;
-    
+
+    if (outfp) MPMY_Fclose(outfp); /* from previous async write */
     for (; xptr < end; xptr++) {
 	VV(p0, = (1.0/a0) * xptr->pos); /* to comoving */
 	VV(p0, -= lc_origin);
@@ -1610,11 +1611,10 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     MPMY_Combine(&nout, &gnout, 1, MPMY_INT, MPMY_SUM);
     sprintf(outname, "%s_%s.%04d", name, tag, iter);
     if (gnout > 0) {
-	outfp = MPMY_Fopen(outname, MPMY_CREAT|MPMY_WRONLY|MPMY_TRUNC|MPMY_MULTI);
+	outfp = MPMY_Fopen(outname, MPMY_CREAT|MPMY_WRONLY|MPMY_TRUNC|MPMY_MULTI|MPMY_ASYNC);
 	MPMY_Fwrite(StkBase(&outstk), nout, outsize, outfp);
-	MPMY_Fclose(outfp);
     }
-    singlPrintf("Wrote %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
+    singlPrintf("Posted write of %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
 		gnout, outname, tpos, r0, c->z_at_t(c, tpos), 
 		lc_origin[0], lc_origin[1], lc_origin[2]);
     StkTerminate(&outstk);
