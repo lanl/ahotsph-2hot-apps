@@ -60,7 +60,7 @@ int maxheap(void);
 
 Timer_t StepTot, StepTotWC, BuildTot;
 Timer_t FindForcesTm;
-Timer_t FixCubeTm, LightConeTm;
+Timer_t FixCubeTm, LightConeTm, LightConeOpenTm, LightConeWriteTm;
 Counter_t NbodyCnt;
 Counter_t MemCnt, Ncell, Nquadcell, Nhexacell;
 Counter_t Ncell_local, Nquadcell_local, Nhexacell_local, Ntbody, Nhcell;
@@ -542,6 +542,8 @@ main(int argc, char *argv[])
     }
     if (light_cone) {
 	EnableTimer(&LightConeTm, "Light Cone");
+	EnableTimer(&LightConeOpenTm, "Light Cone Open");
+	EnableTimer(&LightConeWriteTm, "Light Cone Write");
     }
 
     singlPrintf("float errtol = %g;\n", mac.tol);
@@ -1554,8 +1556,6 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     float vel[NDIM];
     float p0[NDIM], p1[NDIM], v0[NDIM], v1[NDIM];
     Stk outstk;
-    char outname[256];
-    static FILE *outfp = NULL;
     int nout, gnout;
     int outsize = 36;
 
@@ -1576,7 +1576,6 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     r1 = c->conformal_distance_at_z(c, 1.0/a1-1.0);
     if (r1 < 0.0) r1 = 0.0;
 
-    if (outfp) MPMY_Fclose(outfp); /* from previous async write */
     for (; xptr < end; xptr++) {
 	VV(p0, = (1.0/a0) * xptr->pos); /* to comoving */
 	VV(p0, -= lc_origin);
@@ -1607,14 +1606,20 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
 	    StkPushData(&outstk, &(xptr->ident), sizeof(int64_t));
 	}
     }
+    char outname[256];
     nout = StkSz(&outstk)/outsize;
-    MPMY_Combine(&nout, &gnout, 1, MPMY_INT, MPMY_SUM);
-    sprintf(outname, "%s_%s.%04d", name, tag, iter);
-    if (gnout > 0) {
-	outfp = MPMY_Fopen(outname, MPMY_CREAT|MPMY_WRONLY|MPMY_TRUNC|MPMY_MULTI|MPMY_ASYNC);
-	MPMY_Fwrite(StkBase(&outstk), nout, outsize, outfp);
+    MPMY_Combine(&nout, &gnout, 1, MPMY_INT, MPMY_SUM); /* could be eliminated */
+    if (nout > 0) {
+	sprintf(outname, "lc/%s_%s.%04d.%04d", name, tag, iter, MPMY_Procnum()/PROCS_PER_NODE);
+	StartTimer(&LightConeOpenTm);
+	FILE *outfp = fopen(outname, "a");
+	StopTimer(&LightConeOpenTm);
+	StartTimer(&LightConeWriteTm);
+	fwrite(StkBase(&outstk), nout, outsize, outfp);
+	StopTimer(&LightConeWriteTm);
+	fclose(outfp);
     }
-    singlPrintf("Posted write of %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
+    singlPrintf("fwrite of %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
 		gnout, outname, tpos, r0, c->z_at_t(c, tpos), 
 		lc_origin[0], lc_origin[1], lc_origin[2]);
     StkTerminate(&outstk);
