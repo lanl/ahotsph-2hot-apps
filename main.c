@@ -196,6 +196,7 @@ main(int argc, char *argv[])
     }
 
     SDFgetintOrDefault(csdfp, "timeout", &timeout, 600);
+    SDFgetintOrDefault(csdfp, "job_max_wallclock", &job_max_wallclock, MPMY_JobRemaining());
     if (timeout > 0) MPMY_TimeoutSet(timeout);
 #ifdef __PARAGON__
     SDFgetintOrDefault(csdfp, "fail_if_slow", &fail_if_slow, 0);
@@ -520,7 +521,6 @@ main(int argc, char *argv[])
     SDFgetstringOrDefault(csdfp, "outfile", outnamebase, sizeof(outnamebase), "output");
     SDFgetintOrDefault(csdfp, "checkpoint_steps_interval", &checkpoint_steps_interval, 2000);
     SDFgetintOrDefault(csdfp, "checkpoint_wallclock_interval", &checkpoint_wallclock_interval, 7200);
-    SDFgetintOrDefault(csdfp, "job_max_wallclock", &job_max_wallclock, MPMY_JobRemaining());
     SDFgetintOrDefault(csdfp, "step_wallclock_estimate", &step_wallclock_estimate, 1800);
     SDFgetintOrDefault(csdfp, "output_wallclock_estimate", &output_wallclock_estimate, 1800);
     SDFgetintOrDefault(csdfp, "timer_freq", &timer_freq, 10);
@@ -542,8 +542,8 @@ main(int argc, char *argv[])
     }
     if (light_cone) {
 	EnableTimer(&LightConeTm, "Light Cone");
-	EnableTimer(&LightConeOpenTm, "Light Cone Open");
-	EnableTimer(&LightConeWriteTm, "Light Cone Write");
+	/* EnableTimer(&LightConeOpenTm, "Light Cone Open"); */
+	/* EnableTimer(&LightConeWriteTm, "Light Cone Write"); */
     }
 
     singlPrintf("float errtol = %g;\n", mac.tol);
