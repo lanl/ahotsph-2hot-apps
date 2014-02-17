@@ -1,3 +1,4 @@
+#undef NO_MSGS
 #include <stdio.h>		/* only use sprintf */
 #include <stdlib.h>
 #include <math.h>
@@ -19,9 +20,34 @@
 #include "integrate.h"
 #include "output.h"
 #include "version.h"
+#define R123_USE_U01_DOUBLE 1
+#include <Random123/threefry.h>
+#include <Random123/u01fixedpt.h>
 
 int maxmem(void);
 int maxheap(void);
+
+static const body *
+subsample(int64_t *gnobj, int *nobj, body *btab, double subsample_fraction, int subsample_random_seed)
+{
+    Stk outstk;
+    StkInitEz(&outstk);
+    threefry2x64_ctr_t ctr = {{}};
+    threefry2x64_key_t key = {{0, subsample_random_seed}};
+
+    for (body *b = btab; b < btab + *nobj; b++) {
+        ctr.v[0] = b->ident;
+	threefry2x64_ctr_t rand = threefry2x64(ctr, key);
+	double p = u01fixedpt_closed_open_64_53(rand.v[0]);
+	if (p < subsample_fraction) {
+	    StkPushData(&outstk, b, sizeof(body));
+	}
+    }
+    *nobj = StkSz(&outstk)/sizeof(body);
+    *gnobj = *nobj;
+    MPMY_Combine(gnobj, gnobj, 1, MPMY_INT64, MPMY_SUM);
+    return StkBase(&outstk);
+}
 
 void
 output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int iter, 
@@ -31,7 +57,8 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
        float this_tol, float frac_tol, float frac_tol0, 
        const float *R, const int *N, 
        int write_nfiles, double *ke, double *pe, 
-       int do_output, int identsort_output, int ic_Nmesh, double ic_growthfac)
+       int do_output, int identsort_output, int ic_Nmesh, double ic_growthfac,
+       double subsample_fraction, int subsample_random_seed)
 {
     int i;
     sortresult_t outputsort;
@@ -43,6 +70,8 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
     float sysradius[NDIM];
     MPMY_Comm_request req;
     int checkpoint;
+    int64_t gnobj0 = gnobj;
+    const body *btab2;
 
     if (do_output) checkpoint = 0;
     else checkpoint = 1;
@@ -52,29 +81,36 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	malloc_print();
     }
 
+    if (subsample_fraction != 0.0) {
+	Msgf(("Doing subsample\n"));
+	btab2 = subsample(&gnobj, &nobj, (body *)btab, subsample_fraction, subsample_random_seed);
+    } else {
+	btab2 = btab;
+    }
+
     Msgf(("Doing output\n"));
     output_btab = Malloc(nobj * sizeof(outbody));
     Msgf(("output_btab Malloc done\n"));
     for (i=0; i<nobj; i++) {
-	output_btab[i].mass = btab[i].mass;
+	output_btab[i].mass = btab2[i].mass;
 	/* pos and vel set in Integrate() */
 #ifdef SAVE_ACC
-	VV(output_btab[i].acc, = btab[i].acc);
-	output_btab[i].phi = btab[i].phi;
+	VV(output_btab[i].acc, = btab2[i].acc);
+	output_btab[i].phi = btab2[i].phi;
 #endif
-	output_btab[i].ident = btab[i].ident;
+	output_btab[i].ident = btab2[i].ident;
     }
     /* Don't sort before Integrate_out or btab and output_btab */
     /* will not be in the same order */
     tacc = tpos;	   /* tpos and tvel advanced in Integrate()  */
     if (do_cosmology && do_periodic) {
-	CosmoIntegrate(&btab[0].mass, &btab[0].pos[0], &btab[0].vel[0],
-		       &btab[0].acc[0], &btab[0].phi, sizeof(body),
+	CosmoIntegrate(&btab2[0].mass, &btab2[0].pos[0], &btab2[0].vel[0],
+		       &btab2[0].acc[0], &btab2[0].phi, sizeof(body),
 		       &output_btab[0].pos[0], &output_btab[0].vel[0], sizeof(outbody),
 		       nobj, dt, dtv, cosmo, &tpos, &tvel, ke, pe);
     } else {
-	Integrate(&btab[0].mass, &btab[0].pos[0], &btab[0].vel[0],
-		  &btab[0].acc[0], &btab[0].phi, sizeof(body),
+	Integrate(&btab2[0].mass, &btab2[0].pos[0], &btab2[0].vel[0],
+		  &btab2[0].acc[0], &btab2[0].phi, sizeof(body),
 		  &output_btab[0].pos[0], &output_btab[0].vel[0], sizeof(outbody),
 		  nobj, dt, dtv, &tpos, &tvel, ke, pe);
     }
@@ -114,7 +150,11 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	iter++;
 	sprintf(outname, "%s.%04d", outnamebase, iter);
     } else if (do_cosmology) {
-	sprintf(outname, "%s_%.03f", outnamebase, a);
+	if (subsample_fraction != 0.0) {
+	    sprintf(outname, "%s_sub%.0f_%.03f", outnamebase, 1.0/subsample_fraction, a);
+	} else {
+	    sprintf(outname, "%s_%.03f", outnamebase, a);
+	}
     } else {
 	sprintf(outname, "%s_t%.03f", outnamebase, tpos);
     }
@@ -176,6 +216,9 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	       "ic_Nmesh", SDF_INT, ic_Nmesh,
 	       "ic_growthfac", SDF_DOUBLE, ic_growthfac,
 	       "checkpoint", SDF_INT, checkpoint,
+	       "npart_orig", SDF_INT64, gnobj0,
+	       "subsample_fraction", SDF_DOUBLE, subsample_fraction,
+	       "subsample_random_seed", SDF_INT, subsample_random_seed,
 	       "ke", SDF_DOUBLE, *ke,
 	       "pe", SDF_DOUBLE, *pe,
 	       "compiled_version", SDF_STRING, Version,
@@ -187,7 +230,9 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 		(checkpoint) ? "Checkpoint" : "Output", outname, maxmem(), maxheap());
     Msgf(("Output to %s done\n", outname));
     Free(output_btab);
-    if (MPMY_Procnum() == 0) {
+    if (subsample_fraction != 0.0) {
+	Free((body *)btab2);
+    } else if (MPMY_Procnum() == 0) {
 	char name[256];
 	sprintf(name, "%s.restart", outnamebase);
 	if (unlink(name))

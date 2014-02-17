@@ -100,6 +100,8 @@ main(int argc, char *argv[])
     int first_step = 1;
     int do_output, do_checkpoint;
     int checkpoint_steps_interval, checkpoint_wallclock_interval;
+    double subsample_fraction;
+    int subsample_steps_interval, subsample_random_seed;
     int job_max_wallclock, step_wallclock_estimate, output_wallclock_estimate;
     int steps_to_next_output;
     int timer_freq;
@@ -523,6 +525,9 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "checkpoint_wallclock_interval", &checkpoint_wallclock_interval, 7200);
     SDFgetintOrDefault(csdfp, "step_wallclock_estimate", &step_wallclock_estimate, 1800);
     SDFgetintOrDefault(csdfp, "output_wallclock_estimate", &output_wallclock_estimate, 1800);
+    SDFgetintOrDefault(csdfp, "subsample_steps_interval", &subsample_steps_interval, 2000);
+    SDFgetdoubleOrDefault(csdfp, "subsample_fraction", &subsample_fraction, 0.0);
+    SDFgetintOrDefault(csdfp, "subsample_random_seed", &subsample_random_seed, 123);
     SDFgetintOrDefault(csdfp, "timer_freq", &timer_freq, 10);
     SDFgetfloatOrDefault(csdfp, "sort_tol", &sort_tol, 0.001);
     SDFgetintOrDefault(csdfp, "image_freq", &image_freq, 0);
@@ -596,6 +601,11 @@ main(int argc, char *argv[])
 		    job_max_wallclock, job_max_wallclock/3600.0);
     }
     singlPrintf("int timer_freq = %d;\n", timer_freq);
+    if (subsample_fraction > 0.0) {
+	singlPrintf("int subsample_steps_interval = %d;\n", subsample_steps_interval);
+	singlPrintf("int subsample_random_seed = %d;\n", subsample_random_seed);
+	singlPrintf("double subsample_fraction = %.7f;\n", subsample_fraction);
+    }
     singlPrintf("float sort_tol = %.4f;\n", sort_tol);
     singlPrintf("int do_periodic = %d, nimage is %d;\n", do_periodic, nimage);
     singlPrintf("int fix_cube_ewald_le = %d;\n", fix_cube_ewald_le);
@@ -912,13 +922,22 @@ main(int argc, char *argv[])
 	if ((iter-start_iter+1+checkpoint_steps_interval) % checkpoint_steps_interval == 0) do_checkpoint = 1;
 	if (ForceCheckpoint()) do_checkpoint = 1;
 
+	if (0 == iter % subsample_steps_interval && iter && subsample_fraction > 0.0) {
+	    output(outnamebase, gnobj, nobj, btab, iter, dtout, dtvout,
+		   &cosmo, tpos, tvel, do_cosmology, do_periodic, 
+		   eps, this_eps_scaled, force_smoothing_type, mac.this_tol, 
+		   mac.rel_tol, mac.rel_tol0,
+		   R, N, write_nfiles, &ke, &pe, 1, identsort_output,
+		   ic_Nmesh, ic_growthfac, subsample_fraction, subsample_random_seed);
+	}
+
 	if (do_output || do_checkpoint) {
 	    output(outnamebase, gnobj, nobj, btab, iter, dtout, dtvout,
 		   &cosmo, tpos, tvel, do_cosmology, do_periodic, 
 		   eps, this_eps_scaled, force_smoothing_type, mac.this_tol, 
 		   mac.rel_tol, mac.rel_tol0,
 		   R, N, write_nfiles, &ke, &pe, do_output, identsort_output,
-		   ic_Nmesh, ic_growthfac);
+		   ic_Nmesh, ic_growthfac, 0.0, 0);
 	    if (!do_output) MPMY_CheckpointFinished();
 	}
 
@@ -994,15 +1013,12 @@ main(int argc, char *argv[])
 	    AddCounter(&Hcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
 	if (ReadCounter(&FBC4Int))
 	    AddCounter(&FHcycles, 10.0*GHZ*ReadTimer(&GravHFTm)/ReadCounter(&FBC4Int));
-#if 0
 	if (ReadCounter(&Qcycles) > 230) {
 	    char hostname[128];
 	    gethostname(hostname, sizeof(hostname));
 	    SeriousWarning("Proc %d %s is slow, Qcycles is %ld\n", 
 			   MPMY_Procnum(), hostname, ReadCounter(&Qcycles));
 	}
-#endif
-	
 	   
 	Msgf(("doing MPMY_combine\n"));
 	MPMY_ICombine_Init(&req);
@@ -1609,8 +1625,8 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
     char outname[256];
     nout = StkSz(&outstk)/outsize;
     MPMY_Combine(&nout, &gnout, 1, MPMY_INT, MPMY_SUM); /* could be eliminated */
+    sprintf(outname, "lc/%s_%s.%04d.%04d", name, tag, iter, MPMY_Procnum()/PROCS_PER_NODE);
     if (nout > 0) {
-	sprintf(outname, "lc/%s_%s.%04d.%04d", name, tag, iter, MPMY_Procnum()/PROCS_PER_NODE);
 	StartTimer(&LightConeOpenTm);
 	FILE *outfp = fopen(outname, "a");
 	StopTimer(&LightConeOpenTm);
@@ -1619,9 +1635,10 @@ WriteLightCone(body *xptr, const int n, const double dt, const double dtv,
 	StopTimer(&LightConeWriteTm);
 	fclose(outfp);
     }
-    singlPrintf("fwrite of %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
-		gnout, outname, tpos, r0, c->z_at_t(c, tpos), 
-		lc_origin[0], lc_origin[1], lc_origin[2]);
+    if (gnout > 0)
+	singlPrintf("fwrite of %d to %s at time = %6.3f r0 = %8.2f z = %6.4f origin %g %g %g\n",
+		    gnout, outname, tpos, r0, c->z_at_t(c, tpos), 
+		    lc_origin[0], lc_origin[1], lc_origin[2]);
     StkTerminate(&outstk);
     StopTimer(&LightConeTm);
 }
