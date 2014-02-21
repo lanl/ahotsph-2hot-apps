@@ -40,6 +40,7 @@
 #include "cosmo.h"
 #include "integrate.h"
 #include "output.h"
+#include "cpu.h"
 #include "version.h"
 
 static void SanityCheck(bodyptr btab, int nobj, int64_t gnobj, double *mtotp);
@@ -58,6 +59,7 @@ static void WriteLightCone(body *xptr, const int n, const double dt, const doubl
 int maxmem(void);
 int maxheap(void);
 
+struct CPU_s CPU;
 Timer_t StepTot, StepTotWC, BuildTot;
 Timer_t FindForcesTm;
 Timer_t FixCubeTm, LightConeTm, LightConeOpenTm, LightConeWriteTm;
@@ -75,14 +77,10 @@ extern Counter_t PQSortSends, PQSortRecvs, PQSortMaxn;
 
 extern Timer_t GravQFTm, GravHFTm;;
 
-#ifdef AMD6100
-#define GHZ 2.30e9
+#ifdef CUDA
+static int has_cuda = 1;
 #else
-#ifdef XK6
-#define GHZ 2.20e9
-#else
-#define GHZ 2.668e9
-#endif
+static int has_cuda = 0;
 #endif
 
 int
@@ -183,13 +181,11 @@ main(int argc, char *argv[])
 
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
-#ifdef CUDA
-    mxn_s mxn = {.hblock=16*1024*1024, .min_qsink=64, .min_hsink=64,
-		 .min_qsrc=64, .min_hsrc=64, .do_pQ=1, .do_pH=1};
-    CUDA_Init();
-#else
     mxn_s mxn = {.hblock=4096, .min_qsink=64, .min_hsink=64, .min_qsrc=512, .min_hsrc=512};
-#endif
+    mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_qsink=64, .min_hsink=64,
+		      .min_qsrc=64, .min_hsrc=64, .do_pQ=1, .do_pH=1};
+    if (has_cuda) mxn = mxn_cuda;
+    CUDA_Init();
     /* Attempt to get a contiguous chunk of heap */
     SDFgetintOrDefault( csdfp, "memory_tune_MB", &memory_tune_MB, 0);
     if (memory_tune_MB) {
@@ -1002,17 +998,17 @@ main(int argc, char *argv[])
 	}
 	AddCounter(&KNtermsCnt, gnterms/1000.0);
 	if (ReadCounter(&BSInt))
-	    AddCounter(&Scycles, 10.0*GHZ*ReadTimer(&GravSTm)/ReadCounter(&BSInt));
+	    AddCounter(&Scycles, 10.0*CPU.Hz*ReadTimer(&GravSTm)/ReadCounter(&BSInt));
 	if (ReadCounter(&BCInt))
-	    AddCounter(&Mcycles, 10.0*GHZ*ReadTimer(&GravMTm)/ReadCounter(&BCInt));
+	    AddCounter(&Mcycles, 10.0*CPU.Hz*ReadTimer(&GravMTm)/ReadCounter(&BCInt));
 	if (ReadCounter(&BC2Int))
-	    AddCounter(&Qcycles, 10.0*GHZ*ReadTimer(&GravQTm)/ReadCounter(&BC2Int));
+	    AddCounter(&Qcycles, 10.0*CPU.Hz*ReadTimer(&GravQTm)/ReadCounter(&BC2Int));
 	if (ReadCounter(&FBC2Int))
-	    AddCounter(&FQcycles, 10.0*GHZ*ReadTimer(&GravQFTm)/ReadCounter(&FBC2Int));
+	    AddCounter(&FQcycles, 10.0*CPU.Hz*ReadTimer(&GravQFTm)/ReadCounter(&FBC2Int));
 	if (ReadCounter(&BC4Int))
-	    AddCounter(&Hcycles, 10.0*GHZ*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
+	    AddCounter(&Hcycles, 10.0*CPU.Hz*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
 	if (ReadCounter(&FBC4Int))
-	    AddCounter(&FHcycles, 10.0*GHZ*ReadTimer(&GravHFTm)/ReadCounter(&FBC4Int));
+	    AddCounter(&FHcycles, 10.0*CPU.Hz*ReadTimer(&GravHFTm)/ReadCounter(&FBC4Int));
 	if (ReadCounter(&Qcycles) > 230) {
 	    char hostname[128];
 	    gethostname(hostname, sizeof(hostname));
@@ -1162,6 +1158,8 @@ static SDF *startup(int argc, char **argv){
     singlPrintf("Compiled %s %s\n", Compiled_date, Compiled_time);
     singlPrintf("Compiler %s\n", Compiler);
     singlPrintf("Arch %s\n", Arch);
+    CPU.Hz = clockspeedHz(&CPU.ncores, &CPU.cpuname);
+    singlPrintf("CPU %s, %d cores, %.3f GHz\n", CPU.cpuname, CPU.ncores, 1e-9*CPU.Hz);
 
 #ifdef SAVE_ACC
     singlPrintf("Saving phi and acc\n");
@@ -1253,10 +1251,10 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&BCInt, "Body-mono");
     EnableCounter(&BC2Int, "Body-quad");
     EnableCounter(&FBC2Int, "Body-quadF");
-    EnableCounter(&FBC2FInt, "Body-quadFF");
+    if (has_cuda) EnableCounter(&FBC2FInt, "Body-quadFF");
     EnableCounter(&BC4Int, "Body-hexa");
     EnableCounter(&FBC4Int, "Body-hexaF");
-    EnableCounter(&FBC4FInt, "Body-hexaFF");
+    if (has_cuda) EnableCounter(&FBC4FInt, "Body-hexaFF");
     EnableCounter(&MACcnt, "MAC");
     EnableCounter(&BBMACcnt, "BB MAC");
     EnableCounter(&CEmpty, "Cube Empty");
