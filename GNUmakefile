@@ -74,7 +74,7 @@ $(objdir)/cofm$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h order.h physics.h
 $(objdir)/cofm$(objsuf):
-$(objdir)/cofm$(objsuf): physics_generic.h
+$(objdir)/cofm$(objsuf): vec.h physics_generic.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/vop.h $(treedir)/include/Msgs.h $(treedir)/include/fastflpt.h
 $(objdir)/cofm$(objsuf): $(treedir)/include/protos.h
 $(objdir)/grav$(objsuf): physics.h
@@ -90,9 +90,9 @@ $(objdir)/grav$(objsuf):
 $(objdir)/grav$(objsuf):
 $(objdir)/grav$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/grav$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
-$(objdir)/grav$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics_generic.h
-$(objdir)/grav$(objsuf): $(treedir)/include/vop.h $(treedir)/include/tensop.h $(treedir)/include/fastflpt.h
-$(objdir)/grav$(objsuf): $(treedir)/include/Msgs.h
+$(objdir)/grav$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h vec.h
+$(objdir)/grav$(objsuf): physics_generic.h $(treedir)/include/vop.h $(treedir)/include/tensop.h
+$(objdir)/grav$(objsuf): $(treedir)/include/fastflpt.h $(treedir)/include/Msgs.h
 $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf):
@@ -109,8 +109,9 @@ $(objdir)/mac$(objsuf):
 $(objdir)/mac$(objsuf): $(treedir)/include/stk.h
 $(objdir)/mac$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/mac$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h $(treedir)/include/Assert.h
-$(objdir)/mac$(objsuf): $(treedir)/include/pqsort.h physics_generic.h $(treedir)/include/vop.h
+$(objdir)/mac$(objsuf): $(treedir)/include/pqsort.h vec.h physics_generic.h $(treedir)/include/vop.h
 $(objdir)/mac$(objsuf): $(treedir)/include/fastflpt.h $(treedir)/include/Msgs.h $(treedir)/include/mpmy.h
+$(objdir)/mac$(objsuf): $(treedir)/include/ewald_le.h
 $(objdir)/main$(objsuf):
 $(objdir)/main$(objsuf):
 $(objdir)/main$(objsuf):
@@ -139,15 +140,14 @@ $(objdir)/main$(objsuf): $(treedir)/include/key.h
 $(objdir)/main$(objsuf):
 $(objdir)/main$(objsuf):
 $(objdir)/main$(objsuf): $(treedir)/include/stk.h
-$(objdir)/main$(objsuf): $(treedir)/include/chn.h $(treedir)/include/pqsort.h physics_generic.h
+$(objdir)/main$(objsuf): $(treedir)/include/chn.h $(treedir)/include/pqsort.h vec.h physics_generic.h
 $(objdir)/main$(objsuf): $(treedir)/include/vop.h $(treedir)/include/Msgs.h $(treedir)/include/singlio.h
 $(objdir)/main$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/mpmy_io.h
 $(objdir)/main$(objsuf): $(treedir)/include/mpmy_abnormal.h $(treedir)/include/gc.h $(treedir)/include/files.h
 $(objdir)/main$(objsuf): $(treedir)/include/getparam.h $(treedir)/include/verify.h $(treedir)/include/randoms.h
 $(objdir)/main$(objsuf): $(treedir)/include/decomp.h $(treedir)/include/image.h $(treedir)/include/memfile.h
 $(objdir)/main$(objsuf): $(treedir)/include/ewald_le.h $(treedir)/include/cosmo.h integrate.h output.h
-$(objdir)/main$(objsuf): version.h
-$(objdir)/main$(objsuf):
+$(objdir)/main$(objsuf): $(treedir)/include/cpu.h version.h
 $(objdir)/physics$(objsuf): physics.h
 $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf):
@@ -162,8 +162,8 @@ $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/physics$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
-$(objdir)/physics$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics_generic.h
-$(objdir)/physics$(objsuf): physics_generic.c
+$(objdir)/physics$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h vec.h
+$(objdir)/physics$(objsuf): physics_generic.h physics_generic.c
 $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf): $(treedir)/include/protos.h
 $(objdir)/physics$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/vop.h $(treedir)/include/Msgs.h
@@ -185,8 +185,8 @@ $(objdir)/print$(objsuf):
 $(objdir)/print$(objsuf): $(treedir)/include/stk.h
 $(objdir)/print$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/print$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
-$(objdir)/print$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics_generic.h
-$(objdir)/print$(objsuf): $(treedir)/include/protos.h $(treedir)/include/vop.h
+$(objdir)/print$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h vec.h
+$(objdir)/print$(objsuf): physics_generic.h $(treedir)/include/protos.h $(treedir)/include/vop.h
 $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf):
@@ -214,10 +214,15 @@ $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf): $(treedir)/include/stk.h $(treedir)/include/chn.h $(treedir)/include/Assert.h
-$(objdir)/output$(objsuf): $(treedir)/include/pqsort.h physics_generic.h $(treedir)/include/vop.h
+$(objdir)/output$(objsuf): $(treedir)/include/pqsort.h vec.h physics_generic.h $(treedir)/include/vop.h
 $(objdir)/output$(objsuf): $(treedir)/include/Msgs.h $(treedir)/include/singlio.h $(treedir)/include/mpmy.h
 $(objdir)/output$(objsuf): $(treedir)/include/mpmy_io.h $(treedir)/include/cosmo.h integrate.h output.h
-$(objdir)/output$(objsuf): version.h
+$(objdir)/output$(objsuf): version.h $(treedir)/include/Random123/threefry.h
+$(objdir)/output$(objsuf): $(treedir)/include/Random123/features/compilerfeatures.h
+$(objdir)/output$(objsuf): $(treedir)/include/Random123/features/gccfeatures.h
+$(objdir)/output$(objsuf): $(treedir)/include/Random123/array.h
+$(objdir)/output$(objsuf): $(treedir)/include/Random123/features/sse.h
+$(objdir)/output$(objsuf): $(treedir)/include/Random123/u01fixedpt.h
 $(objdir)/integrate$(objsuf): physics.h
 $(objdir)/integrate$(objsuf):
 $(objdir)/integrate$(objsuf):
@@ -234,9 +239,9 @@ $(objdir)/integrate$(objsuf):
 $(objdir)/integrate$(objsuf): $(treedir)/include/stk.h
 $(objdir)/integrate$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/integrate$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
-$(objdir)/integrate$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics_generic.h
-$(objdir)/integrate$(objsuf): $(treedir)/include/vop.h $(treedir)/include/cosmo.h integrate.h
-$(objdir)/integrate$(objsuf): $(treedir)/include/Msgs.h
+$(objdir)/integrate$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h vec.h
+$(objdir)/integrate$(objsuf): physics_generic.h $(treedir)/include/vop.h $(treedir)/include/cosmo.h
+$(objdir)/integrate$(objsuf): integrate.h $(treedir)/include/Msgs.h
 $(objdir)/ewald_le2$(objsuf):
 $(objdir)/ewald_le2$(objsuf):
 $(objdir)/ewald_le2$(objsuf):
@@ -258,10 +263,11 @@ $(objdir)/ewald_le2$(objsuf):
 $(objdir)/ewald_le2$(objsuf): $(treedir)/include/stk.h
 $(objdir)/ewald_le2$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/ewald_le2$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
-$(objdir)/ewald_le2$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics_generic.h
-$(objdir)/ewald_le2$(objsuf): $(treedir)/include/vop.h moments.h $(treedir)/include/mpmy.h
-$(objdir)/ewald_le2$(objsuf): $(treedir)/include/Msgs.h
+$(objdir)/ewald_le2$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h vec.h
+$(objdir)/ewald_le2$(objsuf): physics_generic.h $(treedir)/include/vop.h moments.h
+$(objdir)/ewald_le2$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/Msgs.h
 $(objdir)/do_grav_sse4$(objsuf): order.h
+$(objdir)/pgrav_vec$(objsuf): vec.h
 $(objdir)/ewald$(objsuf):
 $(objdir)/ewald$(objsuf):
 $(objdir)/ewald$(objsuf):
@@ -282,6 +288,7 @@ $(objdir)/grav_n2$(objsuf):
 $(objdir)/grav_n2$(objsuf):
 $(objdir)/grav_n2$(objsuf): $(treedir)/include/stk.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/grav_n2$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h
-$(objdir)/grav_n2$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h physics_generic.h
-$(objdir)/grav_n2$(objsuf): $(treedir)/include/vop.h $(treedir)/include/randoms.h $(treedir)/include/ring.h
-$(objdir)/grav_n2$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/Msgs.h $(treedir)/include/singlio.h
+$(objdir)/grav_n2$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h vec.h
+$(objdir)/grav_n2$(objsuf): physics_generic.h $(treedir)/include/vop.h $(treedir)/include/randoms.h
+$(objdir)/grav_n2$(objsuf): $(treedir)/include/ring.h $(treedir)/include/mpmy.h $(treedir)/include/Msgs.h
+$(objdir)/grav_n2$(objsuf): $(treedir)/include/singlio.h
