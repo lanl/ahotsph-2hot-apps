@@ -225,11 +225,13 @@ typedef struct mac_s {
     float nx;
     float ptol_boost;
     float stol_max;
-    int p2cut;
+    int p2cut;			/* should be bit-fields, but SDFget needs a pointer */
     int p4cut;
     int p8cut;
+    int leaf_max_n;
     int geometric_center;
     int subtract_background;
+    int enable_expand_root;
     double m0;
     /* derived */
     double rho0;

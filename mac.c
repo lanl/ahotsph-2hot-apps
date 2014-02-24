@@ -1138,7 +1138,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    }
 	}
 	/* Optimization of terminal traversal */
-	if (result[i] == MAC_SPLIT_SRC && cp->bptr && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
+	if (result[i] == MAC_SPLIT_SRC && cp->daughters < mac->leaf_max_n && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
 	    result[i] = MAC_ACCEPT;
 	    sink->interactions += cp->daughters;
 	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {

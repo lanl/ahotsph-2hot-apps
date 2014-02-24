@@ -116,7 +116,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     }
     
     /* Count daughters. */
-    /* Set bptr if all daughters are bodies */
+    /* Point bptr at first body in cell */
     for(i=0; i<(1<<NDIM); i++){
 	if (daughters[i] == NULL)
 	  continue;
@@ -125,8 +125,8 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    if (cmp->ndaughters == 0) cmp->bptr = bp;
 	    cmp->ndaughters++;
 	} else {
-	    cmp->bptr = NULL;
 	    dp = daughters[i]->ptr;
+	    if (cmp->ndaughters == 0) cmp->bptr = dp->bptr;
 	    cmp->ndaughters += dp->ndaughters;
 	} 
     }

@@ -467,6 +467,8 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "hexa_ncut", &mac.p4cut, 20);
     SDFgetintOrDefault(csdfp, "geometric_center", &mac.geometric_center, 0);
     SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
+    SDFgetintOrDefault(csdfp, "leaf_max_n", &mac.leaf_max_n, mac.p2cut*8);
+    SDFgetintOrDefault(csdfp, "enable_expand_root", &mac.enable_expand_root, 0);
     SDFgetint(csdfp, "mxn_hblock", &mxn.hblock);
     SDFgetint(csdfp, "mxn_min_qsink", &mxn.min_qsink);
     SDFgetint(csdfp, "mxn_min_hsink", &mxn.min_hsink);
@@ -571,6 +573,8 @@ main(int argc, char *argv[])
     singlPrintf("int hexa_ncut = %d;\n", mac.p4cut);
     singlPrintf("int geometric_center = %d;\n", mac.geometric_center);
     singlPrintf("int subtract_background = %d;\n", mac.subtract_background);
+    singlPrintf("int leaf_max_n = %d;\n", mac.leaf_max_n);
+    singlPrintf("int enable_expand_root = %d;\n", mac.enable_expand_root);
     singlPrintf("int mxn_hblock = %d;\n", mxn.hblock);
     singlPrintf("int mxn_min_qsink = %d;\n", mxn.min_qsink);
     singlPrintf("int mxn_min_hsink = %d;\n", mxn.min_hsink);
@@ -702,7 +706,7 @@ main(int argc, char *argv[])
 	    }
 	    VS(rmin, = -sysradius[NDIM-1]); /* keep tree cells cubical */
 	    VS(rmax, = sysradius[NDIM-1]);
-	    if (ic_Nmesh) {
+	    if (ic_Nmesh && mac.enable_expand_root) {
 		/* Make keys in a box which is a power of two times the smallest cell */
 		int f2 = 1<<(ilog2(ic_Nmesh-1)+1);
 		if (f2 != ic_Nmesh) {
