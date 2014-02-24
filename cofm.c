@@ -61,6 +61,32 @@ void SetupCofm(mac_s *m)
     mac = m;
 }
 
+/* Make Cell bounds correct if system is smaller than root cell */
+static void CellCenterFix(float c[NDIM], float *size)
+{
+    float rmin, rmax, s[NDIM];
+
+    for (int i = 0; i < NDIM; i++) {
+	rmin = Max(c[i], -mac->r0);
+	rmax = Min(c[i] + *size, mac->r0);
+	c[i] = 0.5f * (rmin + rmax);
+	s[i] = rmax - rmin;
+    }
+
+    float smin = mac->r0 * 100.0f;
+    float smax = 0.0f;
+
+    for (int i = 0; i < NDIM; i++) {
+	smin = Min(smin, s[i]);
+	smax = Max(smax, s[i]);
+    }
+    if (smin/smax < 0.99f || smin/smax > 1.01f) {
+	*size = -1.0f;	/* flag non-cubic cells with negative size */
+    } else if (smax < *size * 0.99f) {
+	*size = smax;
+    }
+}
+
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     int i;
     cofmdata *dp;
@@ -81,8 +107,13 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     memset(cmp, 0, sizeof(cofmdata));
     CELLCORNER(hptr->key, center, &cellsz);
     cmp->level = TreeLevel(hptr->key, NDIM);
-    cmp->sz = cellsz;
-    VS(center, += 0.5f*cellsz);
+    if (mac->expand_root > 0.0) {
+	CellCenterFix(center, &cellsz);
+	cmp->sz = cellsz;
+    } else {
+	VS(center, += 0.5f*cellsz);
+	cmp->sz = cellsz;
+    }
     
     /* Count daughters. */
     /* Set bptr if all daughters are bodies */
@@ -158,8 +189,6 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	    if (tmpsq != 0.) {
 		cmp->B2 += dp->m * tmpsq;
 		newbmax += sqrt(tmpsq);
-	    } else {
-		cmp->m += dp->m;
 	    }
 	}
 	if (newbmax > cmp->bmax)
@@ -182,12 +211,14 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 	Warning("cmp->B2 is zero, suspect identical particle positions\n");
     }
 
-    /* This is an alternative bound on bmax, which is sometimes tighter */
-    /* than the cumulative bound computed above. */
-    cellsz *= (float)0.5;
-    VxVVS(dx, = cellsz+ fabs LPAREN cmp->center, - center,  RPAREN);
-    newbmax = sqrtf_fast(Dotx(dx, dx));
-    cmp->bmax = (newbmax < cmp->bmax) ? newbmax : cmp->bmax;
+    if (cellsz > 0.0f) {
+	/* This is an alternative bound on bmax, which is sometimes tighter */
+	/* than the cumulative bound computed above. */
+	cellsz *= (float)0.5;
+	VxVVS(dx, = cellsz+ fabs LPAREN cmp->center, - center,  RPAREN);
+	newbmax = sqrtf_fast(Dotx(dx, dx));
+	cmp->bmax = (newbmax < cmp->bmax) ? newbmax : cmp->bmax;
+    }
     hptr->ptr = cmp;
 }
 
@@ -297,6 +328,7 @@ void *CellFromCofm(cofmdata *cmp)
 	cp->rcrit = (abs_rcrit < rel_rcrit) ? abs_rcrit : rel_rcrit;
 	/* if rel_rcrit0 is more accurate, then use it */
 	if (rel_rcrit0 > cp->rcrit) cp->rcrit = rel_rcrit0;
+	if (cmp->sz < 0.0f) cp->rcrit = 5.0f*mac->r0;
 #ifdef QUAD
 	memcpy(&u, cmp, sizeof(u));
 	if (mac->subtract_background) mpole_add_cube(cmp->sz, -mac->rho0, &u);
@@ -343,6 +375,7 @@ void *CellFromCofm(cofmdata *cmp)
 
 	    qcp->rcrit_q = (abs_rcrit < rel_rcrit) ? abs_rcrit : rel_rcrit;
 	    if (rel_rcrit0 > qcp->rcrit_q) qcp->rcrit_q = rel_rcrit0;
+	    if (cmp->sz < 0.0f) qcp->rcrit_q = 5.0f*mac->r0;
 	    {
 		double t;
 #ifdef DIPOLE
@@ -418,6 +451,7 @@ void *CellFromCofm(cofmdata *cmp)
 
 	    hcp->rcrit_h = (abs_rcrit < rel_rcrit) ? abs_rcrit : rel_rcrit;
 	    if (rel_rcrit0 > hcp->rcrit_h) hcp->rcrit_h = rel_rcrit0;
+	    if (cmp->sz < 0.0f) hcp->rcrit_h = 5.0f*mac->r0;
 	    {
 		double t, tx, ty, tz, txx, txy, tyy, txz, tyz, tzz;
 #ifdef DIPOLE

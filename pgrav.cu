@@ -372,7 +372,7 @@ check_cudaq(void)
     }
 
     if (cudaq[i].devf_size == 0) {
-	cudaq[i].devf_size = 256*1024;
+	cudaq[i].devf_size = 1024*1024;
 	err = cudaMallocHost((void **)&cudaq[i].hostf, cudaq[i].devf_size, cudaHostAllocDefault);
 	if (err != cudaSuccess) 
 	    Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
@@ -520,7 +520,8 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
 	Error("cudaStreamCreate failed, %d %s\n", err, cudaGetErrorString(err));
 
     if (cudaq[q].devf_size < source_n*sz*sizeof(float)) {
-	Error("devf_size too small\n");
+	Error("devf_size (%d) too small, source_n is %d, size is %ld\n", 
+	      cudaq[q].devf_size, source_n, source_n*sz*sizeof(float));
     }
     memcpy(cudaq[q].hostf, f, source_n*sz*sizeof(float));
     err = cudaMemcpyAsync(cudaq[q].devf, cudaq[q].hostf, source_n*sz*sizeof(float), 

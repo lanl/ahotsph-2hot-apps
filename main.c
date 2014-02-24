@@ -702,6 +702,16 @@ main(int argc, char *argv[])
 	    }
 	    VS(rmin, = -sysradius[NDIM-1]); /* keep tree cells cubical */
 	    VS(rmax, = sysradius[NDIM-1]);
+	    if (ic_Nmesh) {
+		/* Make keys in a box which is a power of two times the smallest cell */
+		int f2 = 1<<(ilog2(ic_Nmesh-1)+1);
+		if (f2 != ic_Nmesh) {
+		    mac.expand_root = (float)f2/ic_Nmesh - 1.0f;
+		    if (iter == start_iter) singlPrintf("Expanding root cell by %.3f\n", mac.expand_root);
+		    VS(rmin, *= (1.0f + mac.expand_root)); 
+		    VS(rmax, *= (1.0f + mac.expand_root));
+		}
+	    }
 	    FixRsizeExact(rmin, rmax);
 	} else {
 	    FindBbox(btab, nobj, rmin, rmax);

@@ -218,7 +218,8 @@ typedef struct mac_s {
     float this_tol;	/* absolute acc for this step */
     float rel_tol;
     float rel_tol0;
-    float r0;
+    float r0;		/* radius or 1/2 length of system */
+    float expand_root;	/* length of root tree cell is (expand_root + 1.0) * r0 */
     float dlfac;
     float dlmax;
     float nx;

@@ -20,8 +20,9 @@ Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm, CUDAWtTm;
 
 #if 0
-int64_t WatchId = 7310803995;
-Key_t WatchKey = {.k = {781836800001, 0}};
+int64_t WatchId = 1000000;
+Key_t WatchKey = {.k = {29724808, 0}};
+/* Key_t WatchKey = {.k = {3772552, 0}}; */
 #include <stdio.h>
 /* #define Msg_do printf */
 #define DebugWatchId(a, ...) \
@@ -183,10 +184,10 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
     }
     Eps2 = Eps*Eps*pow(particle_mass, (float)(2./3.));
     Eps2v = (vsf)vsf_scalar(Eps2);
-    float a1 = mac->r0;
-    float a3 = mac->rho0*pow3(2.0f*mac->r0);
-    float a5 = a3*pow2(2.0f*mac->r0);
-    float a7 = a5*pow2(2.0f*mac->r0);
+    float a1 = mac->r0 * (1.0f + mac->expand_root);
+    float a3 = mac->rho0 * pow3(2.0f*a1);
+    float a5 = a3 * pow2(2.0f*a1);
+    float a7 = a5 * pow2(2.0f*a1);
     for (int i = 0; i < CHUBITS; i++) {
 	ucell[i].halfsz = a1;
 	ucell[i].mass = a3;
@@ -493,7 +494,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->bmax = cp->bmax;
 	to->daughters = cp->daughters;
 	to->isbody = 0;
-	if (cp->daughters <= 32 || 4.0f*mac->r0/mac->nx == ucell[cp->level].halfsz) ccp = cp;
+	if (cp->daughters <= 32 || 4.0001f*mac->r0/mac->nx >= ucell[cp->level].halfsz) ccp = cp;
     } else {
 	body *bp = pp->ptr;
 	VV(to->pos, = bp->pos);
@@ -1113,7 +1114,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		AddCounter(&MCCorr, 1);
 		flags_vec[i] |= BACKGROUND_FLAG;
 		DebugWatchKey("  %12g %12g Cvec %ld %s\n", um, sqrt(dr2), (long int)cp->daughters, PrintKey(source_vec[i]->key));
-	    } else if (sf != (1<<MAXNSUB) - 1) {
+	    } else if (sf != (1<<MAXNSUB) - 1 && cp->level > 4) { /* assumes empty cells near root are from expand_root */
 		Key_t k = KeyLshift(source_vec[i]->key, NDIM);
 		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
 		    if ((sf & 1) == 0) {
