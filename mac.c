@@ -20,8 +20,11 @@ Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm, CUDAWtTm;
 
 #if 0
-int64_t WatchId = 1000000;
-Key_t WatchKey = {.k = {29724808, 0}};
+int64_t WatchId = 500000000;
+// Key_t WatchKey = {.k = {13229148200, 0}};
+//Key_t WatchKey = {.k = {30745751, 0}};
+// Key_t WatchKey = {.k = {2129464, 0}};
+Key_t WatchKey = {.k = {2330112, 0}};
 /* Key_t WatchKey = {.k = {3772552, 0}}; */
 #include <stdio.h>
 /* #define Msg_do printf */
@@ -303,7 +306,8 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 
 	float e;
 
-	DebugWatchId("   %12g %12g %12g %ld %ld\n", bp->pos[0], bp->pos[1], bp->pos[2], 
+	if (bp->ident == 500000000L) printf("XXXX %ld %ld\n", pp->key.k[0], pp->key.k[1]);
+	DebugWatchId("---%12g %12g %12g %ld %ld\n", bp->pos[0], bp->pos[1], bp->pos[2], 
 		     pp->key.k[0], pp->key.k[1]);
 	VS(acc, = 0.0f);
 	phi = 0.0f;
@@ -537,12 +541,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (to->scnt >= NSSE*SVECSZ) Error("svec overflow\n");
 	to->mcnt = from->mcnt;
 	if (to->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
+#if 0
 	{
 	    int qsrc = from->qcnt-from->qcnt_done;
 	    int hsrc = from->hcnt-from->hcnt_done;
 	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
 		Msgf(("%ld q %d h %d\n", to->daughters, qsrc, hsrc));
 	}
+#endif
 #ifdef QUAD
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
@@ -1080,12 +1086,14 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    } else {
 		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
 	    }
+	    DebugWatchKey("%10g %10g %10ld %s\n", sink->bmax, smallest_rcrit, (long int)cp->daughters, (result[i] == MAC_ACCEPT) ? "Accept" : 
+			  (result[i] == MAC_SPLIT_SINK) ? "Split Sink" : "Split Source");
 	} else {
 	    /* body-body */
 	    AddCounter(&BBMACcnt, 1);
 	    appendMvec(cp, cp->mass);
 	    sink->fmass += cp->mass;
-	    DebugWatchKey("  %12g %12g Mvec 1 %s\n", cp->mass, sqrt(dr2), PrintKey(source_vec[i]->key));
+	    DebugWatchKey("  %12g %12g Mvec 1 %s\n", cp->mass, sqrt(ddot(r, sink->pos)), PrintKey(source_vec[i]->key));
 	    sink->interactions++;
 	    result[i] = MAC_ACCEPT;
 	    if (!bs) {
@@ -1113,7 +1121,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		sink->fmass += um;
 		AddCounter(&MCCorr, 1);
 		flags_vec[i] |= BACKGROUND_FLAG;
-		DebugWatchKey("  %12g %12g Cvec %ld %s\n", um, sqrt(dr2), (long int)cp->daughters, PrintKey(source_vec[i]->key));
+		DebugWatchKey("  %12g %12g Cvec %ld %s\n", um, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } else if (sf != (1<<MAXNSUB) - 1 && cp->level > 4) { /* assumes empty cells near root are from expand_root */
 		Key_t k = KeyLshift(source_vec[i]->key, NDIM);
 		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
@@ -1138,7 +1146,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    }
 	}
 	/* Optimization of terminal traversal */
-	if (result[i] == MAC_SPLIT_SRC && cp->daughters < mac->leaf_max_n && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
+	if (result[i] == MAC_SPLIT_SRC && cp->daughters <= mac->leaf_max_n && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
 	    result[i] = MAC_ACCEPT;
 	    sink->interactions += cp->daughters;
 	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
