@@ -151,9 +151,9 @@ output(const char *outnamebase, int64_t gnobj, int nobj, const body *btab, int i
 	sprintf(outname, "%s.%04d", outnamebase, iter);
     } else if (do_cosmology) {
 	if (subsample_fraction != 0.0) {
-	    sprintf(outname, "%s_sub%.0f_%.03f", outnamebase, 1.0/subsample_fraction, a);
+	    sprintf(outname, "%s_sub%.0f_%.04f", outnamebase, 1.0/subsample_fraction, a);
 	} else {
-	    sprintf(outname, "%s_%.03f", outnamebase, a);
+	    sprintf(outname, "%s_%.04f", outnamebase, a);
 	}
     } else {
 	sprintf(outname, "%s_t%.03f", outnamebase, tpos);
