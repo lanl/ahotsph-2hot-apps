@@ -306,7 +306,6 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 
 	float e;
 
-	if (bp->ident == 500000000L) printf("XXXX %ld %ld\n", pp->key.k[0], pp->key.k[1]);
 	DebugWatchId("---%12g %12g %12g %ld %ld\n", bp->pos[0], bp->pos[1], bp->pos[2], 
 		     pp->key.k[0], pp->key.k[1]);
 	VS(acc, = 0.0f);
@@ -589,6 +588,18 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 }
 
+static int
+mxn_poll(double *last)
+{
+    double now = MPMY_Wtime();
+    if (now - *last > 0.001) {	/* should be an MxN parameter */
+	WalkPoll();
+	*last = now;
+	return 1;
+    } return 0;
+}
+
+
 static void
 mxn_quad(Sink *to, hcell *pp)
 {
@@ -596,7 +607,6 @@ mxn_quad(Sink *to, hcell *pp)
     body *first = FirstBody(pp);
     body *last = LastBody(pp)+1;
     int i, n0, n1, m_block, block;
-    double this_poll;
     double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
@@ -618,19 +628,21 @@ mxn_quad(Sink *to, hcell *pp)
 	    int q;
 	    StartTimer(&CUDAWtTm);
 	    while ((q = qallocCUDA()) < 0) {
-		this_poll = MPMY_Wtime();
-		if (this_poll - last_poll > 0.001) {
-		    WalkPoll();
-		    last_poll = this_poll;
-		} else break;
+		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
 		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 			      (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)), q);
 	    } else {
-		pQinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			   (float *)&Qvec[n0], n1-n0);
+		float mtot = 0.0f;
+		float e = 0.0f;
+		int ijunk = 0;
+		for (i = 0; i < block; i++) {
+		    Qinteract((float *)&Qvec[n0], (float *)&Qvec[n1],
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+		    if ((i+1) % 16 == 0) mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
+		}
 		AddCounter(&FBC2FInt, block*(n1-n0)*NSSE);
 	    }
 #else
@@ -646,11 +658,7 @@ mxn_quad(Sink *to, hcell *pp)
 			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
 	    }
 	}
-	this_poll = MPMY_Wtime();
-	if (this_poll - last_poll > 0.001) {
-	    WalkPoll();
-	    last_poll = this_poll;
-	}
+	mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
     }
     // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC2Int, (last-first)*(n1-n0)*NSSE);
@@ -672,7 +680,6 @@ mxn_hexa(Sink *to, hcell *pp)
     body *first = FirstBody(pp);
     body *last = LastBody(pp)+1;
     int i, n0, n1, m_block, block;
-    double this_poll;
     double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
@@ -694,19 +701,21 @@ mxn_hexa(Sink *to, hcell *pp)
 	    int q;
 	    StartTimer(&CUDAWtTm);
 	    while ((q = qallocCUDA()) < 0) {
-		this_poll = MPMY_Wtime();
-		if (this_poll - last_poll > 0.001) {
-		    WalkPoll();
-		    last_poll = this_poll;
-		} else break;
+		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
 		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
 			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
 	    } else {
-		pHinteract(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			   (float *)&Hvec[n0], n1-n0);
+		float mtot = 0.0f;
+		float e = 0.0f;
+		int nsmoothed = 0;
+		for (i = 0; i < block; i++) {
+		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &nsmoothed);
+		    if ((i+1) % 16 == 0) mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
+		}
 		AddCounter(&FBC4FInt, block*(n1-n0)*NSSE);
 	    }
 #else
@@ -722,11 +731,7 @@ mxn_hexa(Sink *to, hcell *pp)
 			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &nsmoothed);
 	    }
 	}
-	this_poll = MPMY_Wtime();
-	if (this_poll - last_poll > 0.001) {
-	    WalkPoll();
-	    last_poll = this_poll;
-	}
+	mxn_poll(&last_poll);
     }
     // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);

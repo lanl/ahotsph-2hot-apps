@@ -1075,7 +1075,8 @@ main(int argc, char *argv[])
 		    float grav_tm;
 		    float mac_tm;
 		    float imbal_tm;
-		    float per_tm;
+		    float defer_tm;
+		    int defer_cnt;
 		    int nterms;
 		    int nbody;
 		} perf, *gp = NULL;
@@ -1084,17 +1085,23 @@ main(int argc, char *argv[])
 		perf.grav_tm = ReadTimer(&GravTm);
 		perf.mac_tm = ReadTimer(&MACTm);
 		perf.imbal_tm = ReadTimer(&WTermTm);
+		perf.defer_tm = ReadTimer(&WalkDeferTm);
+		perf.defer_cnt = ReadCounter(&DeferCnt);
 		perf.nterms = ReadCounter(&KNtermsCnt);
 		perf.nbody = nobj;
+		Msg_do("%3d %8.2f %8.2f %8.2f %8.2f %6d %10d %6d\n",
+		       perf.node, perf.grav_tm, perf.mac_tm, 
+		       perf.imbal_tm, perf.defer_tm,
+		       perf.defer_cnt, perf.nterms, perf.nbody);
 
 		if (MPMY_Procnum() == 0) {
 		    gp = Malloc(MPMY_Nproc() * sizeof(perf));
 		    MPMY_Gather(&perf, sizeof(perf), MPMY_CHAR, gp, 0);
 		    for (i = 0; i < MPMY_Nproc(); i++) 
-		      singlPrintf("%3d %8.2f %8.2f %8.2f %8.2f %10d %6d\n",
+		      singlPrintf("%3d %8.2f %8.2f %8.2f %8.2f %6d %10d %6d\n",
 				  gp[i].node, gp[i].grav_tm, gp[i].mac_tm, 
-				  gp[i].imbal_tm, gp[i].per_tm, 
-				  gp[i].nterms, gp[i].nbody);
+				  gp[i].imbal_tm, gp[i].defer_tm,
+				  gp[i].defer_cnt, gp[i].nterms, gp[i].nbody);
 		    Free(gp);
 		} else {
 		    MPMY_Gather(&perf, sizeof(perf), MPMY_CHAR, gp, 0);
