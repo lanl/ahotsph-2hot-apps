@@ -219,10 +219,6 @@ Key_t GetKeyFast(const body *p)
     key.k[0] |= k0;
     key.k[1] |= k3 << 8 | k2 >> 16;
 
-#if 1				/* DEBUG */
-    if (KeyNEQ(key, GetKey(p))) Error("GetKeyFast failed\n");
-#endif
-
     return(key);
 }
 
