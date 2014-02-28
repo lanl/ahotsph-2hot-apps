@@ -16,6 +16,7 @@ float FixRsizeExact(float *rmin, float *rmax);
 void CellCorner(Key_t key, float *corner, float *size);
 void CellCornerPH(Key_t key, float *corner, float *size);
 Key_t GetKey(const body *p);
+Key_t GetKeyFast(const body *p);
 Key_t GetKeyLong(const body *p);
 Key_t GetKeyPH(const body *p);	/* peano-hilbert key */
 float GetCost(const body *p);

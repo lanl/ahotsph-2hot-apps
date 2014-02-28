@@ -7,7 +7,7 @@ EXTRACFLAGS = -I$(PREFIX)/include -DGPERF
 PRELIBS = -lrt -Wl,-rpath -Wl,$(PREFIX)/lib -L$(PREFIX)/lib -lprofiler
 endif
 
-ifeq ($(ARCH),$(filter $(ARCH), cudaxk7 cudaxk7-g cudai7))
+ifeq ($(ARCH),$(filter $(ARCH), cudaxk7 cudaxk7-g cudai7 cudaxk7-4.6 cudaxk7-4.8))
 cusrc = cuda.cu pgrav.cu
 PRELIBS +=-L/opt/cudatoolkit-5.5/lib64 -lcudart
 endif

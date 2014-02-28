@@ -156,7 +156,7 @@ main(int argc, char *argv[])
 #ifdef BODY_HAS_KEY
     pq_keyproto *getkey = (pq_keyproto *)GetKeyFromStruct;
 #else
-    pq_keyproto *getkey = (pq_keyproto *)GetKey;
+    pq_keyproto *getkey = (pq_keyproto *)GetKeyFast;
 #endif
     float R[NDIM];
     int N[NDIM];

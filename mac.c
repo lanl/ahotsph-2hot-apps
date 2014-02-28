@@ -592,7 +592,7 @@ static int
 mxn_poll(double *last)
 {
     double now = MPMY_Wtime();
-    if (now - *last > 0.001) {	/* should be an MxN parameter */
+    if (now - *last > 0.0005) {	/* should be an MxN parameter */
 	WalkPoll();
 	*last = now;
 	return 1;
