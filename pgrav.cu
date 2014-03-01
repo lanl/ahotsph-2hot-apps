@@ -197,10 +197,10 @@ pH(const float *p, float *ret, const int n, const int stride, const float *f, co
     }
     for (i = 0; i < VECWIDTH; i++) {
 	if (index+i < n) {
-	    ret[stride*(index*VECWIDTH+i)+0] += accp[i] Ax;
-	    ret[stride*(index*VECWIDTH+i)+1] += accp[i] Ay;
-	    ret[stride*(index*VECWIDTH+i)+2] += accp[i] Az;
-	    ret[stride*(index*VECWIDTH+i)+3] += accp[i] Phi;
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+3], accp[i] Phi);
 	}
     }
 }
@@ -276,10 +276,10 @@ pQ(const float *p, float *ret, const int n, const int stride,
     }
     for (i = 0; i < VECWIDTH; i++) {
 	if (index+i < n) {
-	    ret[stride*(index*VECWIDTH+i)+0] += accp[i] Ax;
-	    ret[stride*(index*VECWIDTH+i)+1] += accp[i] Ay;
-	    ret[stride*(index*VECWIDTH+i)+2] += accp[i] Az;
-	    ret[stride*(index*VECWIDTH+i)+3] += accp[i] Phi;
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+3], accp[i] Phi);
 	}
     }
 }
@@ -319,10 +319,10 @@ pM(const float *p, float *ret, const int n, const int stride,
     }
     for (i = 0; i < VECWIDTH; i++) {
 	if (index+i < n) {
-	    ret[stride*(index*VECWIDTH+i)+0] += accp[i] Ax;
-	    ret[stride*(index*VECWIDTH+i)+1] += accp[i] Ay;
-	    ret[stride*(index*VECWIDTH+i)+2] += accp[i] Az;
-	    ret[stride*(index*VECWIDTH+i)+3] += accp[i] Phi;
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+3], accp[i] Phi);
 	}
     }
 }

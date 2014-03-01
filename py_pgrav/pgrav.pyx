@@ -11,6 +11,8 @@ cimport numpy as np
 cdef extern void _pgravm(float *p, float *accp, int n, int stride, 
                          float *f, int source_n)
 
+cdef extern int pgrav_vec_init()
+
 cdef extern void pMinteract(float *p, float *accp, int n, int stride, 
                             float *f, int source_n)
 
@@ -34,10 +36,12 @@ def vec_monopole(np.ndarray[float, ndim=1, mode="c"] p not None, \
                  np.ndarray[float, ndim=1, mode="c"] accp not None, \
                  int stride, \
                  np.ndarray[float, ndim=1, mode="c"] f not None):
+    
+    nsse = pgrav_vec_init()
 
     m = p.shape[0]/4
-    n = f.shape[0]/4
+    n = f.shape[0]/(4*nsse)
     
-    pMinteract(&p[0], &accp[0], m, stride, &f[0], n/4)
+    pMinteract(&p[0], &accp[0], m, stride, &f[0], n)
     
     return None

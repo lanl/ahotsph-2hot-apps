@@ -26,6 +26,7 @@ def monopole(np.ndarray[float, ndim=1, mode="c"] p not None, \
     m = p.shape[0]/4
     n = f.shape[0]/4
     
-    pinteractCUDA(&p[0], &accp[0], m, stride, &f[0], n, 4)
+    q = qallocCUDA()
+    pinteractCUDA(&p[0], &accp[0], m, stride, &f[0], n, 4, q)
     
     return None

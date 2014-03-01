@@ -933,7 +933,7 @@ main(int argc, char *argv[])
 	if (ForceCheckpoint()) do_checkpoint = 1;
 
 	if (0 == iter % subsample_steps_interval && iter && subsample_fraction > 0.0) {
-	    output(outnamebase, gnobj, nobj, btab, iter, dtout, dtvout,
+	    output(outnamebase, gnobj, nobj, btab, iter, 0.0, tpos-tvel,
 		   &cosmo, tpos, tvel, do_cosmology, do_periodic, 
 		   eps, this_eps_scaled, force_smoothing_type, mac.this_tol, 
 		   mac.rel_tol, mac.rel_tol0,

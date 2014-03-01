@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pgrav
 
 m = 1
@@ -27,9 +26,9 @@ accp = np.zeros((4), dtype=np.float32)
 pgrav.monopole(sink, accp, sink_stride, source.flatten())
 print accp
 
-nsse = 4
+nsse = 8
 source_swiz = source.reshape(-1,nsse,sink_stride).transpose(0,2,1)
 
 accp = np.zeros((4), dtype=np.float32)
-pgrav.vec_monopole(sink, accp, 4, source_swiz.flatten())
+pgrav.vec_monopole(sink, accp, sink_stride, source_swiz.flatten())
 print accp
