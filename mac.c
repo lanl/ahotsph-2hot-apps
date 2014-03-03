@@ -437,12 +437,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	AddCounter(&BSInt, nsmoothed); /* Includes self */
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
-	if (!isfinite(accd[0]) || !isfinite(accd[1]) || !isfinite(accd[2]) || !isfinite(phi)) {
-	    SeriousWarning("bad results from do_grav for id %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", bp->ident, from->pos[0], from->pos[1], from->pos[2],
-			   acc[0], acc[1], acc[2], phi);
-	} else {
-	    VV(acc, += accd); phi += phid;
-	}
+	VV(acc, += accd); phi += phid;
 	
 	if (Minteract == do_grav_sse16_ivec_asm) {
 	    /* Fix self-interaction for phi from fast asm code */
@@ -467,6 +462,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 		Error("Bad Near for id %ld key %s {%lu,%lu} fmass %g cmass %g near %d\n", bp->ident, PrintKey(pp->key), pp->key.k[0], pp->key.k[1], from->fmass/bp->mass, cmass/bp->mass, from->near);
 	    }
 #endif
+	}
+	if (!isfinite(acc[0]) || !isfinite(acc[1]) || !isfinite(acc[2]) || !isfinite(phi)) {
+	    Error("bad results from do_grav for id %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", bp->ident, from->pos[0], from->pos[1], from->pos[2],
+		  acc[0], acc[1], acc[2], phi);
 	}
 
 	/* Make sure these are initialized to zero externally */
@@ -1048,30 +1047,26 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 
     StartTimer(&MACTm);
     AddCounter(&MACcnt, n);
+    if (sink->daughters < 32) 
+	AddCounter(&MACcnt0, n);
+    else if (sink->daughters < 8*32) 
+	AddCounter(&MACcnt1, n);
+    else if (sink->daughters < 8*8*32) 
+	AddCounter(&MACcnt2, n);
+    else if (sink->daughters < 8*8*8*32) 
+	AddCounter(&MACcnt3, n);
+
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
-	if (!sf && !sink->isbody) {
-	    result[i] = MAC_SPLIT_SINK;
-	    continue;
-	}
-	if (sink->daughters < 32) 
-	    AddCounter(&MACcnt0, 1);
-	else if (sink->daughters < 8*32) 
-	    AddCounter(&MACcnt1, 1);
-	else if (sink->daughters < 8*8*32) 
-	    AddCounter(&MACcnt2, 1);
-	else if (sink->daughters < 8*8*8*32) 
-	    AddCounter(&MACcnt3, 1);
 	const cell *cp = source_vec[i]->ptr;
 	const quadcell *qcp = source_vec[i]->ptr;
 	const hexacell *hcp = source_vec[i]->ptr;
 	int bs = flags_vec[i] & BACKGROUND_FLAG;
-	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
 	if (sf) {
 	    float bmax;
 	    int isquad = mac->p2cut && cp->daughters >= mac->p2cut;
 	    int ishexa = mac->p4cut && cp->daughters >= mac->p4cut;
-	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
+	    VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
 	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
 	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
 		dr2 = ddot(r, sink->cen);
@@ -1097,7 +1092,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		sink->interactions += hcp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else {
-		result[i] = mac->dlfac * sink->bmax > smallest_rcrit ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+		result[i] = (sink->daughters > mac->leaf_max_n) ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
 	    }
 	    DebugWatchKey("%10g %10g %10ld %s\n", sink->bmax, smallest_rcrit, (long int)cp->daughters, (result[i] == MAC_ACCEPT) ? "Accept" : 
 			  (result[i] == MAC_SPLIT_SINK) ? "Split Sink" : "Split Source");
