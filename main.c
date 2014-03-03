@@ -1278,6 +1278,11 @@ static SDF *startup(int argc, char **argv){
     if (has_cuda) EnableCounter(&FBC4FInt, "Body-hexaFF");
     EnableCounter(&MACcnt, "MAC");
     EnableCounter(&BBMACcnt, "BB MAC");
+    EnableCounter(&EmptyMACcnt, "Empty MAC");
+    EnableCounter(&MACcnt0, "MAC0");
+    EnableCounter(&MACcnt1, "MAC1");
+    EnableCounter(&MACcnt2, "MAC2");
+    EnableCounter(&MACcnt3, "MAC3");
     EnableCounter(&CEmpty, "Cube Empty");
     EnableCounter(&MCAnti, "Cube Anti");
     EnableCounter(&MCCorr, "Cube Corr");

@@ -180,6 +180,7 @@ typedef struct{
     float bmax;
     float pos[NDIM];
     int isbody;
+    int done;
     float nterms;
     float M0;
     float M1[NDIM];
@@ -279,7 +280,8 @@ extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACsw
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t CEmpty, MCCorr, MCAnti;
 extern Counter_t FBC2Int, FBC4Int, FBC2FInt, FBC4FInt;
-extern Counter_t MACcnt, BBMACcnt;
+extern Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
+
 
 void SetupGrav(float newton_const, float eps, int64_t gnobj, mac_s *mac,
 	       float particle_mass, int smoothing_type);

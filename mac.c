@@ -14,7 +14,7 @@
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
 Counter_t CEmpty, MCAnti, MCCorr;
 Counter_t FBC2Int, FBC4Int, FBC2FInt, FBC4FInt;
-Counter_t MACcnt, BBMACcnt;
+Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
 
 Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
 Timer_t MACTm, CUDAWtTm;
@@ -532,6 +532,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if ((TreeLevel(pp->key, NDIM) >= 1) && KeyContained(pp->key, WatchKey, NDIM)) 
 	    Msg_do("Inherit to %s, cr %g\n", PrintKey(pp->key), to->cr);
 	to->interactions = from->interactions;
+	if (to->interactions == Nimage*GNobj) 
+	    to->done = 1;
+	else
+	    to->done = from->done;
 	to->key = pp->key;
 	to->nterms = from->nterms;
 	to->M0 = from->M0;
@@ -541,20 +545,11 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->mcnt = from->mcnt;
 	if (to->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
 #if 0
-	{
+	if (MPMY_Procnum() == MPMY_Nproc()/3) {
 	    int qsrc = from->qcnt-from->qcnt_done;
 	    int hsrc = from->hcnt-from->hcnt_done;
 	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
-		Msgf(("%ld q %d h %d\n", to->daughters, qsrc, hsrc));
-	}
-#endif
-#ifdef QUAD
-	to->qcnt = from->qcnt;
-	to->qcnt_done = from->qcnt_done;
-	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
-	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
-	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
-	    mxn_quad(to, pp);
+		Msg_do("%ld q %d h %d\n", to->daughters, qsrc, hsrc);
 	}
 #endif
 #ifdef HEXA
@@ -566,7 +561,17 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    mxn_hexa(to, pp);
 	}
 #endif
+#ifdef QUAD
+	to->qcnt = from->qcnt;
+	to->qcnt_done = from->qcnt_done;
+	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
+	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
+	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
+	    mxn_quad(to, pp);
+	}
+#endif
     } else {
+	to->done = 0;
 	to->interactions = 0;
 	to->nterms = 0;
 	to->M0 = 0.0f;
@@ -664,11 +669,6 @@ mxn_quad(Sink *to, hcell *pp)
     AddCounter(&FBC2Int, (last-first)*(n1-n0)*NSSE);
     to->qcnt_done = n1*NSSE;
 
-    if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
-	Error("bad results from do_grav for %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
-	      first->ident, first->pos[0], first->pos[1], first->pos[2],
-	      first->acc[0], first->acc[1], first->acc[2], first->phi);
-    }
     StopTimer(&GravQFTm);
     StopTimer(&GravTm);
 }
@@ -737,11 +737,6 @@ mxn_hexa(Sink *to, hcell *pp)
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
     to->hcnt_done = n1*NSSE;
 
-    if (!isfinite(first->acc[0]) || !isfinite(first->acc[1]) || !isfinite(first->acc[2]) || !isfinite(first->phi)) {
-	Error("bad results from do_grav for %ld (%g,%g,%g), ax=%g ay=%g az=%g phi=%g\n", 
-	      first->ident, first->pos[0], first->pos[1], first->pos[2],
-	      first->acc[0], first->acc[1], first->acc[2], first->phi);
-    }
     StopTimer(&GravHFTm);
     StopTimer(&GravTm);
 }
@@ -1046,14 +1041,27 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
     float dr2;
     Vxd(float r);
 
-    AddCounter(&MACcnt, n);
+    if (sink->done) {
+	for (int i = 0; i < n; i++) result[i] = MAC_SPLIT_SINK;
+	return;
+    }
+
     StartTimer(&MACTm);
+    AddCounter(&MACcnt, n);
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
 	if (!sf && !sink->isbody) {
 	    result[i] = MAC_SPLIT_SINK;
 	    continue;
 	}
+	if (sink->daughters < 32) 
+	    AddCounter(&MACcnt0, 1);
+	else if (sink->daughters < 8*32) 
+	    AddCounter(&MACcnt1, 1);
+	else if (sink->daughters < 8*8*32) 
+	    AddCounter(&MACcnt2, 1);
+	else if (sink->daughters < 8*8*8*32) 
+	    AddCounter(&MACcnt3, 1);
 	const cell *cp = source_vec[i]->ptr;
 	const quadcell *qcp = source_vec[i]->ptr;
 	const hexacell *hcp = source_vec[i]->ptr;
@@ -1132,6 +1140,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		for (int j = 0; j < MAXNSUB; sf >>= 1, k.k[0]++, j++) {
 		    if ((sf & 1) == 0) {
 			float mxyz[4], cellsz;
+			AddCounter(&EmptyMACcnt, 1);
 			CellCorner(k, mxyz+1, &cellsz);
 			VV((mxyz+1), += 0.5f*cellsz + offset_array[offset_index(flags_vec[i])]);
 			if (fabsf(mxyz[1]-sink->cen[0]) > sink->cr ||
@@ -1151,17 +1160,19 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	    }
 	}
 	/* Optimization of terminal traversal */
-	if (result[i] == MAC_SPLIT_SRC && cp->daughters <= mac->leaf_max_n && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
-	    result[i] = MAC_ACCEPT;
-	    sink->interactions += cp->daughters;
+	if (result[i] != MAC_ACCEPT && cp->daughters <= mac->leaf_max_n && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
 	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
 		VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
+#if 0
 		if (b->mass != Btab[0].mass) {
 		    Error("Bad particle mass %f type %d %s\n", 
 			  b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
 		}
+#endif
 		appendMvec(b, b->mass);
 	    }
+	    result[i] = MAC_ACCEPT;
+	    sink->interactions += cp->daughters;
 	}
     }
     StopTimer(&MACTm);
@@ -1178,7 +1189,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int *r
 {
     float dr2;
     Vxd(float r);
-
+    
     StartTimer(&MACTm);
     for (int i = 0; i < n; i++) {
 	int sf = Sub_Flags(source_vec[i]);
