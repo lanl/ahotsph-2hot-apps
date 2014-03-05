@@ -75,7 +75,7 @@ extern Timer_t PQSortCommTm, PQSortWaitTm; /* in pqsort.c */
 extern Timer_t PQSortAtoaTm, PQSortAtoavTm;
 extern Counter_t PQSortSends, PQSortRecvs, PQSortMaxn;
 
-extern Timer_t GravQFTm, GravHFTm;;
+extern Timer_t GravMFTm, GravQFTm, GravHFTm;;
 
 #ifdef CUDA
 static int has_cuda = 1;
@@ -181,9 +181,12 @@ main(int argc, char *argv[])
 
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
-    mxn_s mxn = {.hblock=4096, .min_qsink=64, .min_hsink=64, .min_qsrc=512, .min_hsrc=512};
-    mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_qsink=64, .min_hsink=64,
-		      .min_qsrc=64, .min_hsrc=64, .do_pQ=1, .do_pH=1};
+    mxn_s mxn = {.hblock=4096, .min_msink=8, .min_qsink=8, .min_hsink=8, 
+		 .min_msrc=64, .min_qsrc=64, .min_hsrc=64,
+		 .do_pM=1, .do_pQ=1, .do_pH=1};
+    mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_msink=32, .min_qsink=128, .min_hsink=32,
+		      .min_msrc=5000, .min_qsrc=128, .min_hsrc=128, 
+		      .do_pM=1, .do_pQ=1, .do_pH=1};
     if (has_cuda) mxn = mxn_cuda;
     CUDA_Init();
     /* Attempt to get a contiguous chunk of heap */
@@ -470,10 +473,13 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "leaf_max_n", &mac.leaf_max_n, mac.p2cut*8);
     SDFgetintOrDefault(csdfp, "enable_expand_root", &mac.enable_expand_root, 0);
     SDFgetint(csdfp, "mxn_hblock", &mxn.hblock);
+    SDFgetint(csdfp, "mxn_min_msink", &mxn.min_msink);
     SDFgetint(csdfp, "mxn_min_qsink", &mxn.min_qsink);
     SDFgetint(csdfp, "mxn_min_hsink", &mxn.min_hsink);
+    SDFgetint(csdfp, "mxn_min_msrc", &mxn.min_msrc);
     SDFgetint(csdfp, "mxn_min_qsrc", &mxn.min_qsrc);
     SDFgetint(csdfp, "mxn_min_hsrc", &mxn.min_hsrc);
+    SDFgetint(csdfp, "mxn_do_pM", &mxn.do_pM);
     SDFgetint(csdfp, "mxn_do_pQ", &mxn.do_pQ);
     SDFgetint(csdfp, "mxn_do_pH", &mxn.do_pH);
     SDFgetfloatOrDie(csdfp, "dt", &dt_base); dt = dt_base;
@@ -576,10 +582,13 @@ main(int argc, char *argv[])
     singlPrintf("int leaf_max_n = %d;\n", mac.leaf_max_n);
     singlPrintf("int enable_expand_root = %d;\n", mac.enable_expand_root);
     singlPrintf("int mxn_hblock = %d;\n", mxn.hblock);
+    singlPrintf("int mxn_min_msink = %d;\n", mxn.min_msink);
     singlPrintf("int mxn_min_qsink = %d;\n", mxn.min_qsink);
     singlPrintf("int mxn_min_hsink = %d;\n", mxn.min_hsink);
+    singlPrintf("int mxn_min_msrc = %d;\n", mxn.min_msrc);
     singlPrintf("int mxn_min_qsrc = %d;\n", mxn.min_qsrc);
     singlPrintf("int mxn_min_hsrc = %d;\n", mxn.min_hsrc);
+    singlPrintf("int mxn_do_pM = %d;\n", mxn.do_pM);
     singlPrintf("int mxn_do_pQ = %d;\n", mxn.do_pQ);
     singlPrintf("int mxn_do_pH = %d;\n", mxn.do_pH);
     singlPrintf("int body_size = %d;\n", sizeof(body));
@@ -1255,6 +1264,7 @@ static SDF *startup(int argc, char **argv){
     EnableTimer(&FindForcesTm, "Force Eval");
     EnableCPUTimer(&GravSTm, "Smth Time");
     EnableCPUTimer(&GravMTm, "Mono Time");
+    EnableCPUTimer(&GravMFTm, "MonoF Time");
     EnableCPUTimer(&GravQTm, "Quad Time");
     EnableCPUTimer(&GravQFTm, "QuadF Time");
     EnableCPUTimer(&GravHTm, "Hexa Time");
@@ -1270,6 +1280,8 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&PQSortMaxn, "PQSort Maxn");
     EnableCounter(&BSInt, "Body-smth");
     EnableCounter(&BCInt, "Body-mono");
+    EnableCounter(&FBCInt, "Body-monoF");
+    EnableCounter(&FBCFInt, "Body-monoFF");
     EnableCounter(&BC2Int, "Body-quad");
     EnableCounter(&FBC2Int, "Body-quadF");
     if (has_cuda) EnableCounter(&FBC2FInt, "Body-quadFF");

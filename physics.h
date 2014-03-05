@@ -181,9 +181,11 @@ typedef struct{
     float pos[NDIM];
     int isbody;
     int done;
+    int processed;
     float nterms;
     float M0;
     float M1[NDIM];
+    hcell *pp;
     int64_t daughters;
     int64_t interactions;
     Key_t key;
@@ -192,8 +194,11 @@ typedef struct{
     int near;
     float cen[NDIM];
     float cr, cr2;
+    float smooth_len;
+    int smooth_cnt;
     int scnt;
     int mcnt;
+    int mcnt_done;
 #ifdef QUAD
     int qcnt;
     int qcnt_done;
@@ -245,10 +250,13 @@ typedef struct mac_s {
 
 typedef struct mxn_s {
     int hblock;
+    int min_msink;
     int min_qsink;
     int min_hsink;
+    int min_msrc;
     int min_qsrc;
     int min_hsrc;
+    int do_pM;
     int do_pQ;
     int do_pH;
 } mxn_s;
@@ -279,7 +287,7 @@ char *PrintBranch(const cofmdata *cmp);
 extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm, CUDAWtTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t CEmpty, MCCorr, MCAnti;
-extern Counter_t FBC2Int, FBC4Int, FBC2FInt, FBC4FInt;
+extern Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt;
 extern Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
 
 
@@ -330,13 +338,16 @@ void pQinteract(const float *p, float *accp, const int m, const int stride,
 		const float *f, const int n);
 void pMinteract(const float *p, float *accp, const int m, const int stride, 
 		const float *f, const int n);
+void pMinteract_sK1(const float *p, float *accp, const int m, const int stride, 
+		    const float *f, const int n, const float e, int *ncut);
 
 
 #ifdef CUDA
 void CUDA_Init(void);
 int qallocCUDA(void);
 void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
-		   const float *f, const int source_n, const int sz, int q);
+		   const float *f, const int source_n, const int sz, 
+		   const float e, int *ncut, int q);
 void WalkInitSinkCUDA(body *btab, int stride, int64_t nobj);
 void WalkTerminateSinkCUDA(body *btab, int stride, int64_t nobj);
 #else

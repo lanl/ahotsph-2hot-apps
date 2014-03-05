@@ -13,10 +13,10 @@
 
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
 Counter_t CEmpty, MCAnti, MCCorr;
-Counter_t FBC2Int, FBC4Int, FBC2FInt, FBC4FInt;
+Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt;
 Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
 
-Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravQFTm, GravHFTm;
+Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravMFTm, GravQFTm, GravHFTm;
 Timer_t MACTm, CUDAWtTm;
 
 #if 0
@@ -60,8 +60,9 @@ static float offset_array[MAX_IMAGE][NDIM];
 static tree_t *SinkTree;
 static body *Btab;
 
-static void mxn_quad(Sink *to, hcell *pp);
-static void mxn_hexa(Sink *to, hcell *pp);
+static void mxn_hexa(Sink *s, const hcell *pp);
+static void mxn_quad(Sink *s, const hcell *pp);
+static void mxn_mono(Sink *s, const hcell *pp);
 
 static grav_f Sinteract;
 static grav_f Minteract;
@@ -246,21 +247,21 @@ WalkInitSrcPeriodic(Stk *kstk, Stk *ostk)
 }
 
 body *
-FirstBody(hcell *pp)
+FirstBody(const hcell *pp)
 {
-    Key_t k;
-    hcell *p;
-    tree_t *tp = SinkTree;
+    Key_t k = pp->key;
+    const hcell *p;
+    const tree_t *tp = SinkTree;
     int nsub = 1<<tp->ndim;
     int sub_flags, i;
 
-    if (pp->type & SHARED) return NULL;
     while ((sub_flags = Sub_Flags(pp))) {
+	if (pp->type & (SHARED|NONLOCAL)) return NULL;
 	k = KeyLshift(pp->key, tp->ndim);
 	for (i = 0; i < nsub; i++) {
 	    if (sub_flags & (1 << i)) {
 		p = Find(tp, KeyOrInt(k, i));
-		if (p == NULL) Error("FirstBody failed\n");
+		if (p == NULL) Error("FirstBody failed %s %d\n", PrintKey(k), i);
 		pp = p;
 		break;
 	    }
@@ -270,21 +271,21 @@ FirstBody(hcell *pp)
 }
 
 body *
-LastBody(hcell *pp)
+LastBody(const hcell *pp)
 {
-    Key_t k;
-    hcell *p;
-    tree_t *tp = SinkTree;
+    Key_t k = pp->key;
+    const hcell *p;
+    const tree_t *tp = SinkTree;
     int nsub = 1<<tp->ndim;
     int sub_flags, i;
 
-    if (pp->type & SHARED) return NULL;
     while ((sub_flags = Sub_Flags(pp))) {
+	if (pp->type & (SHARED|NONLOCAL)) return NULL;
 	k = KeyLshift(pp->key, tp->ndim);
 	for (i = nsub-1; i >= 0; i--) {
 	    if (sub_flags & (1 << i)) {
 		p = Find(tp, KeyOrInt(k, i));
-		if (p == NULL) Error("LastBody failed\n");
+		if (p == NULL) Error("LastBody failed %s %d %d\n", PrintKey(k), i, pp->type);
 		pp = p;
 		break;
 	    }
@@ -300,7 +301,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	body *bp = pp->ptr;
 	/* must init mtot or else you get quiet exceptions in asm code */
 	float mtot = 0.0f;
-	int nsmoothed = 0, nn;
+	int nn, smooth_cnt = from->smooth_cnt;
 	float acc[NDIM], phi;
 	float accd[NDIM], phid;
 
@@ -361,7 +362,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  Error("Hvec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Hinteract((float *)&Hvec[from->hcnt_done/NSSE], (float *)&Hvec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
+			  from->pos, &mtot, accd, &phid, &e, NULL);
 	AddCounter(&BC4Int, from->hcnt-from->hcnt_done);
 	StopTimer(&GravHTm);
 	VV(acc, += accd); phi += phid;
@@ -392,7 +393,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  Error("Qvec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Qinteract((float *)&Qvec[from->qcnt_done/NSSE], (float *)&Qvec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
+			  from->pos, &mtot, accd, &phid, &e, NULL);
 	DebugWatchId("p2 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->qcnt);
 	AddCounter(&BC2Int, from->qcnt-from->qcnt_done);
 	StopTimer(&GravQTm);
@@ -409,12 +410,11 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	if ((long long)&Mvec[0] & 0xF || (long long)&Mvec[1] & 0xF)
 	  Error("Mvec not aligned for asm code\n");
-	if (nsmoothed) Error("nsmoothed nonzero in multipole interaction\n");
 	VS(accd, = 0.0); phid = 0.0;
-	if (nn) Minteract((float *)&Mvec[0], (float *)&Mvec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
+	if (nn) Minteract((float *)&Mvec[from->mcnt_done/NSSE], (float *)&Mvec[nn/NSSE], 
+			  from->pos, &mtot, accd, &phid, &e, &smooth_cnt);
 	DebugWatchId("p1 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->mcnt);
-	AddCounter(&BCInt, from->mcnt);
+	AddCounter(&BCInt, from->mcnt-from->mcnt_done);
 	StopTimer(&GravMTm);
 	VV(acc, += accd); phi += phid;
 	StartTimer(&GravSTm);
@@ -430,11 +430,11 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	  Error("Svec not aligned for asm code\n");
 	VS(accd, = 0.0); phid = 0.0;
 	if (nn) Sinteract((float *)&Svec[0], (float *)&Svec[nn/NSSE], 
-			  from->pos, &mtot, accd, &phid, &e, &nsmoothed);
+			  from->pos, &mtot, accd, &phid, &e, &smooth_cnt);
 	if (from->scnt > BSMax.counter) BSMax.counter = from->scnt;
 	AddCounter(&BSInt, from->scnt);
-	if (nsmoothed > BSMax.counter) BSMax.counter = nsmoothed;
-	AddCounter(&BSInt, nsmoothed); /* Includes self */
+	if (smooth_cnt > BSMax.counter) BSMax.counter = smooth_cnt;
+	AddCounter(&BSInt, smooth_cnt); /* Includes self */
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
 	VV(acc, += accd); phi += phid;
@@ -506,6 +506,43 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 
     if (from) {
+	if (!from->processed && MPMY_Procnum() == MPMY_Nproc()/3) {
+	    int msrc = from->mcnt-from->mcnt_done;
+	    int qsrc = from->qcnt-from->qcnt_done;
+	    int hsrc = from->hcnt-from->hcnt_done;
+	    if (from->daughters >= 32)
+		Msg_do("%ld m %d/%d q %d/%d h %d/%d\n", from->daughters, 
+		       msrc, from->mcnt, qsrc, from->qcnt, hsrc, from->hcnt);
+	}
+#ifdef HEXA
+	if (from->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
+	if (!from->processed && mac->p4cut && MxN->hblock && from->daughters >= MxN->min_hsink && 
+	    from->hcnt-from->hcnt_done >= MxN->min_hsrc) {
+	    mxn_hexa((Sink *)from, from->pp);
+	}
+	to->hcnt = from->hcnt;
+	to->hcnt_done = from->hcnt_done;
+#endif
+#ifdef QUAD
+	if (from->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
+	if (!from->processed && mac->p2cut && MxN->hblock && from->daughters >= MxN->min_qsink && 
+	    from->qcnt-from->qcnt_done >= MxN->min_qsrc) {
+	    mxn_quad((Sink *)from, from->pp);
+	}
+	to->qcnt = from->qcnt;
+	to->qcnt_done = from->qcnt_done;
+#endif
+	if (from->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
+	if (!from->processed && MxN->hblock && from->daughters >= MxN->min_msink && 
+	    from->mcnt-from->mcnt_done >= MxN->min_msrc) {
+	    mxn_mono((Sink *)from, from->pp);
+	}
+	to->mcnt = from->mcnt;
+	to->mcnt_done = from->mcnt_done;
+	if (!from->processed) ((Sink *)from)->processed = 1;
+	to->scnt = from->scnt;
+	if (to->scnt >= NSSE*SVECSZ) Error("svec overflow\n");
+	    
 	if (ccp && from->clevel == CHUBITS) {
 	    to->clevel = ccp->level;
 	    VV(to->cen, = ccp->pos);
@@ -535,60 +572,27 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    to->done = 1;
 	else
 	    to->done = from->done;
+	to->processed = 0;
+	to->pp = pp;
 	to->key = pp->key;
 	to->nterms = from->nterms;
 	to->M0 = from->M0;
 	VV(to->M1, = from->M1);
-	to->scnt = from->scnt;
-	if (to->scnt >= NSSE*SVECSZ) Error("svec overflow\n");
-	to->mcnt = from->mcnt;
-	if (to->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
-#if 0
-	if (MPMY_Procnum() == MPMY_Nproc()/3) {
-	    int qsrc = from->qcnt-from->qcnt_done;
-	    int hsrc = from->hcnt-from->hcnt_done;
-	    if (to->daughters >= 32 && qsrc >= 32 && hsrc >= 32)
-		Msg_do("%ld q %d h %d\n", to->daughters, qsrc, hsrc);
-	}
-#endif
-#ifdef HEXA
-	to->hcnt = from->hcnt;
-	to->hcnt_done = from->hcnt_done;
-	if (to->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
-	if (mac->p4cut && MxN->hblock && to->daughters >= MxN->min_hsink && 
-	    to->hcnt-to->hcnt_done >= MxN->min_hsrc) {
-	    mxn_hexa(to, pp);
-	}
-#endif
-#ifdef QUAD
-	to->qcnt = from->qcnt;
-	to->qcnt_done = from->qcnt_done;
-	if (to->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
-	if (mac->p2cut && MxN->hblock && to->daughters >= MxN->min_qsink && 
-	    to->qcnt-to->qcnt_done >= MxN->min_qsrc) {
-	    mxn_quad(to, pp);
-	}
-#endif
+	to->smooth_cnt = from->smooth_cnt;
+	to->smooth_len = from->smooth_len;
     } else {
-	to->done = 0;
-	to->interactions = 0;
-	to->nterms = 0;
-	to->M0 = 0.0f;
-	VS(to->M1, = 0.0f);
-	to->fmass = 0.0;
-	to->near = 0;
+	memset(to, 0, sizeof(Sink));
+	to->daughters = GNobj;
+	to->pp = pp;
 	to->clevel = CHUBITS;
-	VS(to->cen, = 0.0f);
-	to->cr = 0.0f;
-	to->cr2 = 0.0f;
-	to->mcnt = 0;
-	to->scnt = 0;
-#ifdef QUAD
-	to->qcnt = to->qcnt_done = 0;
-#endif
-#ifdef HEXA
-	to->hcnt = to->hcnt_done = 0;
-#endif
+	/* Assumes constant particle masses */
+	if (Smooth_type == 0 || Smooth_type == 6) {
+	    /* plummer, e ~ (rho*eps)^2 */
+	    to->smooth_len = Eps*Eps*pow(Btab[0].mass, 2./3.);
+	} else {
+	    /* polynomial, e ~ 1/(rho*eps) */
+	    to->smooth_len = pow(Btab[0].mass, -1./3.)/Eps;
+	}
     }
 }
 
@@ -603,22 +607,89 @@ mxn_poll(double *last)
     } return 0;
 }
 
-
 static void
-mxn_quad(Sink *to, hcell *pp)
+mxn_mono(Sink *s, const hcell *pp)
 {
     body *p;
     body *first = FirstBody(pp);
-    body *last = LastBody(pp)+1;
+    body *last = LastBody(pp);
     int i, n0, n1, m_block, block;
     double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
+    last++;
+    if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
+    StartTimer(&GravTm);
+    StartTimer(&GravMFTm);
+    n0 = s->mcnt_done/NSSE;
+    n1 = s->mcnt/NSSE;
+    /* Size MxN->hblock for appropriate WalkPoll() latency */
+    /* If Walk Defer timer is large, make MxN->hblock smaller */
+    if (n1-n0 > MxN->hblock) m_block = 1;
+    else if (n1 == n0) Error("mxn_mono called with n == 0\n");
+    else m_block = MxN->hblock / (n1-n0);
+    block = m_block;
+    for (p = first; p < last; p += m_block) {
+	if (p + block > last) block = last-p;
+	if (MxN->do_pM) {
+#ifdef CUDA
+	    int q;
+	    StartTimer(&CUDAWtTm);
+	    while ((q = qallocCUDA()) < 0) {
+		if (!mxn_poll(&last_poll)) break;
+	    }
+	    StopTimer(&CUDAWtTm);
+	    if (q >= 0) {
+		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			      (float *)&Mvec[n0], (n1-n0)*NSSE, sizeof(Mvec[0])/(NSSE*sizeof(float)), 
+			      s->smooth_len, &s->smooth_cnt, q);
+	    } else {
+		float mtot = 0.0f;
+		for (i = 0; i < block; i++) {
+		    Minteract((float *)&Mvec[n0], (float *)&Mvec[n1],
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &s->smooth_len, &s->smooth_cnt);
+		    if ((i+1) % 16 == 0) mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
+		}
+		AddCounter(&FBCFInt, block*(n1-n0)*NSSE);
+	    }
+#else
+	    pMinteract_sK1(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			   (float *)&Mvec[n0], n1-n0, s->smooth_len, &s->smooth_cnt);
+#endif
+	} else {
+	    float mtot = 0.0f;
+	    for (i = 0; i < block; i++) {
+		Minteract((float *)&Mvec[n0], (float *)&Mvec[n1],
+			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &s->smooth_len, &s->smooth_cnt);
+	    }
+	}
+	mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
+    }
+    // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
+    AddCounter(&FBCInt, (last-first)*(n1-n0)*NSSE);
+    s->mcnt_done = n1*NSSE;
+
+    StopTimer(&GravMFTm);
+    StopTimer(&GravTm);
+}
+
+
+static void
+mxn_quad(Sink *s, const hcell *pp)
+{
+    body *p;
+    body *first = FirstBody(pp);
+    body *last = LastBody(pp);
+    int i, n0, n1, m_block, block;
+    double last_poll = MPMY_Wtime();
+
+    if (!first || !last) return;
+    last++;
     if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
     StartTimer(&GravTm);
     StartTimer(&GravQFTm);
-    n0 = to->qcnt_done/NSSE;
-    n1 = to->qcnt/NSSE;
+    n0 = s->qcnt_done/NSSE;
+    n1 = s->qcnt/NSSE;
     /* Size MxN->hblock for appropriate WalkPoll() latency */
     /* If Walk Defer timer is large, make MxN->hblock smaller */
     if (n1-n0 > MxN->hblock) m_block = 1;
@@ -637,14 +708,13 @@ mxn_quad(Sink *to, hcell *pp)
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
 		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			      (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)), q);
+			      (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)),
+			      s->smooth_len, &s->smooth_cnt, q);
 	    } else {
 		float mtot = 0.0f;
-		float e = 0.0f;
-		int ijunk = 0;
 		for (i = 0; i < block; i++) {
 		    Qinteract((float *)&Qvec[n0], (float *)&Qvec[n1],
-			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &ijunk);
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &s->smooth_len, &s->smooth_cnt);
 		    if ((i+1) % 16 == 0) mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
 		}
 		AddCounter(&FBC2FInt, block*(n1-n0)*NSSE);
@@ -666,27 +736,28 @@ mxn_quad(Sink *to, hcell *pp)
     }
     // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC2Int, (last-first)*(n1-n0)*NSSE);
-    to->qcnt_done = n1*NSSE;
+    s->qcnt_done = n1*NSSE;
 
     StopTimer(&GravQFTm);
     StopTimer(&GravTm);
 }
 
 static void
-mxn_hexa(Sink *to, hcell *pp)
+mxn_hexa(Sink *s, const hcell *pp)
 {
     body *p;
     body *first = FirstBody(pp);
-    body *last = LastBody(pp)+1;
+    body *last = LastBody(pp);
     int i, n0, n1, m_block, block;
     double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
+    last++;
     if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
     StartTimer(&GravTm);
     StartTimer(&GravHFTm);
-    n0 = to->hcnt_done/NSSE;
-    n1 = to->hcnt/NSSE;
+    n0 = s->hcnt_done/NSSE;
+    n1 = s->hcnt/NSSE;
     /* Size MxN->hblock for appropriate WalkPoll() latency */
     /* If Walk Defer timer is large, make MxN->hblock smaller */
     if (n1-n0 > MxN->hblock) m_block = 1;
@@ -705,14 +776,13 @@ mxn_hexa(Sink *to, hcell *pp)
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
 		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)), q);
+			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)),
+			      s->smooth_len, &s->smooth_cnt, q);
 	    } else {
 		float mtot = 0.0f;
-		float e = 0.0f;
-		int nsmoothed = 0;
 		for (i = 0; i < block; i++) {
 		    Hinteract((float *)&Hvec[n0], (float *)&Hvec[n1],
-			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &e, &nsmoothed);
+			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &s->smooth_len, &s->smooth_cnt);
 		    if ((i+1) % 16 == 0) mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
 		}
 		AddCounter(&FBC4FInt, block*(n1-n0)*NSSE);
@@ -734,7 +804,7 @@ mxn_hexa(Sink *to, hcell *pp)
     }
     // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
     AddCounter(&FBC4Int, (last-first)*(n1-n0)*NSSE);
-    to->hcnt_done = n1*NSSE;
+    s->hcnt_done = n1*NSSE;
 
     StopTimer(&GravHFTm);
     StopTimer(&GravTm);
@@ -1062,11 +1132,12 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	const quadcell *qcp = source_vec[i]->ptr;
 	const hexacell *hcp = source_vec[i]->ptr;
 	int bs = flags_vec[i] & BACKGROUND_FLAG;
+	VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
 	if (sf) {
 	    float bmax;
 	    int isquad = mac->p2cut && cp->daughters >= mac->p2cut;
 	    int ishexa = mac->p4cut && cp->daughters >= mac->p4cut;
-	    VxVV(r, = cp->pos, + offset_array[offset_index(flags_vec[i])]);
+	    float smallest_rcrit = ishexa ? hcp->rcrit_h : (isquad ? qcp->rcrit_q : cp->rcrit);
 	    /* Mvec does not compute dipole, so don't test cp->rcrit here if doing geometric_center */
 	    if (sink->clevel != CHUBITS && cp->level < sink->clevel) {
 		dr2 = ddot(r, sink->cen);
@@ -1092,7 +1163,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		sink->interactions += hcp->daughters;
 		result[i] = MAC_ACCEPT;
 	    } else {
-		result[i] = (sink->daughters > mac->leaf_max_n) ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
+		result[i] = (mac->dlfac * sink->bmax > smallest_rcrit && sink->daughters > mac->leaf_max_n) ? MAC_SPLIT_SINK : MAC_SPLIT_SRC;
 	    }
 	    DebugWatchKey("%10g %10g %10ld %s\n", sink->bmax, smallest_rcrit, (long int)cp->daughters, (result[i] == MAC_ACCEPT) ? "Accept" : 
 			  (result[i] == MAC_SPLIT_SINK) ? "Split Sink" : "Split Source");
