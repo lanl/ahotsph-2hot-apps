@@ -299,7 +299,7 @@ pM(const float *p, float *ret, const int n, const int stride,
     if (VECWIDTH*index >= n) return;
 
     for (i = 0; i < source_n; i++) {
-	ii = (i/NSSE)*NSSE*QSZ + i%NSSE;
+	ii = (i/NSSE)*NSSE*MSZ + i%NSSE;
     	VVS(x, = ppos, .x - xp);	
     	VVS(y, = ppos, .y - yp);	
     	VVS(z, = ppos, .z - zp);	
@@ -313,6 +313,58 @@ pM(const float *p, float *ret, const int n, const int stride,
 	VVV(rinv2, = t, * t);
 	VV(accp, Phi += eqe);
 	VV(eqe, *= rinv2);
+	VVV(accp, Ax += x, * eqe);
+	VVV(accp, Ay += y, * eqe);
+	VVV(accp, Az += z, * eqe);
+    }
+    for (i = 0; i < VECWIDTH; i++) {
+	if (index+i < n) {
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+3], accp[i] Phi);
+	}
+    }
+}
+
+__global__ void
+pM_sK1(const float *p, float *ret, const int n, const int stride, 
+       const float *f, const int source_n, const float eps_inv, int *ncut)
+{
+    int i, ii;
+    float t[VECWIDTH], r2[VECWIDTH], rinv[VECWIDTH], u2[VECWIDTH];
+    float x[VECWIDTH], y[VECWIDTH], z[VECWIDTH];
+    float eqe[VECWIDTH];
+    float4 accp[VECWIDTH] = {};
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    const float3 ppos[VECWIDTH] = Vdecl(p, 3);
+    const float eps_inv2 = eps_inv*eps_inv;
+    const float eps2 = 1.0f/eps_inv2;
+
+    if (VECWIDTH*index >= n) return;
+
+    for (i = 0; i < source_n; i++) {
+	ii = (i/NSSE)*NSSE*MSZ + i%NSSE;
+    	VVS(x, = ppos, .x - xp);	
+    	VVS(y, = ppos, .y - yp);	
+    	VVS(z, = ppos, .z - zp);	
+	VVV(r2, = x, * x);
+	VVV(r2, += y, * y);
+	VVV(r2, += z, * z);
+	VVS(rinv, = -rsqrtf LPAREN r2, RPAREN);
+	for (int j = 0; j < VECWIDTH; j++) {
+	    if (r2[j] <= eps2) {
+		u2[j] = r2[j] * eps_inv2 - 1.0f;
+		t[j] = (((45.0f/32.0f)*u2[j] + (-3.0f/8.0f)) * u2[j] + (1.0f/2.0f)) * u2[j] - 1.0f;
+		t[j] *= eps_inv;
+		eqe[j] = ((-135.0f/16.0f) * u2[j] + (3.0f/2.0f)) * u2[j] - 1.0f;
+		eqe[j] *= mass * eps_inv * eps_inv2;
+	    } else {
+		t[j] = rinv[j];
+		eqe[j] = mass * rinv[j] * rinv[j] * rinv[j];
+	    }
+	}
+	VV(accp, Phi += mass * t);
 	VVV(accp, Ax += x, * eqe);
 	VVV(accp, Ay += y, * eqe);
 	VVV(accp, Az += z, * eqe);
@@ -509,7 +561,7 @@ qallocCUDA(void)
 
 extern "C" void
 pinteractCUDA(const float *p, float *accp, const int m, const int stride, 
-	      const float *f, const int source_n, const int sz, int q)
+	      const float *f, const int source_n, const int sz, float e, int *ncut, int q)
 {
     cudaError_t err;
     int blocks, threads;
@@ -555,7 +607,7 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
     if (sz == MSZ) {
 	Msgf(("M %d sinks, %d sources, %d blocks, %d threads. Offset %ld\n",
 	      m, source_n, blocks, threads, (p-Btab)/stride));
-	pM<<<blocks,threads,0,cudaq[q].stream>>>(cudaq[q].pos, cudaq[q].accp, m, 4, cudaq[q].devf, source_n);
+	pM_sK1<<<blocks,threads,0,cudaq[q].stream>>>(cudaq[q].pos, cudaq[q].accp, m, 4, cudaq[q].devf, source_n, e, ncut);
     } else if (sz == QSZ) {
 	Msgf(("Q %d sinks, %d sources, %d blocks, %d thread.  Offset %ld\n",
 	      m, source_n, blocks, threads, (p-Btab)/stride));

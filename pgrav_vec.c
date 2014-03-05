@@ -295,3 +295,102 @@ pMinteract(const float *p, float *accp, const int m, const int stride,
 	accp[i+3] += vsf_hsum(phi);
     }
 }
+
+typedef struct {
+    vsf phi; 
+    vsf a;
+} sret_s;
+
+/* Dehnen K1 Compensating Kernel */
+static sret_s
+sK1(const vsf r2, const float e)
+{
+    sret_s ret;
+    const vsf one = vsf_scalar(1.0f);
+    const vsf f1 = vsf_scalar(-3.0f/2.0f);
+    const vsf f2 = vsf_scalar(135.0f/16.0f);
+    const vsf p1 = vsf_scalar(-1.0f/2.0f);
+    const vsf p2 = vsf_scalar(3.0f/8.0f);
+    const vsf p3 = vsf_scalar(-45.0f/32.0f);
+    const vsf eps_inv = vsf_scalar(e);
+
+    vsf u2 = r2 * eps_inv * eps_inv;
+    vsf mask = vsf_cmple(u2, one);
+    u2 -= one;
+
+    vsf t = p3*u2;
+    t += p2;
+    t *= u2;
+    t += p1;
+    t *= u2;
+    t += one;
+    t *= eps_inv;
+    ret.phi = -vsf_and(mask, t);
+	
+    t = f2*u2;
+    t += f1;
+    t *= u2;
+    t += one;
+    t *= eps_inv * eps_inv * eps_inv;
+    ret.a = -vsf_and(mask, t);
+
+    return ret;
+}
+
+void
+pMinteract_sK1(const float *p, float *accp, const int m, const int stride, 
+	       const vsf *f, const int n, const float e, int *ncut)
+{
+    int i, j;
+    vsf a0, a1, a2, phi;
+    const vsf eps2 = vsf_scalar(1.0f/(e*e));
+
+    for (i = 0; i < m*stride; i += stride) {
+	vsf ppos0 = (vsf)vsf_scalar(p[i+1]);
+	vsf ppos1 = (vsf)vsf_scalar(p[i+2]);
+	vsf ppos2 = (vsf)vsf_scalar(p[i+3]);
+	a0 = a1 = a2 = phi = (vsf)vsf_scalar(0.0f);
+
+	for (j = 0; j < n*MSZ; j += MSZ) {
+	    vsf x = ppos0 - xp;
+	    vsf y = ppos1 - yp;
+	    vsf z = ppos2 - zp;
+	    vsf r2 = x*x + y*y + z*z;
+	    vsf rinv = vsf_rsqrt(r2); /* 11 bit precision */
+	    vsf mask = vsf_cmple(eps2, r2);
+	    unsigned int nmask = vsf_count(mask);
+	    if (nmask != NSSE) {
+		*ncut += NSSE-nmask;
+		sret_s ret = sK1(r2, e);
+		phi += mass * ret.phi;
+		ret.a *= mass;
+		a0 += x * ret.a;
+		a1 += y * ret.a;
+		a2 += z * ret.a;
+	    }
+
+	    __builtin_prefetch(&f[j+PREFETCH_AHEAD/MSZ], 0, 3);
+	    /* Newton-Raphson */
+	    vsf t = rinv;
+	    r2 *= rinv;
+	    rinv *= r2;
+	    rinv -= (vsf)vsf_scalar(3.0f);
+	    rinv *= t;
+	    rinv *= (vsf)vsf_scalar(0.5f); /* flips sign to avoid storing -0.5 */
+	    /* end Newton-Raphson */
+	    rinv = vsf_and(mask, rinv);
+
+	    vsf eqe = rinv*mass;
+	    vsf rinv2 = rinv*rinv;
+	    phi += eqe;
+	    eqe *= rinv2;
+	    a0 += x*eqe;
+	    a1 += y*eqe;
+	    a2 += z*eqe;
+	}
+	accp[i+0] += vsf_hsum(a0);
+	accp[i+1] += vsf_hsum(a1);
+	accp[i+2] += vsf_hsum(a2);
+	accp[i+3] += vsf_hsum(phi);
+    }
+}
