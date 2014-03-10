@@ -196,7 +196,7 @@ pH(const float *p, float *ret, const int n, const int stride, const float *f, co
 	VVVV(accp, Az += z, * eqe, - eq2);
     }
     for (i = 0; i < VECWIDTH; i++) {
-	if (index+i < n) {
+	if (VECWIDTH*index+i < n) {
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
@@ -275,7 +275,7 @@ pQ(const float *p, float *ret, const int n, const int stride,
 	VVVV(accp, Az += z, * eqe, - eq2);
     }
     for (i = 0; i < VECWIDTH; i++) {
-	if (index+i < n) {
+	if (VECWIDTH*index+i < n) {
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
@@ -318,7 +318,7 @@ pM(const float *p, float *ret, const int n, const int stride,
 	VVV(accp, Az += z, * eqe);
     }
     for (i = 0; i < VECWIDTH; i++) {
-	if (index+i < n) {
+	if (VECWIDTH*index+i < n) {
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
@@ -370,7 +370,7 @@ pM_sK1(const float *p, float *ret, const int n, const int stride,
 	VVV(accp, Az += z, * eqe);
     }
     for (i = 0; i < VECWIDTH; i++) {
-	if (index+i < n) {
+	if (VECWIDTH*index+i < n) {
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
@@ -564,7 +564,6 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
 	      const float *f, const int source_n, const int sz, float e, int *ncut, int q)
 {
     cudaError_t err;
-    int blocks, threads;
 
     cudaq[q].inuse = 1;
     err = cudaStreamCreate(&cudaq[q].stream);
@@ -584,25 +583,8 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
     cudaq[q].pos = devpos + 3*(p-Btab)/stride;
     cudaq[q].accp = devaccp + 4*(p-Btab)/stride;;
 
-    if (m <= 512) {
-	blocks = 1;
-	threads = (m+VECWIDTH-1)/(VECWIDTH);
-    } else if (m <= 1024) {
-	blocks = 2;
-	threads = (m+2*VECWIDTH-1)/(2*VECWIDTH);
-    } else if (m <= 2048) {
-	blocks = 4;
-	threads = (m+4*VECWIDTH-1)/(4*VECWIDTH);
-    } else if (m <= 4096) {
-	blocks = 8;
-	threads = (m+8*VECWIDTH-1)/(8*VECWIDTH);
-    } else if (m <= 8192) {
-	blocks = 16;
-	threads = (m+16*VECWIDTH-1)/(16*VECWIDTH);
-    } else {
-	blocks = m/32;
-	threads = (m+blocks*VECWIDTH-1)/(blocks*VECWIDTH);
-    }
+    int threads = 64;
+    int blocks = 1 + (m-1) / (VECWIDTH * threads);
 
     if (sz == MSZ) {
 	Msgf(("M %d sinks, %d sources, %d blocks, %d threads. Offset %ld\n",
