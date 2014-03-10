@@ -1,10 +1,11 @@
 /*
- * Copyright 2013 Michael S. Warren.
+ * Copyright 2013-2014 Michael S. Warren.
  * All Rights Reserved.
  */
 
 #include <cuda.h>
 #include "cudavec.h"
+#include "segarray.h"
 #include "stdio.h"
 
 #define mass f[ii+0*NSSE]
@@ -379,6 +380,60 @@ pM_sK1(const float *p, float *ret, const int n, const int stride,
     }
 }
 
+__global__ void
+pMM_sK1(const float *p, float *ret, const int n, const int stride, 
+	const segarray *sa, const int sa_n, const int source_n, const float mmass, const float eps_inv, int *ncut)
+{
+    float t[VECWIDTH], r2[VECWIDTH], rinv[VECWIDTH], u2[VECWIDTH];
+    float x[VECWIDTH], y[VECWIDTH], z[VECWIDTH];
+    float eqe[VECWIDTH];
+    float4 accp[VECWIDTH] = {};
+    const float3 *p3 = (const float3 *)p;
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    const float3 ppos[VECWIDTH] = Vdecl(p, 3);
+    const float eps_inv2 = eps_inv*eps_inv;
+    const float eps2 = 1.0f/eps_inv2;
+
+    if (VECWIDTH*index >= n) return;
+
+    for (int i = 0; i < sa_n; i++) {
+	for (int j = 0; j < sa[i].n; j++) {
+	    const float3 source = p3[sa[i].index+j];
+	    VVS(x, = ppos, .x - source.x);
+	    VVS(y, = ppos, .y - source.y);
+	    VVS(z, = ppos, .z - source.z);
+	    VVV(r2, = x, * x);
+	    VVV(r2, += y, * y);
+	    VVV(r2, += z, * z);
+	    VVS(rinv, = -rsqrtf LPAREN r2, RPAREN);
+	    for (int k = 0; k < VECWIDTH; k++) {
+		if (r2[k] <= eps2) {
+		    u2[k] = r2[k] * eps_inv2 - 1.0f;
+		    t[k] = (((45.0f/32.0f)*u2[k] + (-3.0f/8.0f)) * u2[k] + (1.0f/2.0f)) * u2[k] - 1.0f;
+		    t[k] *= eps_inv;
+		    eqe[k] = ((-135.0f/16.0f) * u2[k] + (3.0f/2.0f)) * u2[k] - 1.0f;
+		    eqe[k] *= mmass * eps_inv * eps_inv2;
+		} else {
+		    t[k] = rinv[k];
+		    eqe[k] = mmass * rinv[k] * rinv[k] * rinv[k];
+		}
+	    }
+	    VV(accp, Phi += mmass * t);
+	    VVV(accp, Ax += x, * eqe);
+	    VVV(accp, Ay += y, * eqe);
+	    VVV(accp, Az += z, * eqe);
+	}
+    }
+    for (int i = 0; i < VECWIDTH; i++) {
+	if (index+i < n) {
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+0], accp[i] Ax);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+1], accp[i] Ay);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+2], accp[i] Az);
+	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+3], accp[i] Phi);
+	}
+    }
+}
+
 #include <stdio.h>
 #include <unistd.h>
 #include "error.h"
@@ -466,6 +521,9 @@ WalkInitSinkCUDA(float *btab, int stride, int64_t nobj)
     size_t pos_bytes = 3 * sizeof(float) * nobj;
     size_t accp_bytes = 4 * sizeof(float) * nobj;
     cudaError_t err;
+
+    Msgf(("WalkInitSinkCUDA stride %d nobj %ld sizeof(segarray) %ld\n", 
+	  stride, nobj, sizeof(segarray)));
 
     Btab = btab;
 
@@ -620,3 +678,57 @@ pinteractCUDA(const float *p, float *accp, const int m, const int stride,
 
     // wait_cudaq();
 }
+
+/* To minimize traffic over the bus, we send index/count pairs into the body table */
+/* sa == segmented array */
+extern "C" void
+psainteractCUDA(const float *p, float *accp, const int m, const int stride, 
+		const segarray *sa, const int sa_n, const int source_n, float mmass, float e, int *ncut, int q)
+{
+    cudaError_t err;
+    int blocks, threads;
+
+    cudaq[q].inuse = 1;
+    err = cudaStreamCreate(&cudaq[q].stream);
+    if (err != cudaSuccess) 
+	Error("cudaStreamCreate failed, %d %s\n", err, cudaGetErrorString(err));
+
+    if (cudaq[q].devf_size < sa_n * sizeof(segarray)) {
+	Error("devf_size (%d) too small, sa_n is %d, size is %ld\n", 
+	      cudaq[q].devf_size, sa_n, sa_n * sizeof(segarray));
+    }
+    memcpy(cudaq[q].hostf, sa, sa_n * sizeof(segarray));
+    err = cudaMemcpyAsync(cudaq[q].devf, cudaq[q].hostf, sa_n * sizeof(segarray), 
+			  cudaMemcpyHostToDevice, cudaq[q].stream);
+    if (err != cudaSuccess) 
+	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
+    cudaq[q].pos = devpos + 3*(p-Btab)/stride;
+    cudaq[q].accp = devaccp + 4*(p-Btab)/stride;;
+
+    if (m <= 512) {
+	blocks = 1;
+	threads = (m+VECWIDTH-1)/(VECWIDTH);
+    } else if (m <= 1024) {
+	blocks = 2;
+	threads = (m+2*VECWIDTH-1)/(2*VECWIDTH);
+    } else if (m <= 2048) {
+	blocks = 4;
+	threads = (m+4*VECWIDTH-1)/(4*VECWIDTH);
+    } else if (m <= 4096) {
+	blocks = 8;
+	threads = (m+8*VECWIDTH-1)/(8*VECWIDTH);
+    } else if (m <= 8192) {
+	blocks = 16;
+	threads = (m+16*VECWIDTH-1)/(16*VECWIDTH);
+    } else {
+	blocks = m/32;
+	threads = (m+blocks*VECWIDTH-1)/(blocks*VECWIDTH);
+    }
+
+    Msgf(("MM %d sinks, %d sa, %d sources, %d blocks, %d threads. Offset %ld\n",
+	  m, sa_n, source_n, blocks, threads, (p-Btab)/stride));
+    pMM_sK1<<<blocks,threads,0,cudaq[q].stream>>>(cudaq[q].pos, cudaq[q].accp, m, 4, 
+						  (const segarray *)cudaq[q].devf, sa_n, source_n, mmass, e, ncut);
+}
+

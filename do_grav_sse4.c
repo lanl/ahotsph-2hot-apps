@@ -1,9 +1,9 @@
 /*
- * Copyright 2012 Michael S. Warren. All Rights Reserved.
+ * Copyright 2012-2014 Michael S. Warren. All Rights Reserved.
  */
 #ifndef __AVX__
 #include "order.h"
-typedef float v4sf __attribute__ ((vector_size (16)));
+#include "vec.h"
 
 #define mass f[0]
 #define xp f[1]
@@ -1001,9 +1001,9 @@ do_grav_sK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass
 	__asm__("prefetcht0 512(%rdi)");
 	v4sf rinv = __builtin_ia32_rsqrtps(r2);
 	v4sf mask = __builtin_ia32_cmpleps(eps2, r2);
-	unsigned int nmask = __builtin_popcount(__builtin_ia32_movmskps(mask));
-	if (nmask != 4) {
-	    *ncut += 4-nmask;
+	unsigned int nmask = vsf_count(mask);
+	if (nmask != NSSE) {
+	    *ncut += NSSE-nmask;
 	    sret_s r = sK1(r2, *e);
 	    phi += mass * r.phi;
 	    r.a *= mass;
@@ -1041,6 +1041,90 @@ do_grav_sK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass
     acc[1] += __builtin_ia32_haddps(a1, a1)[0];
     acc[2] += __builtin_ia32_haddps(a2, a2)[0];
 }
+
+void
+do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const int *mm, const int mm_n, 
+		   const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+{
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    vsf mmass = vsf_scalar(pmass);
+    vsf xx, yy, zz;
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf eps2 = vsf_scalar(1.0f/(*e**e));
+
+    int i = 0;
+    int j = 0;
+    const float *ff = xyz + mm[0] * stride;
+    while (i < mm_n) {
+	/* Load vsf vectors from pairs of start, count indices into array of x,y,z positions */
+	for (int k = 0; k < NSSE; k++) {
+	    xx[k] = ff[j*stride+0];
+	    yy[k] = ff[j*stride+1];
+	    zz[k] = ff[j*stride+2];
+	    if (++j == mm[i+1]) {
+		i += 2;
+		ff = xyz + mm[i] * stride;
+		j = 0;
+		if (i >= mm_n) {
+		    while (k < NSSE) {
+			mmass[k++] = 0.0f;
+		    }
+		    break;
+		}
+	    } 
+	}
+
+	vsf x = ppos0 - xx;
+	vsf y = ppos1 - yy;
+	vsf z = ppos2 - zz;
+
+	vsf r2 = x*x + y*y + z*z;
+
+	__asm__("prefetcht0 512(%rdi)");
+	vsf rinv = vsf_rsqrt(r2);
+	vsf mask = vsf_cmple(eps2, r2);
+	unsigned int nmask = vsf_count(mask);
+	if (nmask != NSSE) {
+	    *ncut += NSSE-nmask;
+	    sret_s r = sK1(r2, *e);
+	    phi += mmass * r.phi;
+	    r.a *= mmass;
+	    a0 += x * r.a;
+	    a1 += y * r.a;
+	    a2 += z * r.a;
+	}
+
+	/* Newton-Raphson */
+	vsf t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+	rinv = vsf_and(mask, rinv);
+
+	t = rinv*rinv;
+	rinv *= mmass;
+	phi += rinv;
+	t *= rinv;
+	a0 += x*t;
+	a1 += y*t;
+	a2 += z*t;
+    }
+    *phi0 += vsf_hsum(phi);
+    acc[0] += vsf_hsum(a0);
+    acc[1] += vsf_hsum(a1);
+    acc[2] += vsf_hsum(a2);
+}
+
 
 /* Spline Kernel */
 
