@@ -10,13 +10,15 @@
 #include "stk.h"
 #include "mpmy.h"
 #include "ewald_le.h"
+#include "segment.h"
+#include "gravcuda.h"
 
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
 Counter_t CEmpty, MCAnti, MCCorr;
 Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt;
 Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
 
-Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravQTm, GravHTm, GravMFTm, GravQFTm, GravHFTm;
+Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravMMTm, GravQTm, GravHTm, GravMFTm, GravQFTm, GravHFTm;
 Timer_t MACTm, CUDAWtTm;
 
 #if 0
@@ -66,6 +68,7 @@ static void mxn_mono(Sink *s, const hcell *pp);
 
 static grav_f Sinteract;
 static grav_f Minteract;
+static grav_ff MMinteract;
 static grav_f Qinteract;
 static grav_f Hinteract;
 #ifdef AMD6100
@@ -105,10 +108,16 @@ static struct {
     vsf mass, x, y, z;
 } Svec[SVECSZ];
 
-#define MVECSZ (180073) /* This should be dynamically extensible */
+#define MVECSZ (1873) /* This should be dynamically extensible */
 static struct {
     vsf mass, x, y, z;
 } Mvec[MVECSZ];
+
+#define MMVECSZ (1021) /* This should be dynamically extensible */
+segment MMvec[MMVECSZ];
+
+#define SSVECSZ (1021) /* This should be dynamically extensible */
+segment SSvec[SSVECSZ];
 
 #ifdef QUAD
 #define QVECSZ (7919)
@@ -139,6 +148,24 @@ static struct Hvec {
 static struct ucell_s {
     float halfsz, mass, x4, x2y2;
 } ucell[CHUBITS];
+
+#define MNSQ_MAX 65536
+#define MNSQ_MAX_M 65536
+
+typedef struct mnsq_s {
+    int initialized;
+    int sink_base;
+    int m;
+    int ss_len;
+    int seg_n;
+    int source_base;
+    int source_n[MNSQ_MAX/64];
+    segment ss_seg[MNSQ_MAX/64];
+    uint16_t ss_index[MNSQ_MAX_M];
+    segment seg[MNSQ_MAX];
+} mnsq_s;
+
+mnsq_s mnsq;
 
 void
 SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
@@ -175,6 +202,7 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	} else if (smooth_type == 4) {
 	    Eps = 3.35f*e;
 	    Minteract = Arch(do_grav_sK1);
+	    MMinteract = Arch(do_gravmm_sK1);
 	    Sinteract = Arch(do_gravsK1);
 	} else if (smooth_type == 5) {
 	    Eps = 2.8f*e;
@@ -213,13 +241,14 @@ WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn)
     Btab = btab;
     Nobj = nobj;
     MxN = mxn;
-    WalkInitSinkCUDA(btab, sizeof(body)/sizeof(float), nobj);
+    WalkInitSinkCUDA((float *)btab, sizeof(body)/sizeof(float), nobj);
+    memset(&mnsq, 0, sizeof(mnsq));
 }
 
 void
 WalkTerminateSink(tree_t *tp, body *btab, int64_t nobj)
 {
-    WalkTerminateSinkCUDA(btab, sizeof(body)/sizeof(float), nobj);
+    WalkTerminateSinkCUDA((float *)btab, sizeof(body)/sizeof(float), nobj);
 
     /* scale by GNewt */
     for (int64_t i = 0; i < nobj; i++) {
@@ -417,6 +446,17 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	AddCounter(&BCInt, from->mcnt-from->mcnt_done);
 	StopTimer(&GravMTm);
 	VV(acc, += accd); phi += phid;
+
+	StartTimer(&GravMTm);
+	nn = from->mmcnt-from->mmcnt_done;
+	VS(accd, = 0.0); phid = 0.0;
+	if (nn) MMinteract(Btab[0].pos, sizeof(Btab[0])/sizeof(float), Btab[0].mass, MMvec+from->mmcnt_done, nn, 
+			   from->pos, &mtot, accd, &phid, &e, &smooth_cnt);
+	DebugWatchId("p1 %12g %12g %12g %d\n", accd[0], accd[1], accd[2], from->mcnt);
+	AddCounter(&BCInt, from->mmterms-from->mmterms_done);
+	VV(acc, += accd); phi += phid;
+	StopTimer(&GravMTm);
+
 	StartTimer(&GravSTm);
 	nn = from->scnt;
 	while (nn % NSSE) {
@@ -475,7 +515,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	VV(bp->acc, += acc);
 	DebugWatchId("a %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
 	DebugWatchId("g %12g %12g %12g\n", bp->acc[0], bp->acc[1], bp->acc[2]);
-	bp->nterms += from->nterms + from->scnt + from->mcnt 
+	bp->nterms += from->nterms + from->scnt + from->mcnt + from->mmterms 
 #ifdef QUAD
 	    + QUAD_COST*from->qcnt 
 #endif
@@ -506,13 +546,14 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 
     if (from) {
-	if (!from->processed && MPMY_Procnum() == MPMY_Nproc()/3) {
+	if (!from->processed /* && MPMY_Procnum() == MPMY_Nproc()/3 */) {
 	    int msrc = from->mcnt-from->mcnt_done;
+	    int mmsrc = from->mmterms-from->mmterms_done;
 	    int qsrc = from->qcnt-from->qcnt_done;
 	    int hsrc = from->hcnt-from->hcnt_done;
 	    if (from->daughters >= 32)
-		Msg_do("%ld m %d/%d q %d/%d h %d/%d\n", from->daughters, 
-		       msrc, from->mcnt, qsrc, from->qcnt, hsrc, from->hcnt);
+		Msg_do("%ld m %d/%d mm %d/%d q %d/%d h %d/%d\n", from->daughters, 
+		       msrc, from->mcnt, mmsrc, from->mmterms, qsrc, from->qcnt, hsrc, from->hcnt);
 	}
 #ifdef HEXA
 	if (from->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
@@ -532,11 +573,15 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
 #endif
-	if (from->mcnt >= NSSE*MVECSZ) Error("mvec overflow\n");
+	if (from->mmcnt >= MMVECSZ) Error("mmvec overflow\n");
 	if (!from->processed && MxN->hblock && from->daughters >= MxN->min_msink && 
-	    from->mcnt-from->mcnt_done >= MxN->min_msrc) {
+	    from->mmterms-from->mmterms_done >= MxN->min_msrc) {
 	    mxn_mono((Sink *)from, from->pp);
 	}
+	to->mmterms = from->mmterms;
+	to->mmterms_done = from->mmterms_done;
+	to->mmcnt = from->mmcnt;
+	to->mmcnt_done = from->mmcnt_done;
 	to->mcnt = from->mcnt;
 	to->mcnt_done = from->mcnt_done;
 	if (!from->processed) ((Sink *)from)->processed = 1;
@@ -596,6 +641,54 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 }
 
+/* Queue an MxN interaction as an array of segments */
+static void
+grav_mns_queue(int this_base, int this_m, const segment *this_seg, int this_seg_n, int this_source_n)
+{
+    if (!mnsq.initialized) {
+	mnsq.sink_base = this_base;
+	mnsq.initialized = 1;
+    }
+    int base = this_base - mnsq.sink_base;
+
+    Msgf(("mns_queue ss_len %d base %d m %d seg_n %d\n",
+	  mnsq.ss_len, mnsq.sink_base, mnsq.m, mnsq.seg_n));
+    Msgf(("mns_queue this_base %d this_m %d this_seg_n %d this_source_n %d\n",
+	  this_base, this_m, this_seg_n, this_source_n));
+
+    if (base != mnsq.m) 
+	Error("Gap in grav_mns_queue, mnsq.sink_base %d mnsq.m %d this_base %d this_m %d\n",
+	      mnsq.sink_base, mnsq.m, this_base, this_m);
+    mnsq.m += this_m;
+    memcpy(mnsq.seg + mnsq.seg_n, this_seg, this_seg_n * sizeof(segment));
+    
+    mnsq.ss_seg[mnsq.ss_len].base = mnsq.seg_n;
+    mnsq.ss_seg[mnsq.ss_len].length = this_seg_n;
+    mnsq.source_n[mnsq.ss_len] = this_source_n;
+    if (base + this_m >= MNSQ_MAX_M) Error("mnsq.ss_index overflow\n");
+    for (int i = 0; i < this_m; i++) {
+	mnsq.ss_index[base+i] = mnsq.ss_len;
+    }
+    mnsq.seg_n += this_seg_n;
+    mnsq.ss_len++;
+    if (mnsq.seg_n >= MNSQ_MAX) Error("mnsq.seg_n overflow\n");
+    if (mnsq.ss_len >= MNSQ_MAX/64) Error("mnsq.ss_len overflow\n");
+}
+
+static void
+grav_mns_flush(float mass, float e, int *ncut, int q)
+{
+    grav_mnss_CUDA("pMM_mnss_sK1", mnsq.sink_base, mnsq.m, 
+		   mnsq.ss_index, mnsq.ss_seg, mnsq.ss_len,
+		   mnsq.seg, mnsq.seg_n, mnsq.source_base, mnsq.source_n,
+		   mass, e, ncut, q);
+
+    mnsq.sink_base += mnsq.m;
+    mnsq.m = 0;
+    mnsq.ss_len = 0;
+    mnsq.seg_n = 0;
+}
+
 static int
 mxn_poll(double *last)
 {
@@ -610,10 +703,8 @@ mxn_poll(double *last)
 static void
 mxn_mono(Sink *s, const hcell *pp)
 {
-    body *p;
     body *first = FirstBody(pp);
     body *last = LastBody(pp);
-    int i, n0, n1, m_block, block;
     double last_poll = MPMY_Wtime();
 
     if (!first || !last) return;
@@ -621,58 +712,25 @@ mxn_mono(Sink *s, const hcell *pp)
     if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
     StartTimer(&GravTm);
     StartTimer(&GravMFTm);
-    n0 = s->mcnt_done/NSSE;
-    n1 = s->mcnt/NSSE;
-    /* Size MxN->hblock for appropriate WalkPoll() latency */
-    /* If Walk Defer timer is large, make MxN->hblock smaller */
-    if (n1-n0 > MxN->hblock) m_block = 1;
-    else if (n1 == n0) Error("mxn_mono called with n == 0\n");
-    else m_block = MxN->hblock / (n1-n0);
-    block = m_block;
-    for (p = first; p < last; p += m_block) {
-	if (p + block > last) block = last-p;
-	if (MxN->do_pM) {
-#ifdef CUDA
-	    int q;
-	    StartTimer(&CUDAWtTm);
-	    while (qallocCUDA(&q) < 0) {
-		if (!mxn_poll(&last_poll)) break;
-	    }
-	    StopTimer(&CUDAWtTm);
-	    if (q >= 0) {
-		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			      (float *)&Mvec[n0], (n1-n0)*NSSE, sizeof(Mvec[0])/(NSSE*sizeof(float)), 
-			      s->smooth_len, &s->smooth_cnt, q);
-	    } else {
-		float mtot = 0.0f;
-		for (i = 0; i < block; i++) {
-		    Minteract((float *)&Mvec[n0], (float *)&Mvec[n1],
-			      (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &s->smooth_len, &s->smooth_cnt);
-		    if ((i+1) % 16 == 0) mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
-		}
-		AddCounter(&FBCFInt, block*(n1-n0)*NSSE);
-	    }
-#else
-	    pMinteract_sK1(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			   (float *)&Mvec[n0], n1-n0, s->smooth_len, &s->smooth_cnt);
-#endif
-	} else {
-	    float mtot = 0.0f;
-	    for (i = 0; i < block; i++) {
-		Minteract((float *)&Mvec[n0], (float *)&Mvec[n1],
-			  (p+i)->pos, &mtot, (p+i)->acc, &(p+i)->phi, &s->smooth_len, &s->smooth_cnt);
-	    }
-	}
-	mxn_poll(&last_poll); /* ~ ratio in speed between GPU core/ CPU core */
+
+    int seg_n = s->mmcnt - s->mmcnt_done;
+    int source_n = s->mmterms-s->mmterms_done;
+    grav_mns_queue(first-Btab, last-first, MMvec, seg_n, source_n);
+    /* need 100k transfer to get 4 GB/sec on Titan (PCI-Express 2.0) */
+    if (mnsq.seg_n >= 32768) {	
+	StartTimer(&CUDAWtTm);
+	int q;
+	while ((q = qallocCUDA()) < 0) mxn_poll(&last_poll);
+	StopTimer(&CUDAWtTm);
+	grav_mns_flush(Btab[0].mass, s->smooth_len, &s->smooth_cnt, q);
     }
-    // Msg_do("%ld %g %g %g\n", first->ident, first->acc[0], first->acc[1], first->acc[2]);
-    AddCounter(&FBCInt, (last-first)*(n1-n0)*NSSE);
-    s->mcnt_done = n1*NSSE;
+    AddCounter(&FBCInt, (last-first)*source_n);
+    s->mmcnt_done = s->mmcnt;
+    s->mmterms_done = s->mmterms;
 
     StopTimer(&GravMFTm);
     StopTimer(&GravTm);
 }
-
 
 static void
 mxn_quad(Sink *s, const hcell *pp)
@@ -702,14 +760,14 @@ mxn_quad(Sink *s, const hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while (qallocCUDA(&q) < 0) {
+	    while ((q = qallocCUDA()) < 0) {
 		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
-		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			      (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)),
-			      s->smooth_len, &s->smooth_cnt, q);
+		grav_mn_CUDA("pQ", &p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			     (float *)&Qvec[n0], (n1-n0)*NSSE, sizeof(Qvec[0])/(NSSE*sizeof(float)),
+			     s->smooth_len, &s->smooth_cnt, q);
 	    } else {
 		float mtot = 0.0f;
 		for (i = 0; i < block; i++) {
@@ -770,14 +828,14 @@ mxn_hexa(Sink *s, const hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while (qallocCUDA(&q) < 0) {
+	    while ((q = qallocCUDA()) < 0) {
 		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0) {
-		pinteractCUDA(&p->mass, p->acc, block, sizeof(body)/sizeof(float),
-			      (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)),
-			      s->smooth_len, &s->smooth_cnt, q);
+		grav_mn_CUDA("pH", &p->mass, p->acc, block, sizeof(body)/sizeof(float),
+			     (float *)&Hvec[n0], (n1-n0)*NSSE, sizeof(Hvec[0])/(NSSE*sizeof(float)),
+			     s->smooth_len, &s->smooth_cnt, q);
 	    } else {
 		float mtot = 0.0f;
 		for (i = 0; i < block; i++) {
@@ -1227,15 +1285,16 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 	}
 	/* Optimization of terminal traversal */
 	if (result[i] != MAC_ACCEPT && cp->daughters <= mac->leaf_max_n && !(source_vec[i]->type & (SHARED|NONLOCAL))) {
-	    for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
-		VxVV(r, = b->pos, + offset_array[offset_index(flags_vec[i])]);
-#if 0
-		if (b->mass != Btab[0].mass) {
-		    Error("Bad particle mass %f type %d %s\n", 
-			  b->mass, source_vec[i]->type, PrintType(source_vec[i]->type));
+	    int idx = offset_index(flags_vec[i]);
+	    if (idx == Nimage >> 1) {
+		MMvec[sink->mmcnt].base = cp->bptr-Btab;
+		MMvec[sink->mmcnt++].length = cp->daughters;
+		sink->mmterms += cp->daughters;
+	    } else {
+		for (body *b = cp->bptr; b < cp->bptr + cp->daughters; b++) {
+		    VxVV(r, = b->pos, + offset_array[idx]);
+		    appendMvec(b, b->mass);
 		}
-#endif
-		appendMvec(b, b->mass);
 	    }
 	    result[i] = MAC_ACCEPT;
 	    sink->interactions += cp->daughters;
@@ -1245,6 +1304,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
     
     if (sink->scnt/NSSE >= SVECSZ) Error("svec overflow\n");
     if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
+    if (sink->mmcnt >= MMVECSZ) Error("mmvec overflow\n");
     if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
     if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 }

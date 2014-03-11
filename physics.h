@@ -10,7 +10,7 @@
 #include "key.h"
 #include "timers.h"
 #include "vec.h"
-#include "segarray.h"
+#include "segment.h"
 
 #define SAVE_ACC
 /* #define BODY_HAS_KEY */
@@ -337,10 +337,10 @@ void Arch(do_gravph_amd6100)(const float *f, const float *fend, const float *pos
 void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
-typedef void (*grav_ff)(const float *f, const int stride, const float pmass, const segarray *mm, const int mm_n, 
+typedef void (*grav_ff)(const float *f, const int stride, const float pmass, const segment *mm, const int mm_n, 
 			const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 		       
-void Arch(do_gravmm_sK1)(const float *f, const int stride, const float pmass, const segarray *mm, const int mm_n, 
+void Arch(do_gravmm_sK1)(const float *f, const int stride, const float pmass, const segment *mm, const int mm_n, 
 			 const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
 
@@ -352,23 +352,6 @@ void pMinteract(const float *p, float *accp, const int m, const int stride,
 		const float *f, const int n);
 void pMinteract_sK1(const float *p, float *accp, const int m, const int stride, 
 		    const float *f, const int n, const float e, int *ncut);
-
-
-#ifdef CUDA
-void CUDA_Init(void);
-int qallocCUDA(int *q);
-void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
-		   const float *f, const int source_n, const int sz, 
-		   const float e, int *ncut, int q);
-void psainteractCUDA(const float *p, float *accp, const int m, const int stride, 
-		     const segarray *sa, const int sa_n, const int source_n, float mass, float e, int *ncut, int q);
-void WalkInitSinkCUDA(body *btab, int stride, int64_t nobj);
-void WalkTerminateSinkCUDA(body *btab, int stride, int64_t nobj);
-#else
-#define CUDA_Init()
-#define WalkInitSinkCUDA(a, b, c) {}
-#define WalkTerminateSinkCUDA(a, b, c) {}
-#endif
 
 /* In ewald.c */
 void ewald(double *x, double L, double *f, double *phi);

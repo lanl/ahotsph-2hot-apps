@@ -3,6 +3,7 @@
  */
 #ifndef __AVX__
 #include "order.h"
+#inlclude "segment.h"
 #include "vec.h"
 
 #define mass f[0]
@@ -1043,7 +1044,7 @@ do_grav_sK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass
 }
 
 void
-do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const int *mm, const int mm_n, 
+do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const segment *mm, const int mm_n, 
 		   const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     vsf a0 = vsf_scalar(0.0f);
@@ -1061,16 +1062,15 @@ do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const 
 
     int i = 0;
     int j = 0;
-    const float *ff = xyz + mm[0] * stride;
+    const float *ff = xyz + mm[0].base * stride;
     while (i < mm_n) {
 	/* Load vsf vectors from pairs of start, count indices into array of x,y,z positions */
 	for (int k = 0; k < NSSE; k++) {
 	    xx[k] = ff[j*stride+0];
 	    yy[k] = ff[j*stride+1];
 	    zz[k] = ff[j*stride+2];
-	    if (++j == mm[i+1]) {
-		i += 2;
-		ff = xyz + mm[i] * stride;
+	    if (++j == mm[i].length) {
+		ff = xyz + mm[i].base * stride;
 		j = 0;
 		if (i >= mm_n) {
 		    while (k < NSSE) {
