@@ -635,7 +635,7 @@ mxn_mono(Sink *s, const hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while ((q = qallocCUDA()) < 0) {
+	    while (qallocCUDA(&q) < 0) {
 		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);
@@ -702,7 +702,7 @@ mxn_quad(Sink *s, const hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while ((q = qallocCUDA()) < 0) {
+	    while (qallocCUDA(&q) < 0) {
 		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);
@@ -770,7 +770,7 @@ mxn_hexa(Sink *s, const hcell *pp)
 #ifdef CUDA
 	    int q;
 	    StartTimer(&CUDAWtTm);
-	    while ((q = qallocCUDA()) < 0) {
+	    while (qallocCUDA(&q) < 0) {
 		if (!mxn_poll(&last_poll)) break;
 	    }
 	    StopTimer(&CUDAWtTm);

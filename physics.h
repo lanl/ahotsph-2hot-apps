@@ -10,6 +10,7 @@
 #include "key.h"
 #include "timers.h"
 #include "vec.h"
+#include "segarray.h"
 
 #define SAVE_ACC
 /* #define BODY_HAS_KEY */
@@ -199,6 +200,10 @@ typedef struct{
     int scnt;
     int mcnt;
     int mcnt_done;
+    int mmcnt;
+    int mmterms;
+    int mmterms_done;
+    int mmcnt_done;
 #ifdef QUAD
     int qcnt;
     int qcnt_done;
@@ -332,6 +337,13 @@ void Arch(do_gravph_amd6100)(const float *f, const float *fend, const float *pos
 void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
+typedef void (*grav_ff)(const float *f, const int stride, const float pmass, const segarray *mm, const int mm_n, 
+			const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+		       
+void Arch(do_gravmm_sK1)(const float *f, const int stride, const float pmass, const segarray *mm, const int mm_n, 
+			 const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+
+
 void pHinteract(const float *p, float *accp, const int m, const int stride, 
 		const float *f, const int n);
 void pQinteract(const float *p, float *accp, const int m, const int stride, 
@@ -344,10 +356,12 @@ void pMinteract_sK1(const float *p, float *accp, const int m, const int stride,
 
 #ifdef CUDA
 void CUDA_Init(void);
-int qallocCUDA(void);
+int qallocCUDA(int *q);
 void pinteractCUDA(const float *p, float *accp, const int n, const int stride, 
 		   const float *f, const int source_n, const int sz, 
 		   const float e, int *ncut, int q);
+void psainteractCUDA(const float *p, float *accp, const int m, const int stride, 
+		     const segarray *sa, const int sa_n, const int source_n, float mass, float e, int *ncut, int q);
 void WalkInitSinkCUDA(body *btab, int stride, int64_t nobj);
 void WalkTerminateSinkCUDA(body *btab, int stride, int64_t nobj);
 #else

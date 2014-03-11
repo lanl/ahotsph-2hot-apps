@@ -554,9 +554,11 @@ WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj)
 }
 
 extern "C" int
-qallocCUDA(void)
+qallocCUDA(int *q)
 {
-    return check_cudaq();
+    int ret = check_cudaq();
+    if (q) *q = ret;
+    return ret;
 }
 
 extern "C" void
