@@ -551,9 +551,8 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    int mmsrc = from->mmterms-from->mmterms_done;
 	    int qsrc = from->qcnt-from->qcnt_done;
 	    int hsrc = from->hcnt-from->hcnt_done;
-	    if (from->daughters >= 32)
-		Msg_do("%ld m %d/%d mm %d/%d q %d/%d h %d/%d\n", from->daughters, 
-		       msrc, from->mcnt, mmsrc, from->mmterms, qsrc, from->qcnt, hsrc, from->hcnt);
+	    Msg_do("%ld m %d/%d mm %d/%d q %d/%d h %d/%d\n", from->daughters, 
+		   msrc, from->mcnt, mmsrc, from->mmterms, qsrc, from->qcnt, hsrc, from->hcnt);
 	}
 #ifdef HEXA
 	if (from->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
@@ -656,9 +655,18 @@ grav_mns_queue(int this_base, int this_m, const segment *this_seg, int this_seg_
     Msgf(("mns_queue this_base %d this_m %d this_seg_n %d this_source_n %d\n",
 	  this_base, this_m, this_seg_n, this_source_n));
 
-    if (base != mnsq.m) 
-	Error("Gap in grav_mns_queue, mnsq.sink_base %d mnsq.m %d this_base %d this_m %d\n",
-	      mnsq.sink_base, mnsq.m, this_base, this_m);
+    if (this_base > mnsq.sink_base + mnsq.m) {
+	int gap_m = this_base - (mnsq.sink_base + mnsq.m);
+	Msgf(("Filling gap of %d\n", gap_m));
+	mnsq.m += gap_m;
+	mnsq.ss_seg[mnsq.ss_len].base = mnsq.seg_n;
+	mnsq.ss_seg[mnsq.ss_len].length = 0; /* fill gap with zero work placeholders */
+	mnsq.source_n[mnsq.ss_len] = 0;
+	for (int i = 0; i < gap_m; i++) {
+	    mnsq.ss_index[base+i] = mnsq.ss_len;
+	}
+	mnsq.ss_len++;
+    }
     mnsq.m += this_m;
     memcpy(mnsq.seg + mnsq.seg_n, this_seg, this_seg_n * sizeof(segment));
     
