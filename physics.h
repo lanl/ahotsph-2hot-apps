@@ -266,6 +266,13 @@ typedef struct mxn_s {
     int do_pH;
 } mxn_s;
 
+typedef struct membuf_s {
+    int p2store_enable;
+    int p2store_len;
+    int p2store_used;
+    void *p2store;
+} membuf_s;
+
 /* Prototypes for all the functions which are "friends" of physics.h */
 #include "physics_generic.h"
 
@@ -276,7 +283,7 @@ extern Timer_t FindForcesTm;
 extern Counter_t NbodyCnt;
 
 /* In cofm.c */
-void SetupCofm(mac_s *mac);
+void SetupCofm(mac_s *mac, membuf_s *cellbuf);
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
 int CellSz(void *p);
 void *CellFromCofm(cofmdata *cmp);

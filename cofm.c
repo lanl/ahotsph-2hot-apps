@@ -13,6 +13,7 @@
 #include "protos.h"
 
 static const mac_s *mac;
+static membuf_s *cellbuf;
 static float min_sigma_m = 1.0f;
 static float max_sigma_m = 7.2e+10; /* exp(25.0) */
 static float sigma_m[] = {
@@ -51,7 +52,7 @@ static void rcrit_poly(int n, double r, double *value, double *deriv);
 static double rtnewt(int n, void (*funcd)(int, double, double *, double *),  
 		    double x1, double xacc);
 
-void SetupCofm(mac_s *m)
+void SetupCofm(mac_s *m, membuf_s *c)
 {
     m->rho0 = m->m0/pow3(2.0*m->r0);
     m->inv_tol = 1.0/m->this_tol;
@@ -59,6 +60,7 @@ void SetupCofm(mac_s *m)
     m->inv_rel_tol0 = 1.0/m->rel_tol0;
     m->bmax0 = m->r0;
     mac = m;
+    cellbuf = c;
 }
 
 /* Make Cell bounds correct if system is smaller than root cell */
@@ -250,8 +252,14 @@ void *CellFromCofm(cofmdata *cmp)
 	qcp = (quadcell *)cp;
 	hcp = (hexacell *)cp;
     } else if (mac->p2cut && (cmp->ndaughters >= mac->p2cut)) {
-	cp = ChnAlloc(&mac->tree->cell2chn);
-	qcp = (quadcell *)cp;
+	if (cellbuf->p2store_enable && cellbuf->p2store_used < cellbuf->p2store_len) {
+	    qcp = (quadcell *)cellbuf->p2store + cellbuf->p2store_used++;
+	    cp = (cell *)qcp;
+	} else {
+	    cp = ChnAlloc(&mac->tree->cell2chn);
+	    qcp = (quadcell *)cp;
+	}
+
     } else {
 	cp = ChnAlloc(&mac->tree->cellchn);
     }

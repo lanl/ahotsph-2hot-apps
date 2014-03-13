@@ -179,6 +179,7 @@ main(int argc, char *argv[])
     int ic_Nmesh;
     double ic_growthfac;
     mac_s mac = {.type = AREL_MAC, .tol = 1e-3, .tree = &thetree};
+    membuf_s cellbuf = {};
 
     MPMY_Init(&argc, &argv);
     csdfp = startup(argc, argv);
@@ -473,6 +474,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
     SDFgetintOrDefault(csdfp, "leaf_max_n", &mac.leaf_max_n, mac.p2cut*8);
     SDFgetintOrDefault(csdfp, "enable_expand_root", &mac.enable_expand_root, 0);
+    SDFgetintOrDefault(csdfp, "quadstore_enable", &cellbuf.p2store_enable, 1);
     SDFgetint(csdfp, "mxn_hblock", &mxn.hblock);
     SDFgetint(csdfp, "mxn_min_msink", &mxn.min_msink);
     SDFgetint(csdfp, "mxn_min_qsink", &mxn.min_qsink);
@@ -582,6 +584,7 @@ main(int argc, char *argv[])
     singlPrintf("int subtract_background = %d;\n", mac.subtract_background);
     singlPrintf("int leaf_max_n = %d;\n", mac.leaf_max_n);
     singlPrintf("int enable_expand_root = %d;\n", mac.enable_expand_root);
+    singlPrintf("int quadstore_enable = %d;\n", cellbuf.p2store_enable);
     singlPrintf("int mxn_hblock = %d;\n", mxn.hblock);
     singlPrintf("int mxn_min_msink = %d;\n", mxn.min_msink);
     singlPrintf("int mxn_min_qsink = %d;\n", mxn.min_qsink);
@@ -753,7 +756,7 @@ main(int argc, char *argv[])
 	if (setdisplacement) {
 	    mac.this_tol /= 3.0;
 	}
-	SetupCofm(&mac);
+	SetupCofm(&mac, &cellbuf);
 
 	if (do_cosmology && !do_periodic) {
 	    /* integer factor to keep error behavior identical to periodic */
@@ -795,6 +798,11 @@ main(int argc, char *argv[])
             BuildTree(&thetree, &sortedbtab);
             FreeTree(&thetree);
         }
+	if (cellbuf.p2store_enable) { /* for array of local cells to be copied to co-processor */
+	    cellbuf.p2store_len = nobj/32;
+	    cellbuf.p2store_used = 0;
+	    cellbuf.p2store = Malloc(sizeof(quadcell)*cellbuf.p2store_len);
+	}
 	BuildTree(&thetree, &sortedbtab);
 	btab = sortedbtab.data;
 	nobj = sortedbtab.nobj;
@@ -855,6 +863,11 @@ main(int argc, char *argv[])
 	    malloc_print();
 	}
 	FreeTree(&thetree);
+	if (cellbuf.p2store_enable) {
+	    Free(cellbuf.p2store);
+	    cellbuf.p2store_len = 0;
+	    cellbuf.p2store_used = 0;
+	}
 	singlPrintf("FreeTree done %d (%d)\n", maxmem(), maxheap());
 	Msgf(("FreeTree done\n"));
 	if( Msg_test("memleak") ){
