@@ -509,7 +509,7 @@ pMM1_mnss_sK1(const float * __restrict__ sink, const int sink_m,
 	      const uint16_t * __restrict__ ss_index, const segment * __restrict__ ss_seg, const int ss_len,
 	      const segment * __restrict__ s_seg, const int s_seg_len, 
 	      const float * __restrict__ source, const int *s_source_n, 
-	      const float mmass, const float eps_inv, float *accp, int *ncut)
+	      const float mmass, const float eps_inv, float *accp, int *ncut, int proc)
 {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     if (index >= sink_m) return;
@@ -560,7 +560,9 @@ pMM1_mnss_sK1(const float * __restrict__ sink, const int sink_m,
 	atomicAdd(&accp[4*index+2], acc.Az);
 	atomicAdd(&accp[4*index+3], acc.Phi);
     }
-    assert(source_interactions == source_n);
+    if (source_interactions != source_n) 
+	printf("CUDA ERROR proc %d: %d %d %d %d %d %d %d %d\n", 
+	       proc, index, sindex, ss_len, ss_seg[sindex].base, seg_len, s_seg_len, source_n, source_interactions);
 }
 
 
@@ -904,11 +906,12 @@ grav_mnss_CUDA(const char *routine, const int sink_base, const int m,
 
     Msgf(("%s %d sinks, %d ss_segments %d segments, %d blocks, %d threads. Base %d\n",
 	  routine, m, ss_len, seg_len, blocks, threads, sink_base));
+    extern int _MPMY_procnum_;
     if (strcmp(routine, "pMM_mnss_sK1") == 0)
 	pMM1_mnss_sK1<<<blocks,threads,0,stream>>>
 	    (sink, m, ss_index_dev, ss_seg_dev, ss_len,
 	     seg_dev, seg_len, source, source_n_dev,
-	     mmass, e, accp, ncut);
+	     mmass, e, accp, ncut, _MPMY_procnum_);
     else Error("routine %s not found\n", routine);
 
     err = cudaGetLastError();

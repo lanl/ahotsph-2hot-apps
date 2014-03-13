@@ -116,9 +116,6 @@ static struct {
 #define MMVECSZ (1021) /* This should be dynamically extensible */
 segment MMvec[MMVECSZ];
 
-#define SSVECSZ (1021) /* This should be dynamically extensible */
-segment SSvec[SSVECSZ];
-
 #ifdef QUAD
 #define QVECSZ (7919)
 static struct Qvec {
@@ -349,7 +346,10 @@ grav_mns_queue(int this_base, int this_m, const segment *this_seg, int this_seg_
     Msgf(("base %5d m %5d seg_n %5d source_n %5d\n",
 	  this_base, this_m, this_seg_n, this_source_n));
 
-    if (this_base > mnsq.sink_base + mnsq.m) {
+    if (this_base < mnsq.sink_base + mnsq.m) {
+	/* could fix this by updating entries already in queue */
+	Error("repeated or out-of-sequence sink in grav_mns_queue\n");
+    } else if (this_base > mnsq.sink_base + mnsq.m) {
 	int gap_m = this_base - (mnsq.sink_base + mnsq.m);
 	Msgf(("Filling gap of %d\n", gap_m));
 	mnsq.ss_seg[mnsq.ss_len].base = mnsq.seg_n;
@@ -622,7 +622,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
     }
 
     if (from) {
-	if (!from->processed && MPMY_Procnum() == MPMY_Nproc()/3) {
+	if (!from->processed /* && MPMY_Procnum() == MPMY_Nproc()/3 */) {
 	    int msrc = from->mcnt-from->mcnt_done;
 	    int mmsrc = from->mmterms-from->mmterms_done;
 	    int qsrc = from->qcnt-from->qcnt_done;
@@ -732,7 +732,7 @@ mxn_mono(Sink *s, const hcell *pp)
     int seg_n = s->mmcnt - s->mmcnt_done;
     int source_n = s->mmterms-s->mmterms_done;
 #ifdef CUDA
-    if (MxN->do_pM) {
+    if (MxN->do_pM && first-Btab >= mnsq.sink_base + mnsq.m) { /* Don't do more than one level */
 	grav_mns_queue(first-Btab, last-first, MMvec, seg_n, source_n);
 	/* need 100k transfer to get 4 GB/sec on Titan (PCI-Express 2.0) */
 	if (mnsq.seg_n >= 32768) grav_mns_flush(Btab[0].mass, s->smooth_len, &s->smooth_cnt);

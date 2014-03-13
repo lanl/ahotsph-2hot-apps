@@ -185,7 +185,7 @@ main(int argc, char *argv[])
     mxn_s mxn = {.hblock=4096, .min_msink=8, .min_qsink=8, .min_hsink=8, 
 		 .min_msrc=64, .min_qsrc=64, .min_hsrc=64,
 		 .do_pM=0, .do_pQ=0, .do_pH=0};
-    mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_msink=32, .min_qsink=32, .min_hsink=32,
+    mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_msink=8, .min_qsink=32, .min_hsink=32,
 		      .min_msrc=128, .min_qsrc=128, .min_hsrc=128, 
 		      .do_pM=1, .do_pQ=1, .do_pH=1};
     if (has_cuda) mxn = mxn_cuda;
@@ -705,6 +705,7 @@ main(int argc, char *argv[])
 	    ProfilerStart(gperffile);
 	}
 #endif
+	Msgf(("Starting iteration %d\n", iter));
 
 	if (do_cosmology) for (dt = dt_base; dt/tpos > dt_hiz_tol; dt *= 0.5) /* NULL */;
 
@@ -1033,12 +1034,14 @@ main(int argc, char *argv[])
 	    AddCounter(&Hcycles, 10.0*CPU.Hz*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
 	if (ReadCounter(&FBC4Int))
 	    AddCounter(&FHcycles, 10.0*CPU.Hz*ReadTimer(&GravHFTm)/ReadCounter(&FBC4Int));
+#if 0
 	if (ReadCounter(&Mcycles) > 70) {
 	    char hostname[128];
 	    gethostname(hostname, sizeof(hostname));
 	    SeriousWarning("Proc %d %s is slow, Mcycles is %ld\n", 
 			   MPMY_Procnum(), hostname, ReadCounter(&Mcycles));
 	}
+#endif
 	   
 	Msgf(("doing MPMY_combine\n"));
 	MPMY_ICombine_Init(&req);
