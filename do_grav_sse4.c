@@ -2,8 +2,9 @@
  * Copyright 2012-2014 Michael S. Warren. All Rights Reserved.
  */
 #ifndef __AVX__
+#include <assert.h>
 #include "order.h"
-#inlclude "segment.h"
+#include "segment.h"
 #include "vec.h"
 
 #define mass f[0]
@@ -1031,7 +1032,6 @@ do_grav_sK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass
 	a0 += x*t;
 	a1 += y*t;
 	a2 += z*t;
-
     }
     phi = __builtin_ia32_haddps(phi, phi);
     a0 = __builtin_ia32_haddps(a0, a0);
@@ -1045,7 +1045,7 @@ do_grav_sK1_sse4(const v4sf *f, const v4sf *fend, const float *pos0, float *mass
 
 void
 do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const segment *mm, const int mm_n, 
-		   const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
+		   const int source_n, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     vsf a0 = vsf_scalar(0.0f);
     vsf a1 = vsf_scalar(0.0f);
@@ -1059,6 +1059,7 @@ do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const 
     const vsf three = vsf_scalar(3.0f);
     const vsf half = vsf_scalar(0.5f);
     const vsf eps2 = vsf_scalar(1.0f/(*e**e));
+    int source_interactions = 0;
 
     int i = 0;
     int j = 0;
@@ -1069,12 +1070,13 @@ do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const 
 	    xx[k] = ff[j*stride+0];
 	    yy[k] = ff[j*stride+1];
 	    zz[k] = ff[j*stride+2];
+	    source_interactions++;
 	    if (++j == mm[i].length) {
-		ff = xyz + mm[i].base * stride;
+		ff = xyz + mm[++i].base * stride;
 		j = 0;
 		if (i >= mm_n) {
-		    while (k < NSSE) {
-			mmass[k++] = 0.0f;
+		    while (++k < NSSE) {
+			mmass[k] = 0.0f;
 		    }
 		    break;
 		}
@@ -1123,6 +1125,7 @@ do_gravmm_sK1_sse4(const float *xyz, const int stride, const float pmass, const 
     acc[0] += vsf_hsum(a0);
     acc[1] += vsf_hsum(a1);
     acc[2] += vsf_hsum(a2);
+    assert(source_interactions == source_n);
 }
 
 

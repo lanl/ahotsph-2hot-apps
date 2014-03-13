@@ -8,7 +8,7 @@
 #ifdef CUDA
 EXTERN void CUDA_Init(void *device_prop);
 EXTERN void CUDA_Finalize(void);
-EXTERN int qallocCUDA(void);
+EXTERN int qallocCUDA(int *inuse);
 EXTERN void WalkInitSinkCUDA(float *btab, int stride, int64_t nobj);
 EXTERN void WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj);
 EXTERN void grav_mn_CUDA(const char *routine, const float *p, float *accp, const int n, const int stride, 
@@ -26,7 +26,7 @@ EXTERN void grav_mnss_CUDA(const char *routine, const int sink_base, const int m
 /* stubs */
 inline static void CUDA_Init(void *device_prop) {}
 inline static void CUDA_Finalize(void) {}
-inline static int qallocCUDA(void) {return 0;}
+inline static int qallocCUDA(int *inuse) {return 0;}
 inline static void WalkInitSinkCUDA(float *btab, int stride, int64_t nobj) {}
 inline static void WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj) {};
 inline static void grav_mn_CUDA(const char *routine, const float *p, float *accp, const int n, const int stride, 

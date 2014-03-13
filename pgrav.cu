@@ -449,14 +449,12 @@ pMM_mnss_sK1(const float * __restrict__ sink, const int sink_m,
 {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     if (VECWIDTH*index >= sink_m) return;
-    const int sindex = ss_index[index];
+    const int sindex = ss_index[VECWIDTH*index];
     assert(sindex < ss_len);
     assert(ss_seg[sindex].base + ss_seg[sindex].length <= s_seg_len);
     const segment *seg = s_seg + ss_seg[sindex].base;
     const int seg_len = ss_seg[sindex].length;
     const int source_n = s_source_n[sindex];
-
-    // printf("%d %d %d %d %d %d %d\n", index, sindex, ss_len, ss_seg[sindex].base, seg_len, s_seg_len, source_n);
 
     float t[VECWIDTH], r2[VECWIDTH], rinv[VECWIDTH], u2[VECWIDTH];
     float x[VECWIDTH], y[VECWIDTH], z[VECWIDTH];
@@ -506,6 +504,65 @@ pMM_mnss_sK1(const float * __restrict__ sink, const int sink_m,
     assert(source_interactions == source_n);
 }
 
+__global__ void
+pMM1_mnss_sK1(const float * __restrict__ sink, const int sink_m,
+	      const uint16_t * __restrict__ ss_index, const segment * __restrict__ ss_seg, const int ss_len,
+	      const segment * __restrict__ s_seg, const int s_seg_len, 
+	      const float * __restrict__ source, const int *s_source_n, 
+	      const float mmass, const float eps_inv, float *accp, int *ncut)
+{
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (index >= sink_m) return;
+    const int sindex = ss_index[index];
+    assert(sindex < ss_len);
+    assert(ss_seg[sindex].base + ss_seg[sindex].length <= s_seg_len);
+    const segment *seg = s_seg + ss_seg[sindex].base;
+    const int seg_len = ss_seg[sindex].length;
+    const int source_n = s_source_n[sindex];
+    // if (debug) printf("%d %d %d %d %d\n", index, sindex, ss_len, ss_seg[sindex].base, ss_seg[sindex].length);
+
+    const float3 ppos = {sink[3*index], sink[3*index+1], sink[3*index+2]};
+    const float eps_inv2 = eps_inv*eps_inv;
+    const float eps2 = 1.0f/eps_inv2;
+    float4 acc = {};
+    int source_interactions = 0;
+
+    for (int seg_i = 0; seg_i < seg_len; seg_i++) {
+	source_interactions += seg[seg_i].length;
+	for (int seg_j = 0; seg_j < seg[seg_i].length; seg_j++) {
+	    const float3 qpos = ((float3 *)source)[seg[seg_i].base + seg_j];
+	    float x = ppos.x - qpos.x;
+	    float y = ppos.y - qpos.y;
+	    float z = ppos.z - qpos.z;
+	    float r2 = x*x + y*y + z*z;
+	    float eqe;
+	    if (r2 > eps2) {
+		float rinv = -rsqrtf(r2);
+		eqe = mmass * rinv;
+		acc.Phi += eqe;
+		eqe *= rinv * rinv;
+	    } else {
+		float u2 = r2 * eps_inv2 - 1.0f;
+		float t = (((45.0f/32.0f)*u2 + (-3.0f/8.0f)) * u2 + (1.0f/2.0f)) * u2 - 1.0f;
+		t *= mmass * eps_inv;
+		acc.Phi += t;
+		eqe = ((-135.0f/16.0f) * u2 + (3.0f/2.0f)) * u2 - 1.0f;
+		eqe *= mmass * eps_inv * eps_inv2;
+	    }
+	    acc.Ax += x * eqe;
+	    acc.Ay += y * eqe;
+	    acc.Az += z * eqe;
+	}
+    }
+    if (index < sink_m) {
+	atomicAdd(&accp[4*index+0], acc.Ax);
+	atomicAdd(&accp[4*index+1], acc.Ay);
+	atomicAdd(&accp[4*index+2], acc.Az);
+	atomicAdd(&accp[4*index+3], acc.Phi);
+    }
+    assert(source_interactions == source_n);
+}
+
 
 #include <stdio.h>
 #include <unistd.h>
@@ -525,7 +582,7 @@ typedef struct cudaq_t {
 static cudaq_t cudaq[NQ];
 
 static int
-check_cudaq(void)
+check_cudaq(int *inuse)
 {
     int i;
     cudaError_t err;
@@ -544,6 +601,7 @@ check_cudaq(void)
 	    } else ninuse++;
 	}
     }
+    if (inuse) *inuse = ninuse;
     if (ninuse == NQ) return -1; // All slots in use
     
     for (i = 0; i < NQ; i++) {
@@ -678,6 +736,7 @@ WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj)
 	btab[i*stride+8] += hostaccp[i*4+1];
 	btab[i*stride+9] += hostaccp[i*4+2];
 	btab[i*stride+10] += hostaccp[i*4+3];
+	// Msgf(("b %5ld %12g %12g %12g\n", i, btab[i*stride+7], btab[i*stride+8], btab[i*stride+9]));
     }
 
     err = cudaFreeHost(hostaccp);
@@ -688,9 +747,9 @@ WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj)
 }
 
 extern "C" int
-qallocCUDA(void)
+qallocCUDA(int *inuse)
 {
-    return check_cudaq();
+    return check_cudaq(inuse);
 }
 
 extern "C" void
@@ -840,13 +899,13 @@ grav_mnss_CUDA(const char *routine, const int sink_base, const int m,
     float *accp = devaccp + sink_base * 4;
     cudaStream_t stream = cudaq[q].stream;
 
-    int threads = 64;
-    int blocks = 1 + (m-1) / (VECWIDTH * threads);
+    int threads = 256;
+    int blocks = 1 + (m-1) / threads;
 
     Msgf(("%s %d sinks, %d ss_segments %d segments, %d blocks, %d threads. Base %d\n",
 	  routine, m, ss_len, seg_len, blocks, threads, sink_base));
     if (strcmp(routine, "pMM_mnss_sK1") == 0)
-	pMM_mnss_sK1<<<blocks,threads,0,stream>>>
+	pMM1_mnss_sK1<<<blocks,threads,0,stream>>>
 	    (sink, m, ss_index_dev, ss_seg_dev, ss_len,
 	     seg_dev, seg_len, source, source_n_dev,
 	     mmass, e, accp, ncut);

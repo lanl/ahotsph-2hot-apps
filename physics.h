@@ -338,10 +338,10 @@ void Arch(do_gravpq)(const float *f, const float *fend, const float *pos0, float
 void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
 typedef void (*grav_ff)(const float *f, const int stride, const float pmass, const segment *mm, const int mm_n, 
-			const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+			const int source_n, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 		       
 void Arch(do_gravmm_sK1)(const float *f, const int stride, const float pmass, const segment *mm, const int mm_n, 
-			 const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+			 const int source_n, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
 
 
 void pHinteract(const float *p, float *accp, const int m, const int stride, 
