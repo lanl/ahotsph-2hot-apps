@@ -248,18 +248,18 @@ void *CellFromCofm(cofmdata *cmp)
     cofmdata u;
 
     if (mac->p4cut && (cmp->ndaughters >= mac->p4cut)) {
-	cp = ChnAlloc(&mac->tree->cell4chn);
-	qcp = (quadcell *)cp;
-	hcp = (hexacell *)cp;
-    } else if (mac->p2cut && (cmp->ndaughters >= mac->p2cut)) {
-	if (cellbuf->p2store_enable && cellbuf->p2store_used < cellbuf->p2store_len) {
-	    qcp = (quadcell *)cellbuf->p2store + cellbuf->p2store_used++;
-	    cp = (cell *)qcp;
+	if (cellbuf->p4store_enable && cellbuf->p4store_used < cellbuf->p4store_len) {
+	    hcp = (hexacell *)cellbuf->p4store + cellbuf->p4store_used++;
+	    qcp = (quadcell *)hcp;
+	    cp = (cell *)hcp;
 	} else {
-	    cp = ChnAlloc(&mac->tree->cell2chn);
+	    cp = ChnAlloc(&mac->tree->cell4chn);
 	    qcp = (quadcell *)cp;
+	    hcp = (hexacell *)cp;
 	}
-
+    } else if (mac->p2cut && (cmp->ndaughters >= mac->p2cut)) {
+	cp = ChnAlloc(&mac->tree->cell2chn);
+	qcp = (quadcell *)cp;
     } else {
 	cp = ChnAlloc(&mac->tree->cellchn);
     }

@@ -207,6 +207,8 @@ typedef struct{
 #ifdef QUAD
     int qcnt;
     int qcnt_done;
+    int qqcnt;
+    int qqcnt_done;
 #endif
 #ifdef HEXA
     int hcnt;
@@ -267,10 +269,10 @@ typedef struct mxn_s {
 } mxn_s;
 
 typedef struct membuf_s {
-    int p2store_enable;
-    int p2store_len;
-    int p2store_used;
-    void *p2store;
+    int p4store_enable;
+    int p4store_len;
+    int p4store_used;
+    void *p4store;
 } membuf_s;
 
 /* Prototypes for all the functions which are "friends" of physics.h */
@@ -299,7 +301,7 @@ char *PrintBranch(const cofmdata *cmp);
 extern Timer_t GravTm, GravSTm, GravMTm, GravQTm, GravHTm, EwaldTm, MACTm, MACswzlTm, CUDAWtTm;
 extern Counter_t CCInt, BSInt, BSMax, CBInt, BCInt, BC2Int, BC4Int, BBInt;
 extern Counter_t CEmpty, MCCorr, MCAnti;
-extern Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt;
+extern Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt, LBC2Int;
 extern Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
 
 
@@ -311,6 +313,7 @@ void DLRcritMACsb(Sink *sink, const hcell **source, int *flags, int *result, int
 void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void SetGravOffset(float *off, int nimage);
 void WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn);
+void WalkInitHSrc(hexacell *q, int ncells);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
 void WalkInitSrcPeriodic(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
@@ -346,10 +349,14 @@ void Arch(do_gravp)(const float *f, const float *fend, const float *pos0, float 
 
 typedef void (*grav_ff)(const float *f, const int stride, const float pmass, const segment *mm, const int mm_n, 
 			const int source_n, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
+
+typedef void (*grav_qf)(const float *f, const int stride, const int *ii, const int ii_n,
+			const float *pos0, float *mass0, float *acc, float *phi0);
 		       
 void Arch(do_gravmm_sK1)(const float *f, const int stride, const float pmass, const segment *mm, const int mm_n, 
 			 const int source_n, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut);
-
+void Arch(do_gravdqq)(const float *f, const int stride, const int *ii, const int ii_n,
+		      const float *pos0, float *mass0, float *acc, float *phi0);
 
 void pHinteract(const float *p, float *accp, const int m, const int stride, 
 		const float *f, const int n);

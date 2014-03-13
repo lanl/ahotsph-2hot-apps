@@ -287,6 +287,7 @@ pQ(const float *p, float *ret, const int n, const int stride,
     }
 }
 
+
 __global__ void
 pM(const float *p, float *ret, const int n, const int stride, 
    const float *f, const int source_n)
@@ -380,6 +381,108 @@ pM_sK1(const float *p, float *ret, const int n, const int stride,
 	    atomicAdd(&ret[stride*(index*VECWIDTH+i)+3], accp[i].Phi);
 	}
     }
+}
+
+#undef mass
+#undef xp
+#undef yp
+#undef zp
+#undef R
+#undef qx
+#undef qy
+#undef qz
+#undef qxx
+#undef qxy
+#undef qyy
+#undef qxz
+#undef qyz
+
+#define mass f[i*QSZ+0]
+#define xp f[i*QSZ+1]
+#define yp f[i*QSZ+2]
+#define zp f[i*QSZ+3]
+#define R  f[i*QSZ+4]
+#define qx f[i*QSZ+5]
+#define qy f[i*QSZ+6]
+#define qz f[i*QSZ+7]
+#define qxx f[i*QSZ+8]
+#define qxy f[i*QSZ+9]
+#define qyy f[i*QSZ+10]
+#define qxz f[i*QSZ+11]
+#define qyz f[i*QSZ+12]
+
+__global__ void
+pQQ1(const float * __restrict__ sink, const int sink_m,
+     const int * __restrict__ ii, const int source_n,
+     const float * __restrict__ f, float *accp_ret)
+{
+    float t, r2, rinv, rinv2;
+    float x, y, z;
+    float eqe, eq0, eq1, eq2;
+    float4 accp = {};
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    const float3 ppos = {sink[3*index], sink[3*index+1], sink[3*index+2]};
+
+    if (index >= source_n) return;
+
+    for (int i = 0; i < source_n; i++) {
+    	x = ppos.x - xp;	
+ 	y = ppos.y - yp;	
+    	z = ppos.z - zp;	
+	r2 = x * x;
+	r2 += y * y;
+	r2 += z * z;
+	rinv = -rsqrtf(r2);
+	
+	t = rinv;
+	eqe = mass * t;
+	rinv2 = t * t;
+	accp.Phi += eqe;
+	eqe *= rinv2;
+	accp.Ax += x * eqe;
+	accp.Ay += y * eqe;
+	accp.Az += z * eqe;
+
+        t *= R * rinv2;
+        eq0 = qx * t;
+        eq1 = qy * t;
+        eq2 = qz * t;
+	eqe  = eq0 * x;
+	eqe += eq1 * y;
+	eqe += eq2 * z;
+	accp.Phi += eqe;
+        eqe *= 3.0f * rinv2;
+	accp.Ax += x * eqe - eq0;
+	accp.Ay += y * eqe - eq1;
+	accp.Az += z * eqe - eq2;
+
+        t *= 3.0f * R * rinv2;
+        eq0  = qxx * x;
+        eq1  = qyy * y;
+	eq2 = -(qxx + qyy) * z;
+        eq0 += qxy * y;
+	eq1 += qxy * x;
+	eq2 += qxz * x;
+	eq0 += qxz * z;
+	eq1 += qyz * z;
+	eq2 += qyz * y;
+	eq0 *= t;
+	eq1 *= t;
+	eq2 *= t;
+	eqe  = eq0 * x;
+	eqe += eq1 * y;
+	eqe += eq2 * z;
+	eqe *= 0.5f;
+	accp.Phi -= eqe;
+	eqe *= 5.0f * rinv2;
+	accp.Ax += x * eqe - eq0;
+	accp.Ay += y * eqe - eq1;
+	accp.Az += z * eqe - eq2;
+    }
+    atomicAdd(&accp_ret[4*index+0], accp.Ax);
+    atomicAdd(&accp_ret[4*index+1], accp.Ay);
+    atomicAdd(&accp_ret[4*index+2], accp.Az);
+    atomicAdd(&accp_ret[4*index+3], accp.Phi);
 }
 
 __global__ void
@@ -645,6 +748,54 @@ wait_cudaq(void)
 
 static float *devpos, *devaccp;
 static float *Btab;
+static float *qdev;
+
+extern "C" void
+WalkInitSrcCUDA(float *qtab, int stride, int64_t ncells)
+{
+    Msgf(("WalkInitSrcCUDA stride %d nobj %ld\n", stride, ncells));
+
+    cudaError_t err = cudaMalloc((void **)&qdev, ncells*QSZ*sizeof(float));
+    if (err != cudaSuccess) 
+	Error("cudaMalloc failed, %d %s\n", err, cudaGetErrorString(err));
+
+    float *host;		// pinned
+    err = cudaMallocHost((void **)&host, ncells*QSZ*sizeof(float), cudaHostAllocDefault);
+    if (err != cudaSuccess) 
+	Error("cudaMallocHost failed, %d %s\n", err, cudaGetErrorString(err));
+
+    for (int64_t i = 0; i < ncells; i++) {
+	host[i*QSZ+0] = qtab[i*stride+0];
+	host[i*QSZ+1] = qtab[i*stride+1];
+	host[i*QSZ+2] = qtab[i*stride+2];
+	host[i*QSZ+3] = qtab[i*stride+3];
+	host[i*QSZ+5] = qtab[i*stride+4];
+	host[i*QSZ+12] = qtab[i*stride+5];
+	host[i*QSZ+13] = qtab[i*stride+6];
+	host[i*QSZ+14] = qtab[i*stride+7];
+	host[i*QSZ+15] = qtab[i*stride+8];
+	host[i*QSZ+16] = qtab[i*stride+9];
+	host[i*QSZ+17] = qtab[i*stride+10];
+	host[i*QSZ+18] = qtab[i*stride+11];
+	host[i*QSZ+19] = qtab[i*stride+12];
+    }
+
+    err = cudaMemcpy(qdev, host, ncells*QSZ*sizeof(float), cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) 
+	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
+    err = cudaFreeHost(host);
+    if (err != cudaSuccess) 
+	Error("cudaFreeHost failed, %d %s\n", err, cudaGetErrorString(err));
+}
+
+extern "C" void
+WalkTerminateSrcCUDA(void)
+{
+    cudaError_t err = cudaFree(qdev);
+    if (err != cudaSuccess) 
+	Error("cudaFree failed, %d %s\n", err, cudaGetErrorString(err));
+}
 
 extern "C" void
 WalkInitSinkCUDA(float *btab, int stride, int64_t nobj)
@@ -840,6 +991,51 @@ grav_mns_CUDA(const char *routine, const int base, const int m,
     if (strcmp(routine, "pMM_sK1") == 0)
 	pMM_sK1<<<blocks,threads,0,stream>>>
 	    (sink, m, devseg, seg_n, source, source_n, mmass, e, accp, ncut);
+    else Error("routine %s not found\n", routine);
+
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+	Error("CUDA error, %d %s\n", err, cudaGetErrorString(err));
+    }
+}
+
+extern "C" void
+grav_qns_CUDA(const char *routine, const int base, const int m,
+	      const int *source_list, const int source_n, int q)
+{
+    cudaError_t err;
+
+    cudaq[q].inuse = 1;
+    err = cudaStreamCreate(&cudaq[q].stream);
+    if (err != cudaSuccess) 
+	Error("cudaStreamCreate failed, %d %s\n", err, cudaGetErrorString(err));
+    
+    int *dev = (int *)cudaq[q].dev;
+    size_t total_size = source_n * sizeof(int);
+
+    if (cudaq[q].dev_size < total_size) {
+	Error("dev_size (%ld) too small, source_n is %d, total_size is %ld\n", 
+	      cudaq[q].dev_size, source_n, total_size);
+    }
+    memcpy(cudaq[q].host, source_list, total_size);
+    err = cudaMemcpyAsync(dev, cudaq[q].host, total_size, 
+			  cudaMemcpyHostToDevice, cudaq[q].stream);
+    if (err != cudaSuccess) 
+	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
+    float *sink = devpos + base * 3;
+    int *source = dev;
+    float *accp = devaccp + base * 4;
+
+    int threads = 256;
+    int blocks = 1 + (m-1) / threads;
+    cudaStream_t stream = cudaq[q].stream;
+
+    Msgf(("QQ %d sinks, %d sources, %d blocks, %d threads. Base %d\n",
+	  m, source_n, blocks, threads, base));
+    if (strcmp(routine, "pQQ1") == 0)
+	pQQ1<<<blocks,threads,0,stream>>>
+	    (sink, m, source, source_n, qdev, accp);
     else Error("routine %s not found\n", routine);
 
     err = cudaGetLastError();

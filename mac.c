@@ -15,10 +15,10 @@
 
 Counter_t CCInt, CBInt, BSInt, BSMax, BCInt, BC2Int, BC4Int, BBInt;
 Counter_t CEmpty, MCAnti, MCCorr;
-Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt;
+Counter_t FBCInt, FBC2Int, FBC4Int, FBCFInt, FBC2FInt, FBC4FInt, LBC2Int;
 Counter_t MACcnt, BBMACcnt, EmptyMACcnt, MACcnt0, MACcnt1, MACcnt2, MACcnt3;
 
-Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravMMTm, GravQTm, GravHTm, GravMFTm, GravQFTm, GravHFTm;
+Timer_t GravTm, PGravTm, GravSTm, GravMTm, GravMMTm, GravQTm, GravHTm, GravMFTm, GravQFTm, GravHFTm, GravQLTm;
 Timer_t MACTm, CUDAWtTm;
 
 #if 0
@@ -61,15 +61,18 @@ static int Nimage = 1;
 static float offset_array[MAX_IMAGE][NDIM];
 static tree_t *SinkTree;
 static body *Btab;
+static hexacell *Htab;
 
 static void mxn_hexa(Sink *s, const hcell *pp);
 static void mxn_quad(Sink *s, const hcell *pp);
+static void mxn_qquad(Sink *s, const hcell *pp);
 static void mxn_mono(Sink *s, const hcell *pp);
 
 static grav_f Sinteract;
 static grav_f Minteract;
 static grav_ff MMinteract;
 static grav_f Qinteract;
+static grav_qf QQinteract;
 static grav_f Hinteract;
 #ifdef AMD6100
 static int amd6100 = 1;
@@ -126,6 +129,8 @@ static struct Qvec {
 #endif
     vsf qxx, qxy, qyy, qxz, qyz;
 } Qvec[QVECSZ];
+#define QQVECSZ (7919)
+int QQvec[QQVECSZ];
 #endif
 
 #ifdef HEXA
@@ -182,6 +187,7 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 	Minteract = Arch(do_grav);
 	if (mac->geometric_center) {
 	    Qinteract = Arch(do_gravdq);
+	    QQinteract = Arch(do_gravdqq);
 	    Hinteract = (amd6100) ? Arch(do_gravdh_amd6100) : Arch(do_gravdh);
 	} else {
 	    Qinteract = Arch(do_gravq);
@@ -230,6 +236,13 @@ SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
 }
 
 void Nlognmacv(Sink *sink, const hcell **source_vec, int *result, int);
+
+void
+WalkInitHSrc(hexacell *htab, int ncells)
+{
+    Htab = htab;
+    WalkInitSrcCUDA((float *)htab, sizeof(hexacell), ncells);
+}
 
 void
 WalkInitSink(tree_t *tp, body *btab, int64_t nobj, mxn_s *mxn)
@@ -593,7 +606,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	// Msgf(("a %5ld %12g %12g %12g\n", bp-Btab, bp->acc[0], bp->acc[1], bp->acc[2]));
 	bp->nterms += from->nterms + from->scnt + from->mcnt + from->mmterms 
 #ifdef QUAD
-	    + QUAD_COST*from->qcnt 
+	    + QUAD_COST*from->qcnt + QUAD_COST*from->qqcnt 
 #endif
 #ifdef HEXA
 	    + HEXA_COST*from->hcnt
@@ -626,9 +639,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	    int msrc = from->mcnt-from->mcnt_done;
 	    int mmsrc = from->mmterms-from->mmterms_done;
 	    int qsrc = from->qcnt-from->qcnt_done;
+	    int qqsrc = from->qqcnt-from->qqcnt_done;
 	    int hsrc = from->hcnt-from->hcnt_done;
-	    Msgf(("%ld m %d/%d mm %d/%d q %d/%d h %d/%d\n", from->daughters, 
-		  msrc, from->mcnt, mmsrc, from->mmterms, qsrc, from->qcnt, hsrc, from->hcnt));
+	    Msgf(("%ld m %d/%d mm %d/%d q %d/%d qq %d/%d h %d/%d\n", from->daughters, 
+		  msrc, from->mcnt, mmsrc, from->mmterms, qsrc, from->qcnt, qqsrc, from->qqcnt, hsrc, from->hcnt));
 	}
 #ifdef HEXA
 	if (from->hcnt >= NSSE*HVECSZ) Error("hvec overflow\n");
@@ -647,6 +661,13 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	}
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
+	if (from->qqcnt >= QQVECSZ) Error("qqvec overflow\n");
+	if (!from->processed && mac->p2cut && MxN->hblock && from->daughters >= MxN->min_qsink && 
+	    from->qqcnt-from->qqcnt_done >= MxN->min_qsrc) {
+	    mxn_qquad((Sink *)from, from->pp);
+	}
+	to->qqcnt = from->qqcnt;
+	to->qqcnt_done = from->qqcnt_done;
 #endif
 	if (from->mmcnt >= MMVECSZ) Error("mmvec overflow\n");
 	if (!from->processed && MxN->hblock && from->daughters >= MxN->min_msink && 
@@ -827,6 +848,50 @@ mxn_quad(Sink *s, const hcell *pp)
     StopTimer(&GravQFTm);
     StopTimer(&GravTm);
 }
+
+void
+mxn_qquad(Sink *s, const hcell *pp)
+{
+    body *first = FirstBody(pp);
+    body *last = LastBody(pp);
+
+    if (!first || !last) return;
+    last++;
+    if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
+    StartTimer(&GravTm);
+    StartTimer(&GravQLTm);
+
+    int source_n = s->qqcnt - s->qqcnt_done;
+#ifdef CUDA
+    if (MxN->do_pQ) {
+	double last_poll = MPMY_Wtime();
+	int q;
+
+	StartTimer(&CUDAWtTm);
+	while ((q = qallocCUDA(NULL)) < 0) mxn_poll(&last_poll);
+	StopTimer(&CUDAWtTm);
+	grav_qns_CUDA("pQQ1", first-Btab, last-first, QQvec + s->qqcnt_done, source_n, q);
+    } else {
+	float mtot = 0.0;
+	for (body *p = first; p < last; p++) {
+	    QQinteract((float *)Htab, sizeof(hexacell), QQvec+s->qqcnt_done, source_n, p->pos, &mtot, p->acc, &p->phi);
+	}
+    }
+#else
+    {
+	float mtot = 0.0;
+	for (body *p = first; p < last; p++) {
+	    QQinteract((float *)Htab, sizeof(hexacell), QQvec+s->qqcnt_done, source_n, p->pos, &mtot, p->acc, &p->phi);
+	}
+    }
+#endif
+    AddCounter(&LBC2Int, source_n);
+    s->qqcnt_done = s->qqcnt;
+
+    StopTimer(&GravQLTm);
+    StopTimer(&GravTm);
+}
+
 
 void
 mxn_hexa(Sink *s, const hcell *pp)
@@ -1239,7 +1304,11 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		DebugWatchKey("b %12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } 
 	    if (isquad && dr2 > Square(qcp->rcrit_q + bmax)) {
-		appendQdvec(qcp);
+		if (!bs && MxN->do_pQ && offset_index(flags_vec[i]) == Nimage >> 1 && !(source_vec[i]->type & NONLOCAL)) {
+		    QQvec[sink->qqcnt++] = hcp-Htab;
+		} else {
+		    appendQdvec(qcp);
+		}
 		DebugWatchKey("%s %12g %12g Qvec %ld %s\n", bs ? "b" : " ", _m, sqrt(dr2), (long int)qcp->daughters, PrintKey(source_vec[i]->key));
 		sink->interactions += qcp->daughters;
 		result[i] = MAC_ACCEPT;
@@ -1334,6 +1403,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
     if (sink->mcnt/NSSE >= MVECSZ) Error("mvec overflow\n");
     if (sink->mmcnt >= MMVECSZ) Error("mmvec overflow\n");
     if (sink->qcnt/NSSE >= QVECSZ) Error("qvec overflow\n");
+    if (sink->qqcnt >= QQVECSZ) Error("qqvec overflow\n");
     if (sink->hcnt/NSSE >= HVECSZ) Error("hvec overflow\n");
 }
 

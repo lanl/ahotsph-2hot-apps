@@ -435,6 +435,114 @@ do_gravdq_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, f
 }
 
 void
+do_gravdqq_avx8(const float *q, const int stride, const int *ii, const int n, 
+		const float *pos0, float *mass0, float *acc, float *phi0)
+{
+    vsf t, r2, rinv, rinv2;
+    vsf x, y, z;
+    vsf eqe, eq0, eq1, eq2;
+    vsf mmass, xx, yy, zz;
+    vsf RR, qqx, qqy, qqz;
+    vsf qqxx, qqxy, qqyy, qqxz, qqyz;
+    vsf a0 = vsf_scalar(0.0f);
+    vsf a1 = vsf_scalar(0.0f);
+    vsf a2 = vsf_scalar(0.0f);
+    vsf phi = vsf_scalar(0.0f);
+    const vsf ppos0 = vsf_scalar(pos0[0]);
+    const vsf ppos1 = vsf_scalar(pos0[1]);
+    const vsf ppos2 = vsf_scalar(pos0[2]);
+    const vsf three = vsf_scalar(3.0f);
+    const vsf half = vsf_scalar(0.5f);
+    const vsf five = vsf_scalar(5.0f);
+
+    for (int i = 0; i < n; i += NSSE) {
+	const float *ff = q + ii[i] * stride;
+	for (int k = 0; k < NSSE; k++) {
+	    mmass[k] = ff[k*stride+0];
+	    xx[k] = ff[k*stride+1];
+	    yy[k] = ff[k*stride+2];
+	    zz[k] = ff[k*stride+3];
+	    if (i+k >= n) {
+		while (++k < NSSE) {
+		    mmass[k] = 0.0f;
+		}
+		break;
+	    }
+	}
+	x = ppos0 - xx;
+	y = ppos1 - yy;
+	z = ppos2 - zz;
+
+	r2 = x*x + y*y + z*z;
+
+	__asm__("prefetcht0 512(%rdi)");
+	rinv = vsf_rsqrt(r2);
+
+	__asm__("prefetcht0 576(%rdi)");
+	/* Newton-Raphson */
+	t = rinv;
+	r2 *= rinv;
+	rinv *= r2;
+	rinv -= three;
+	rinv *= t;
+	rinv *= half;		/* flips sign to avoid storing -0.5 */
+	/* end Newton-Raphson */
+
+	for (int k = 0; k < NSSE; k++) {
+	    RR[k] = ff[k*stride+5];
+	    qqx[k] = ff[k*stride+12];
+	    qqy[k] = ff[k*stride+13];
+	    qqz[k] = ff[k*stride+14];
+	    qqxx[k] = ff[k*stride+15];
+	    qqxy[k] = ff[k*stride+16];
+	    qqyy[k] = ff[k*stride+17];
+	    qqxz[k] = ff[k*stride+18];
+	    qqyz[k] = ff[k*stride+19];
+	    if (i+k >= n) break;
+	}
+
+	
+	__asm__("prefetcht0 640(%rdi)");
+	t = rinv;
+	eqe = t*mmass;
+	rinv2 = t*t;
+	t *= rinv2;
+	phi += eqe;
+	eqe *= rinv2;
+	a0 += x*eqe;
+	a1 += y*eqe;
+	a2 += z*eqe;
+
+        t *= RR;
+        eq0 = t*qqx;
+        eq1 = t*qqy;
+        eq2 = t*qqz;
+        eqe = x*eq0 + y*eq1 + z*eq2;
+        phi += eqe;
+        eqe *= three*rinv2;
+        a0 += x*eqe - eq0;
+        a1 += y*eqe - eq1;
+        a2 += z*eqe - eq2;
+
+        t *= three*rinv2*RR;
+        eq0 = t*(qqxx*x + qqxy*y + qqxz*z);
+        eq1 = t*(qqyy*y + qqxy*x + qqyz*z);
+        eq2 = t*(-(qqxx + qqyy)*z + qqxz*x + qqyz*y);
+        eqe = half*(eq0*x + eq1*y + eq2*z);
+	phi -= eqe;
+	eqe *= five*rinv2;
+	a0 += x*eqe - eq0;
+	a1 += y*eqe - eq1;
+	a2 += z*eqe - eq2;
+    }
+    *phi0 += vsf_hsum(phi);
+    acc[0] += vsf_hsum(a0);
+    acc[1] += vsf_hsum(a1);
+    acc[2] += vsf_hsum(a2);
+}
+
+
+void
 do_gravh_avx8(const vsf *f, const vsf *fend, const float *pos0, float *mass0, float *acc, float *phi0, const float *e, int *ncut)
 {
     vsf t, r2, rinv, rinv2;

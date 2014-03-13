@@ -9,6 +9,8 @@
 EXTERN void CUDA_Init(void *device_prop);
 EXTERN void CUDA_Finalize(void);
 EXTERN int qallocCUDA(int *inuse);
+EXTERN void WalkInitSrcCUDA(float *qtab, int stride, int64_t nobj);
+EXTERN void WalkTerminateSrcCUDA(void);
 EXTERN void WalkInitSinkCUDA(float *btab, int stride, int64_t nobj);
 EXTERN void WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj);
 EXTERN void grav_mn_CUDA(const char *routine, const float *p, float *accp, const int n, const int stride, 
@@ -22,11 +24,16 @@ EXTERN void grav_mnss_CUDA(const char *routine, const int sink_base, const int m
 			   const segment *seg, const int seg_len, 
 			   const int source_base, const int *source_n, 
 			   const float mmass, float e, int *ncut, int q);
+EXTERN void grav_qns_CUDA(const char *routine, const int base, const int m,
+			  const int *source_list, const int source_n, int q);
+
 #else
 /* stubs */
 inline static void CUDA_Init(void *device_prop) {}
 inline static void CUDA_Finalize(void) {}
 inline static int qallocCUDA(int *inuse) {return 0;}
+inline static void WalkInitSrcCUDA(float *qtab, int stride, int64_t nobj) {}
+inline static void WalkTerminateSrcCUDA(void) {}
 inline static void WalkInitSinkCUDA(float *btab, int stride, int64_t nobj) {}
 inline static void WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj) {};
 inline static void grav_mn_CUDA(const char *routine, const float *p, float *accp, const int n, const int stride, 
@@ -40,4 +47,6 @@ inline static void grav_mnss_CUDA(const char *routine, const int sink_base, cons
 				  const segment *seg, const int seg_len, 
 				  const int source_base, const int *source_n, 
 				  const float mmass, float e, int *ncut, int q) {}
+inline static void grav_qns_CUDA(const char *routine, const int base, const int m,
+				 const int *source_list, const int source_n) {};
 #endif
