@@ -297,7 +297,7 @@ pQ1_mnss(const float * __restrict__ sink, const int sink_m,
     float4 accp = {};
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     const float3 ppos = {sink[3*index], sink[3*index+1], sink[3*index+2]};
-    const float * __restrict__ f = ff + seg[index].base;
+    const float * __restrict__ f = ff + seg[index].base * QSZ;
 
     if (index >= sink_m) return;
 

@@ -112,7 +112,7 @@ static struct {
     vsf mass, x, y, z;
 } Svec[SVECSZ];
 
-#define MVECSZ (1873) /* This should be dynamically extensible */
+#define MVECSZ (8*1873) /* This should be dynamically extensible */
 static struct {
     vsf mass, x, y, z;
 } Mvec[MVECSZ];
@@ -122,14 +122,15 @@ segment MMvec[MMVECSZ];
 
 #ifdef QUAD
 #define QVECSZ (7919)
-static struct Qvec {
+typedef struct Q_s {
     vsf mass, x, y, z;
     vsf R;
 #ifdef DIPOLE
     vsf qx, qy, qz;
 #endif
     vsf qxx, qxy, qyy, qxz, qyz;
-} Qvec[QVECSZ];
+} Q_s;
+static Q_s Qvec[QVECSZ];
 #define QQVECSZ (7919)
 int QQvec[QQVECSZ];
 #endif
@@ -170,8 +171,8 @@ typedef struct mnsq_s {
 
 mnsq_s mnsq;
 
-#define QNSQ_MAX 32768
-#define QNSQ_MAX_M 8192
+#define QNSQ_MAX 20164
+#define QNSQ_MAX_M (512+256)
 
 typedef struct qnsq_s {
     int inuse;
@@ -179,7 +180,7 @@ typedef struct qnsq_s {
     int m;
     int source_len;
     segment ss_seg[QNSQ_MAX_M];
-    float source[QNSQ_MAX];
+    Q_s source[QNSQ_MAX/NSSE];
 } qnsq_s;
 
 qnsq_s qnsq;
@@ -406,7 +407,7 @@ grav_mns_queue(int this_base, int this_m, const segment *this_seg, int this_seg_
 }
 
 void
-grav_qns_queue(int this_base, int this_m, const float *this_source, int this_source_n)
+grav_qns_queue(int this_base, int this_m, const Q_s *this_source, int this_source_n)
 {
     if (!qnsq.inuse) {
 	qnsq.sink_base = this_base;
@@ -431,7 +432,10 @@ grav_qns_queue(int this_base, int this_m, const float *this_source, int this_sou
 	qnsq.m += gap_m;
     }
     qnsq.m += this_m;
-    memcpy(qnsq.source + qnsq.source_len, this_source, this_source_n * sizeof(Qvec[0]));
+    int this_source_bytes = this_source_n * sizeof(Q_s)/NSSE;
+    if (qnsq.source_len + this_source_n >= QNSQ_MAX) 
+	Error("qnsq.source overflow\n");
+    memcpy(qnsq.source + qnsq.source_len/NSSE, this_source, this_source_bytes);
     
     if (base + this_m >= QNSQ_MAX_M) Error("qnsq overflow\n");
     for (int i = 0; i < this_m; i++) {
@@ -439,7 +443,6 @@ grav_qns_queue(int this_base, int this_m, const float *this_source, int this_sou
 	qnsq.ss_seg[base+i].length = this_source_n;
     }
     qnsq.source_len += this_source_n;
-    if (qnsq.source_len >= QNSQ_MAX) Error("qnsq.source_len overflow\n");
 }
 
 void
@@ -472,13 +475,15 @@ grav_qns_flush(void)
     StartTimer(&CUDAWtTm);
     while ((q = qallocCUDA(NULL)) < 0) mxn_poll(&last_poll);
     StopTimer(&CUDAWtTm);
-    grav_qnss_CUDA("pQQ_qnss", qnsq.sink_base, qnsq.m, 
-		   qnsq.ss_seg, qnsq.source, qnsq.source_len, q);
+    StartTimer(&GravQLTm);
+    grav_qnss_CUDA("pQ1_qnss", qnsq.sink_base, qnsq.m, 
+		   qnsq.ss_seg, (float *)qnsq.source, qnsq.source_len, q);
     
     qnsq.sink_base += qnsq.m;
     qnsq.inuse = 0;
     qnsq.m = 0;
     qnsq.source_len = 0;
+    StopTimer(&GravQLTm);
 }
 
 void 
@@ -861,13 +866,12 @@ mxn_quad2(Sink *s, const hcell *pp)
     last++;
     if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
     StartTimer(&GravTm);
-    StartTimer(&GravQFTm);
 
     int source_n = (s->qcnt/NSSE-s->qcnt_done/NSSE)*NSSE;
     if (MxN->do_pQ) {
-	if (last-first < 256 && first-Btab >= qnsq.sink_base + qnsq.m) { /* Don't do more than one level */
-	    grav_qns_queue(first-Btab, last-first, (float *)&Qvec[s->qcnt_done/NSSE], source_n);
-	    if (qnsq.m >= 4096) grav_qns_flush();
+	if (MxN->do_pQL && last-first < 256 && first-Btab >= qnsq.sink_base + qnsq.m) { /* Don't do more than one level */
+	    grav_qns_queue(first-Btab, last-first, &Qvec[s->qcnt_done/NSSE], source_n);
+	    if (qnsq.m >= 512) grav_qns_flush();
 	} else {
 	    double last_poll = MPMY_Wtime();
 	    int q, qinuse;;
@@ -877,10 +881,13 @@ mxn_quad2(Sink *s, const hcell *pp)
 	    }
 	    StopTimer(&CUDAWtTm);
 	    if (q >= 0 && qinuse < 24) {
+		StartTimer(&GravQFTm);
 		grav_mn_CUDA("pQ", &first->mass, first->acc, last-first, sizeof(body)/sizeof(float),
 			     (float *)&Qvec[s->qcnt_done/NSSE], source_n, sizeof(Qvec[0])/(NSSE*sizeof(float)),
 			     s->smooth_len, &s->smooth_cnt, q);
+		StopTimer(&GravQFTm);
 	    } else {
+		StartTimer(&GravQTm);
 		double last_poll = MPMY_Wtime();
 		for (body *p = first; p < last; p++) {
 		    float mtot = 0.0;
@@ -889,9 +896,11 @@ mxn_quad2(Sink *s, const hcell *pp)
 		    if ((p-first+1) % 16 == 0) mxn_poll(&last_poll);
 		}
 		AddCounter(&FBC2FInt, (last-first)*source_n);
+		StopTimer(&GravQTm);
 	    }
 	}
     } else {
+	StartTimer(&GravQTm);
 	double last_poll = MPMY_Wtime();
 	for (body *p = first; p < last; p++) {
 	    float mtot = 0.0;
@@ -899,11 +908,11 @@ mxn_quad2(Sink *s, const hcell *pp)
 		      &s->smooth_len, &s->smooth_cnt);
 	    if ((p-first+1) % 16 == 0) mxn_poll(&last_poll);
 	}
+	StopTimer(&GravQTm);
     }
     AddCounter(&FBC2Int, (last-first)*source_n);
     s->qcnt_done = (s->qcnt/NSSE)*NSSE;
 
-    StopTimer(&GravQFTm);
     StopTimer(&GravTm);
 }
 
@@ -1430,7 +1439,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		DebugWatchKey("b %12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } 
 	    if (isquad && dr2 > Square(qcp->rcrit_q + bmax)) {
-		if (!bs && MxN->do_pQL && offset_index(flags_vec[i]) == Nimage >> 1 && !(source_vec[i]->type & NONLOCAL)) {
+		if (0 && !bs && MxN->do_pQL && offset_index(flags_vec[i]) == Nimage >> 1 && !(source_vec[i]->type & NONLOCAL)) {
 		    QQvec[sink->qqcnt++] = hcp-Htab;
 		} else {
 		    appendQdvec(qcp);

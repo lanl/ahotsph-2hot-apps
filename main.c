@@ -188,7 +188,7 @@ main(int argc, char *argv[])
 		 .do_pM=0, .do_pQ=0, .do_pQL=0, .do_pH=0};
     mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_msink=8, .min_qsink=32, .min_hsink=32,
 		      .min_msrc=128, .min_qsrc=128, .min_hsrc=128, 
-		      .do_pM=1, .do_pQ=1, .do_pQL=0, .do_pH=1};
+		      .do_pM=1, .do_pQ=1, .do_pQL=1, .do_pH=1};
     if (has_cuda) mxn = mxn_cuda;
     CUDA_Init(NULL);
     /* Attempt to get a contiguous chunk of heap */
@@ -474,7 +474,7 @@ main(int argc, char *argv[])
     SDFgetintOrDefault(csdfp, "subtract_background", &mac.subtract_background, 0);
     SDFgetintOrDefault(csdfp, "leaf_max_n", &mac.leaf_max_n, mac.p2cut*8);
     SDFgetintOrDefault(csdfp, "enable_expand_root", &mac.enable_expand_root, 0);
-    SDFgetintOrDefault(csdfp, "celltore_enable", &cellbuf.p4store_enable, 1);
+    SDFgetintOrDefault(csdfp, "cellstore_enable", &cellbuf.p4store_enable, 0);
     SDFgetint(csdfp, "mxn_hblock", &mxn.hblock);
     SDFgetint(csdfp, "mxn_min_msink", &mxn.min_msink);
     SDFgetint(csdfp, "mxn_min_qsink", &mxn.min_qsink);
@@ -484,6 +484,7 @@ main(int argc, char *argv[])
     SDFgetint(csdfp, "mxn_min_hsrc", &mxn.min_hsrc);
     SDFgetint(csdfp, "mxn_do_pM", &mxn.do_pM);
     SDFgetint(csdfp, "mxn_do_pQ", &mxn.do_pQ);
+    SDFgetint(csdfp, "mxn_do_pQL", &mxn.do_pQL);
     SDFgetint(csdfp, "mxn_do_pH", &mxn.do_pH);
     SDFgetfloatOrDie(csdfp, "dt", &dt_base); dt = dt_base;
     SDFgetintOrDie(csdfp, "nsteps", &nsteps);
@@ -594,6 +595,7 @@ main(int argc, char *argv[])
     singlPrintf("int mxn_min_hsrc = %d;\n", mxn.min_hsrc);
     singlPrintf("int mxn_do_pM = %d;\n", mxn.do_pM);
     singlPrintf("int mxn_do_pQ = %d;\n", mxn.do_pQ);
+    singlPrintf("int mxn_do_pQL = %d;\n", mxn.do_pQL);
     singlPrintf("int mxn_do_pH = %d;\n", mxn.do_pH);
     singlPrintf("int body_size = %d;\n", sizeof(body));
     singlPrintf("int outbody_size = %d;\n", sizeof(outbody));
@@ -1040,23 +1042,21 @@ main(int argc, char *argv[])
 	if (ReadCounter(&BSInt))
 	    AddCounter(&Scycles, 10.0*CPU.Hz*ReadTimer(&GravSTm)/ReadCounter(&BSInt));
 	if (ReadCounter(&BCInt))
-	    AddCounter(&Mcycles, 10.0*CPU.Hz*ReadTimer(&GravMTm)/ReadCounter(&BCInt));
+	    AddCounter(&Mcycles, 10.0*CPU.Hz*ReadTimer(&GravMTm)/(ReadCounter(&BCInt)+ReadCounter(&FBCFInt)));
 	if (ReadCounter(&BC2Int))
-	    AddCounter(&Qcycles, 10.0*CPU.Hz*ReadTimer(&GravQTm)/ReadCounter(&BC2Int));
+	    AddCounter(&Qcycles, 10.0*CPU.Hz*ReadTimer(&GravQTm)/(ReadCounter(&BC2Int)+ReadCounter(&FBC2FInt)));
 	if (ReadCounter(&FBC2Int))
 	    AddCounter(&FQcycles, 10.0*CPU.Hz*ReadTimer(&GravQFTm)/ReadCounter(&FBC2Int));
 	if (ReadCounter(&BC4Int))
 	    AddCounter(&Hcycles, 10.0*CPU.Hz*ReadTimer(&GravHTm)/ReadCounter(&BC4Int));
 	if (ReadCounter(&FBC4Int))
 	    AddCounter(&FHcycles, 10.0*CPU.Hz*ReadTimer(&GravHFTm)/ReadCounter(&FBC4Int));
-#if 0
-	if (ReadCounter(&Mcycles) > 70) {
+	if (ReadCounter(&Qcycles) > 230) {
 	    char hostname[128];
 	    gethostname(hostname, sizeof(hostname));
-	    SeriousWarning("Proc %d %s is slow, Mcycles is %ld\n", 
-			   MPMY_Procnum(), hostname, ReadCounter(&Mcycles));
+	    SeriousWarning("Proc %d %s is slow, Qcycles is %ld\n", 
+			   MPMY_Procnum(), hostname, ReadCounter(&Qcycles));
 	}
-#endif
 	   
 	Msgf(("doing MPMY_combine\n"));
 	MPMY_ICombine_Init(&req);
