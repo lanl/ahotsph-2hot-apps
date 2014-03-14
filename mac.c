@@ -65,6 +65,7 @@ static hexacell *Htab;
 
 static void mxn_hexa(Sink *s, const hcell *pp);
 static void mxn_quad(Sink *s, const hcell *pp);
+static void mxn_quad2(Sink *s, const hcell *pp);
 static void mxn_qquad(Sink *s, const hcell *pp);
 static void mxn_mono(Sink *s, const hcell *pp);
 
@@ -168,6 +169,20 @@ typedef struct mnsq_s {
 } mnsq_s;
 
 mnsq_s mnsq;
+
+#define QNSQ_MAX 32768
+#define QNSQ_MAX_M 8192
+
+typedef struct qnsq_s {
+    int inuse;
+    int sink_base;
+    int m;
+    int source_len;
+    segment ss_seg[QNSQ_MAX_M];
+    float source[QNSQ_MAX];
+} qnsq_s;
+
+qnsq_s qnsq;
 
 void
 SetupGrav(float newton_const, float e, int64_t gnobj, mac_s *m,
@@ -391,6 +406,43 @@ grav_mns_queue(int this_base, int this_m, const segment *this_seg, int this_seg_
 }
 
 void
+grav_qns_queue(int this_base, int this_m, const float *this_source, int this_source_n)
+{
+    if (!qnsq.inuse) {
+	qnsq.sink_base = this_base;
+	qnsq.inuse = 1;
+    }
+    int base = this_base - qnsq.sink_base;
+
+    Msgf(("queue base %5d m %5d source_len %5d -- ",
+	  qnsq.sink_base, qnsq.m, qnsq.source_len));
+    Msgf(("base %5d m %5d source_len %5d\n",
+	  this_base, this_m, this_source_n));
+
+    if (this_base < qnsq.sink_base + qnsq.m) {
+	Error("repeated or out-of-sequence sink in grav_qns_queue\n");
+    } else if (this_base > qnsq.sink_base + qnsq.m) {
+	int gap_m = this_base - (qnsq.sink_base + qnsq.m);
+	Msgf(("Filling gap of %d\n", gap_m));
+	for (int i = 0; i < gap_m; i++) {
+	    qnsq.ss_seg[qnsq.m + i].base = qnsq.source_len;
+	    qnsq.ss_seg[qnsq.m + i].length = 0;
+	}
+	qnsq.m += gap_m;
+    }
+    qnsq.m += this_m;
+    memcpy(qnsq.source + qnsq.source_len, this_source, this_source_n * sizeof(Qvec[0]));
+    
+    if (base + this_m >= QNSQ_MAX_M) Error("qnsq overflow\n");
+    for (int i = 0; i < this_m; i++) {
+	qnsq.ss_seg[base+i].base = qnsq.source_len;
+	qnsq.ss_seg[base+i].length = this_source_n;
+    }
+    qnsq.source_len += this_source_n;
+    if (qnsq.source_len >= QNSQ_MAX) Error("qnsq.source_len overflow\n");
+}
+
+void
 grav_mns_flush(float mass, float e, int *ncut)
 {
     double last_poll = MPMY_Wtime();
@@ -409,6 +461,24 @@ grav_mns_flush(float mass, float e, int *ncut)
     mnsq.m = 0;
     mnsq.ss_len = 0;
     mnsq.seg_n = 0;
+}
+
+void
+grav_qns_flush(void)
+{
+    double last_poll = MPMY_Wtime();
+    int q;
+
+    StartTimer(&CUDAWtTm);
+    while ((q = qallocCUDA(NULL)) < 0) mxn_poll(&last_poll);
+    StopTimer(&CUDAWtTm);
+    grav_qnss_CUDA("pQQ_qnss", qnsq.sink_base, qnsq.m, 
+		   qnsq.ss_seg, qnsq.source, qnsq.source_len, q);
+    
+    qnsq.sink_base += qnsq.m;
+    qnsq.inuse = 0;
+    qnsq.m = 0;
+    qnsq.source_len = 0;
 }
 
 void 
@@ -657,7 +727,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	if (from->qcnt >= NSSE*QVECSZ) Error("qvec overflow\n");
 	if (!from->processed && mac->p2cut && MxN->hblock && from->daughters >= MxN->min_qsink && 
 	    from->qcnt-from->qcnt_done >= MxN->min_qsrc) {
-	    mxn_quad((Sink *)from, from->pp);
+	    mxn_quad2((Sink *)from, from->pp);
 	}
 	to->qcnt = from->qcnt;
 	to->qcnt_done = from->qcnt_done;
@@ -782,6 +852,62 @@ mxn_mono(Sink *s, const hcell *pp)
 }
 
 void
+mxn_quad2(Sink *s, const hcell *pp)
+{
+    body *first = FirstBody(pp);
+    body *last = LastBody(pp);
+
+    if (!first || !last) return;
+    last++;
+    if (first < Btab || last > first+Nobj) Error("first/last out of range\n");
+    StartTimer(&GravTm);
+    StartTimer(&GravQFTm);
+
+    int source_n = (s->qcnt/NSSE-s->qcnt_done/NSSE)*NSSE;
+    if (MxN->do_pQ) {
+	if (last-first < 256 && first-Btab >= qnsq.sink_base + qnsq.m) { /* Don't do more than one level */
+	    grav_qns_queue(first-Btab, last-first, (float *)&Qvec[s->qcnt_done/NSSE], source_n);
+	    if (qnsq.m >= 4096) grav_qns_flush();
+	} else {
+	    double last_poll = MPMY_Wtime();
+	    int q, qinuse;;
+	    StartTimer(&CUDAWtTm);
+	    while ((q = qallocCUDA(&qinuse)) < 0) {
+		if (!mxn_poll(&last_poll)) break;
+	    }
+	    StopTimer(&CUDAWtTm);
+	    if (q >= 0 && qinuse < 24) {
+		grav_mn_CUDA("pQ", &first->mass, first->acc, last-first, sizeof(body)/sizeof(float),
+			     (float *)&Qvec[s->qcnt_done/NSSE], source_n, sizeof(Qvec[0])/(NSSE*sizeof(float)),
+			     s->smooth_len, &s->smooth_cnt, q);
+	    } else {
+		double last_poll = MPMY_Wtime();
+		for (body *p = first; p < last; p++) {
+		    float mtot = 0.0;
+		    Qinteract((float *)&Qvec[s->qcnt_done/NSSE], (float *)&Qvec[s->qcnt/NSSE], p->pos, &mtot, p->acc, &p->phi, 
+			      &s->smooth_len, &s->smooth_cnt);
+		    if ((p-first+1) % 16 == 0) mxn_poll(&last_poll);
+		}
+		AddCounter(&FBC2FInt, (last-first)*source_n);
+	    }
+	}
+    } else {
+	double last_poll = MPMY_Wtime();
+	for (body *p = first; p < last; p++) {
+	    float mtot = 0.0;
+	    Qinteract((float *)&Qvec[s->qcnt_done/NSSE], (float *)&Qvec[s->qcnt/NSSE], p->pos, &mtot, p->acc, &p->phi, 
+		      &s->smooth_len, &s->smooth_cnt);
+	    if ((p-first+1) % 16 == 0) mxn_poll(&last_poll);
+	}
+    }
+    AddCounter(&FBC2Int, (last-first)*source_n);
+    s->qcnt_done = (s->qcnt/NSSE)*NSSE;
+
+    StopTimer(&GravQFTm);
+    StopTimer(&GravTm);
+}
+
+void
 mxn_quad(Sink *s, const hcell *pp)
 {
     body *p;
@@ -870,7 +996,7 @@ mxn_qquad(Sink *s, const hcell *pp)
 	StartTimer(&CUDAWtTm);
 	while ((q = qallocCUDA(NULL)) < 0) mxn_poll(&last_poll);
 	StopTimer(&CUDAWtTm);
-	grav_qns_CUDA("pQQ1", first-Btab, last-first, QQvec + s->qqcnt_done, source_n, q);
+	grav_qns_CUDA("pQ1", first-Btab, last-first, QQvec + s->qqcnt_done, source_n, q);
     } else {
 	float mtot = 0.0;
 	for (body *p = first; p < last; p++) {
@@ -1304,7 +1430,7 @@ DLRcritMACsb(Sink *sink, const hcell **source_vec, int *restrict flags_vec, int 
 		DebugWatchKey("b %12g %12g Near %ld %s\n", 0.0, sqrt(ddot(r, sink->cen)), (long int)cp->daughters, PrintKey(source_vec[i]->key));
 	    } 
 	    if (isquad && dr2 > Square(qcp->rcrit_q + bmax)) {
-		if (!bs && MxN->do_pQ && offset_index(flags_vec[i]) == Nimage >> 1 && !(source_vec[i]->type & NONLOCAL)) {
+		if (!bs && MxN->do_pQL && offset_index(flags_vec[i]) == Nimage >> 1 && !(source_vec[i]->type & NONLOCAL)) {
 		    QQvec[sink->qqcnt++] = hcp-Htab;
 		} else {
 		    appendQdvec(qcp);

@@ -265,6 +265,7 @@ typedef struct mxn_s {
     int min_hsrc;
     int do_pM;
     int do_pQ;
+    int do_pQL;
     int do_pH;
 } mxn_s;
 

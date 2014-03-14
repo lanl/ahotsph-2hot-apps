@@ -26,6 +26,8 @@ EXTERN void grav_mnss_CUDA(const char *routine, const int sink_base, const int m
 			   const float mmass, float e, int *ncut, int q);
 EXTERN void grav_qns_CUDA(const char *routine, const int base, const int m,
 			  const int *source_list, const int source_n, int q);
+EXTERN void grav_qnss_CUDA(const char *routine, const int base, const int m,
+			   const segment *seg, const float *source, const int source_n, int q);
 
 #else
 /* stubs */
@@ -49,4 +51,6 @@ inline static void grav_mnss_CUDA(const char *routine, const int sink_base, cons
 				  const float mmass, float e, int *ncut, int q) {}
 inline static void grav_qns_CUDA(const char *routine, const int base, const int m,
 				 const int *source_list, const int source_n) {};
+inline static void grav_qnss_CUDA(const char *routine, const int base, const int m,
+				  const segment *seg, const float *source, const int source_n, int q) {}
 #endif

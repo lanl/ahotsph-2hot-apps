@@ -287,6 +287,80 @@ pQ(const float *p, float *ret, const int n, const int stride,
     }
 }
 
+__global__ void
+pQ1_mnss(const float * __restrict__ sink, const int sink_m,
+	 const segment * __restrict__ seg,  const float * __restrict__ ff, float *accp_ret)
+{
+    float t, r2, rinv, rinv2;
+    float x, y, z;
+    float eqe, eq0, eq1, eq2;
+    float4 accp = {};
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    const float3 ppos = {sink[3*index], sink[3*index+1], sink[3*index+2]};
+    const float * __restrict__ f = ff + seg[index].base;
+
+    if (index >= sink_m) return;
+
+    for (int i = 0; i < seg[index].length; i++) {
+	const int ii = (i/NSSE)*NSSE*QSZ + i%NSSE;
+    	x = ppos.x - xp;	
+ 	y = ppos.y - yp;	
+    	z = ppos.z - zp;	
+	r2 = x * x;
+	r2 += y * y;
+	r2 += z * z;
+	rinv = -rsqrtf(r2);
+	
+	t = rinv;
+	eqe = mass * t;
+	rinv2 = t * t;
+	accp.Phi += eqe;
+	eqe *= rinv2;
+	accp.Ax += x * eqe;
+	accp.Ay += y * eqe;
+	accp.Az += z * eqe;
+
+        t *= R * rinv2;
+        eq0 = qx * t;
+        eq1 = qy * t;
+        eq2 = qz * t;
+	eqe  = eq0 * x;
+	eqe += eq1 * y;
+	eqe += eq2 * z;
+	accp.Phi += eqe;
+        eqe *= 3.0f * rinv2;
+	accp.Ax += x * eqe - eq0;
+	accp.Ay += y * eqe - eq1;
+	accp.Az += z * eqe - eq2;
+
+        t *= 3.0f * R * rinv2;
+        eq0  = qxx * x;
+        eq1  = qyy * y;
+	eq2 = -(qxx + qyy) * z;
+        eq0 += qxy * y;
+	eq1 += qxy * x;
+	eq2 += qxz * x;
+	eq0 += qxz * z;
+	eq1 += qyz * z;
+	eq2 += qyz * y;
+	eq0 *= t;
+	eq1 *= t;
+	eq2 *= t;
+	eqe  = eq0 * x;
+	eqe += eq1 * y;
+	eqe += eq2 * z;
+	eqe *= 0.5f;
+	accp.Phi -= eqe;
+	eqe *= 5.0f * rinv2;
+	accp.Ax += x * eqe - eq0;
+	accp.Ay += y * eqe - eq1;
+	accp.Az += z * eqe - eq2;
+    }
+    atomicAdd(&accp_ret[4*index+0], accp.Ax);
+    atomicAdd(&accp_ret[4*index+1], accp.Ay);
+    atomicAdd(&accp_ret[4*index+2], accp.Az);
+    atomicAdd(&accp_ret[4*index+3], accp.Phi);
+}
 
 __global__ void
 pM(const float *p, float *ret, const int n, const int stride, 
@@ -484,6 +558,7 @@ pQQ1(const float * __restrict__ sink, const int sink_m,
     atomicAdd(&accp_ret[4*index+2], accp.Az);
     atomicAdd(&accp_ret[4*index+3], accp.Phi);
 }
+
 
 __global__ void
 pMM_sK1(const float * __restrict__ sink, const int sink_m,
@@ -1108,6 +1183,63 @@ grav_mnss_CUDA(const char *routine, const int sink_base, const int m,
 	    (sink, m, ss_index_dev, ss_seg_dev, ss_len,
 	     seg_dev, seg_len, source, source_n_dev,
 	     mmass, e, accp, ncut, _MPMY_procnum_);
+    else Error("routine %s not found\n", routine);
+
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+	Error("CUDA error, %d %s\n", err, cudaGetErrorString(err));
+    }
+}
+
+extern "C" void
+grav_qnss_CUDA(const char *routine, const int sink_base, const int m,
+	       const segment *ss_seg, const float *source_base, const int source_n, 
+	       int q)
+{
+    int align_mask = 127;	// align device pointers to 128 byte boundary
+    cudaError_t err;
+
+    cudaq[q].inuse = 1;
+    err = cudaStreamCreate(&cudaq[q].stream);
+    if (err != cudaSuccess) 
+	Error("cudaStreamCreate failed, %d %s\n", err, cudaGetErrorString(err));
+
+    char *dev = (char *)cudaq[q].dev;
+
+    size_t ss_seg_offset = 0;
+    size_t ss_seg_size = m * sizeof(segment);
+    segment *ss_seg_dev = (segment *)(dev + ss_seg_offset);
+
+    size_t source_offset = ss_seg_offset + ss_seg_size + align_mask & ~align_mask;
+    size_t source_size = source_n * QSZ * sizeof(float);
+    float *source_dev = (float *)(dev + source_offset);
+
+    size_t total_size = source_offset + source_size;
+
+    if (cudaq[q].dev_size < total_size) {
+	Error("dev_size (%ld) too small, total size is %ld\n", 
+	      cudaq[q].dev_size, total_size);
+    }
+    memcpy(cudaq[q].host, ss_seg, ss_seg_size);
+    memcpy((char *)cudaq[q].host + source_offset, source_base, source_size);
+    err = cudaMemcpyAsync(dev, cudaq[q].host, total_size, 
+			  cudaMemcpyHostToDevice, cudaq[q].stream);
+    if (err != cudaSuccess) 
+	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+
+    float *sink = devpos + sink_base * 3;
+    float *accp = devaccp + sink_base * 4;
+    cudaStream_t stream = cudaq[q].stream;
+
+    int threads = 64;
+    int blocks = 1 + (m-1) / threads;
+
+    Msgf(("%s %d sinks, %d sources, %d blocks, %d threads. Base %d\n",
+	  routine, m, source_n, blocks, threads, sink_base));
+
+    if (strcmp(routine, "pQ1_qnss") == 0)
+	pQ1_mnss<<<blocks,threads,0,stream>>>
+	    (sink, m, ss_seg_dev, source_dev, accp);
     else Error("routine %s not found\n", routine);
 
     err = cudaGetLastError();

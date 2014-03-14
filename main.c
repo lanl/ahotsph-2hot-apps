@@ -185,10 +185,10 @@ main(int argc, char *argv[])
     csdfp = startup(argc, argv);
     mxn_s mxn = {.hblock=4096, .min_msink=8, .min_qsink=8, .min_hsink=8, 
 		 .min_msrc=64, .min_qsrc=64, .min_hsrc=64,
-		 .do_pM=0, .do_pQ=0, .do_pH=0};
+		 .do_pM=0, .do_pQ=0, .do_pQL=0, .do_pH=0};
     mxn_s mxn_cuda = {.hblock=16*1024*1024, .min_msink=8, .min_qsink=32, .min_hsink=32,
 		      .min_msrc=128, .min_qsrc=128, .min_hsrc=128, 
-		      .do_pM=1, .do_pQ=1, .do_pH=1};
+		      .do_pM=1, .do_pQ=1, .do_pQL=0, .do_pH=1};
     if (has_cuda) mxn = mxn_cuda;
     CUDA_Init(NULL);
     /* Attempt to get a contiguous chunk of heap */
