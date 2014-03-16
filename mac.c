@@ -112,12 +112,12 @@ static struct {
     vsf mass, x, y, z;
 } Svec[SVECSZ];
 
-#define MVECSZ (8*1873) /* This should be dynamically extensible */
+#define MVECSZ (4*1873) /* This should be dynamically extensible */
 static struct {
     vsf mass, x, y, z;
 } Mvec[MVECSZ];
 
-#define MMVECSZ (1021) /* This should be dynamically extensible */
+#define MMVECSZ (4*1021) /* This should be dynamically extensible */
 segment MMvec[MMVECSZ];
 
 #ifdef QUAD
@@ -153,8 +153,8 @@ static struct ucell_s {
     float halfsz, mass, x4, x2y2;
 } ucell[CHUBITS];
 
-#define MNSQ_MAX 65536
-#define MNSQ_MAX_M 65536
+#define MNSQ_MAX (32768+1024)
+#define MNSQ_MAX_M 131072
 
 typedef struct mnsq_s {
     int inuse;
@@ -163,8 +163,8 @@ typedef struct mnsq_s {
     int ss_len;
     int seg_n;
     int source_base;
-    int source_n[MNSQ_MAX/64];
-    segment ss_seg[MNSQ_MAX/64];
+    int source_n[MNSQ_MAX/16];
+    segment ss_seg[MNSQ_MAX/16];
     uint16_t ss_index[MNSQ_MAX_M];
     segment seg[MNSQ_MAX];
 } mnsq_s;
@@ -403,7 +403,7 @@ grav_mns_queue(int this_base, int this_m, const segment *this_seg, int this_seg_
     mnsq.seg_n += this_seg_n;
     mnsq.ss_len++;
     if (mnsq.seg_n >= MNSQ_MAX) Error("mnsq.seg_n overflow\n");
-    if (mnsq.ss_len >= MNSQ_MAX/64) Error("mnsq.ss_len overflow\n");
+    if (mnsq.ss_len >= MNSQ_MAX/16) Error("mnsq.ss_len overflow\n");
 }
 
 void
