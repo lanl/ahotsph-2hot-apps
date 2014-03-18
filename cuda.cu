@@ -8,12 +8,16 @@
 #include "Msgs.h"
 #include "error.h"
 
+extern void initTrace(void);
+
 extern "C" void
 CUDA_Init(void)
 {
     int devID;
     struct cudaDeviceProp props;
     cudaError_t err;
+
+    // initTrace();
 
     devID = 0;
     err = cudaSetDevice(devID);

@@ -8,6 +8,7 @@
 #ifdef CUDA
 EXTERN void CUDA_Init(void *device_prop);
 EXTERN void CUDA_Finalize(void);
+EXTERN int vecwidthCUDA(void);
 EXTERN int qallocCUDA(int *inuse);
 EXTERN void WalkInitSrcCUDA(float *qtab, int stride, int64_t nobj);
 EXTERN void WalkTerminateSrcCUDA(void);
@@ -33,6 +34,7 @@ EXTERN void grav_qnss_CUDA(const char *routine, const int base, const int m,
 /* stubs */
 inline static void CUDA_Init(void *device_prop) {}
 inline static void CUDA_Finalize(void) {}
+inline static int vecwidthCUDA(void) {return 0;}
 inline static int qallocCUDA(int *inuse) {return 0;}
 inline static void WalkInitSrcCUDA(float *qtab, int stride, int64_t nobj) {}
 inline static void WalkTerminateSrcCUDA(void) {}

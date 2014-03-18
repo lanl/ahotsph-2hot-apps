@@ -80,6 +80,7 @@ extern Timer_t GravMFTm, GravQFTm, GravHFTm, GravQLTm;
 
 #ifdef CUDA
 static int has_cuda = 1;
+Timer_t PCISendTm, KernelTm, KernelHTm, KernelQTm, KernelMTm;
 #else
 static int has_cuda = 0;
 #endif
@@ -608,6 +609,7 @@ main(int argc, char *argv[])
     singlPrintf("int hash_bits = %d;\n", HASH_BITS);
     singlPrintf("int memory_tune_MB = %d;\n", memory_tune_MB);
     singlPrintf("int identsort_output = %d;\n", identsort_output);
+    if (has_cuda) singlPrintf("int cuda_vecwidth = %d;\n", vecwidthCUDA());
     if (static_decomp) singlPrintf("int static_decomp = %d;\n", static_decomp);
     singlPrintf("Checkpoint to %s.nnnn, every %d steps or %d seconds\n", 
 		outnamebase, checkpoint_steps_interval, checkpoint_wallclock_interval);
@@ -1291,7 +1293,12 @@ static SDF *startup(int argc, char **argv){
     EnableCPUTimer(&GravHFTm, "HexaF Time");
     EnableCPUTimer(&GravTm, "Grav Time");
     EnableCPUTimer(&MACTm, "MAC Time");
-    EnableTimer(&CUDAWtTm, "CUDA Wait");
+    if (has_cuda) EnableTimer(&KernelTm, "CUDA Kernel");
+    if (has_cuda) EnableTimer(&KernelHTm, "CUDA pH");
+    if (has_cuda) EnableTimer(&KernelQTm, "CUDA pQ");
+    if (has_cuda) EnableTimer(&KernelMTm, "CUDA pM");
+    if (has_cuda) EnableTimer(&PCISendTm, "CUDA Send");
+    if (has_cuda) EnableTimer(&CUDAWtTm, "CUDA Wait");
     EnableTimer(&WalkDeferTm, "Walk Defer");
     EnableTimer(&WTermTm, "WalkTerm");
     EnableTimer(&WNTTm, "WalkNT");

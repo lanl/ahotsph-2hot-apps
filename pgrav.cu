@@ -1247,3 +1247,35 @@ grav_qnss_CUDA(const char *routine, const int sink_base, const int m,
 	Error("CUDA error, %d %s\n", err, cudaGetErrorString(err));
     }
 }
+
+#include "timers.h"
+#include "mpmy_time.h"
+
+#define Match(a, b) (strncmp(a, b, strlen(b)) == 0)
+
+extern void 
+recordActivity(CUpti_Activity *record)
+{
+    extern Timer_t PCISendTm, KernelTm, KernelHTm, KernelQTm, KernelMTm;
+
+    if (record->kind == CUPTI_ACTIVITY_KIND_MEMCPY) {
+	CUpti_ActivityMemset *memset = (CUpti_ActivityMemset *)record;
+	int64_t cycles = memset->end-memset->start;
+	double dt = 1e-6*cycles/clockMHz;
+	MPMY_AccumTimer(PCISendTm.mpmy_tm, dt);
+    } else if (record->kind == CUPTI_ACTIVITY_KIND_KERNEL 
+	       || record->kind == CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL) {
+	CUpti_ActivityKernel2 *kernel = (CUpti_ActivityKernel2 *)record;
+	int64_t cycles = kernel->end-kernel->start;
+	double dt = 1e-6*cycles/clockMHz;
+	MPMY_AccumTimer(KernelTm.mpmy_tm, dt);
+	if (Match(kernel->name, "_Z2pH")) {
+	    MPMY_AccumTimer(KernelHTm.mpmy_tm, dt);
+	} else if (Match(kernel->name, "_Z2pQ")) {
+	    MPMY_AccumTimer(KernelQTm.mpmy_tm, dt);
+	} else if (Match(kernel->name, "_Z13pMM1")) {
+	    MPMY_AccumTimer(KernelMTm.mpmy_tm, dt);
+	}
+	// printf("kernel %g %s\n", dt, kernel->name);
+    }
+}
