@@ -8,7 +8,7 @@ PRELIBS = -lrt -Wl,-rpath -Wl,$(PREFIX)/lib -L$(PREFIX)/lib -lprofiler
 endif
 
 ifeq ($(ARCH),$(filter $(ARCH), cudaxk7 cudaxk7-g cudai7 cudaxk7-4.6 cudaxk7-4.8))
-cusrc = cuda.cu pgrav.cu
+cusrc = cuda.cu pgrav.cu trace.cu
 PRELIBS +=-L/opt/cudatoolkit-5.5/lib64 -lcudart
 endif
 
