@@ -10,6 +10,8 @@
 #include "segment.h"
 #include "gravcuda.h"
 
+#define clockMHz 732.0
+
 #define mass f[ii+0*NSSE]
 #define xp f[ii+1*NSSE]
 #define yp f[ii+2*NSSE]
@@ -975,6 +977,12 @@ WalkTerminateSinkCUDA(float *btab, int stride, int64_t nobj)
 }
 
 extern "C" int
+vecwidthCUDA(void)
+{
+    return VECWIDTH;
+}
+
+extern "C" int
 qallocCUDA(int *inuse)
 {
     return check_cudaq(inuse);
@@ -1248,12 +1256,13 @@ grav_qnss_CUDA(const char *routine, const int sink_base, const int m,
     }
 }
 
+#include <cupti.h>
 #include "timers.h"
 #include "mpmy_time.h"
 
 #define Match(a, b) (strncmp(a, b, strlen(b)) == 0)
 
-extern void 
+void 
 recordActivity(CUpti_Activity *record)
 {
     extern Timer_t PCISendTm, KernelTm, KernelHTm, KernelQTm, KernelMTm;
