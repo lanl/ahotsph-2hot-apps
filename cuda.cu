@@ -17,7 +17,7 @@ CUDA_Init(void)
     struct cudaDeviceProp props;
     cudaError_t err;
 
-    initTrace();
+    // initTrace();
 
     devID = 0;
     err = cudaSetDevice(devID);

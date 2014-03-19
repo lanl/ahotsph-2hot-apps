@@ -751,6 +751,9 @@ pMM1_mnss_sK1(const float * __restrict__ sink, const int sink_m,
 #include <cuda_profiler_api.h>
 #include "error.h"
 #include "Msgs.h"
+#include "timers.h"
+
+extern Counter_t PCISend;
 
 typedef struct cudaq_t {
     int inuse;
@@ -1011,6 +1014,7 @@ grav_mn_CUDA(const char *routine, const float *p, float *accp, const int m, cons
 			  cudaMemcpyHostToDevice, cudaq[q].stream);
     if (err != cudaSuccess) 
 	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+    AddCounter(&PCISend, total_size);
 
     float *pos = devpos + 3*(p-Btab)/stride;
     float *accp_ret = devaccp + 4*(p-Btab)/stride;;
@@ -1060,6 +1064,7 @@ grav_mns_CUDA(const char *routine, const int base, const int m,
 			  cudaMemcpyHostToDevice, cudaq[q].stream);
     if (err != cudaSuccess) 
 	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+    AddCounter(&PCISend, total_size);
 
     float *sink = devpos + base * 3;
     float *source = devpos;
@@ -1105,6 +1110,7 @@ grav_qns_CUDA(const char *routine, const int base, const int m,
 			  cudaMemcpyHostToDevice, cudaq[q].stream);
     if (err != cudaSuccess) 
 	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+    AddCounter(&PCISend, total_size);
 
     float *sink = devpos + base * 3;
     int *source = dev;
@@ -1174,6 +1180,7 @@ grav_mnss_CUDA(const char *routine, const int sink_base, const int m,
 			  cudaMemcpyHostToDevice, cudaq[q].stream);
     if (err != cudaSuccess) 
 	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+    AddCounter(&PCISend, total_size);
 
     float *sink = devpos + sink_base * 3;
     float *source = devpos + source_base * 3;
@@ -1234,6 +1241,7 @@ grav_qnss_CUDA(const char *routine, const int sink_base, const int m,
 			  cudaMemcpyHostToDevice, cudaq[q].stream);
     if (err != cudaSuccess) 
 	Error("cudaMemcpy failed, %d %s\n", err, cudaGetErrorString(err));
+    AddCounter(&PCISend, total_size);
 
     float *sink = devpos + sink_base * 3;
     float *accp = devaccp + sink_base * 4;
@@ -1257,7 +1265,6 @@ grav_qnss_CUDA(const char *routine, const int sink_base, const int m,
 }
 
 #include <cupti.h>
-#include "timers.h"
 #include "mpmy_time.h"
 
 #define Match(a, b) (strncmp(a, b, strlen(b)) == 0)
