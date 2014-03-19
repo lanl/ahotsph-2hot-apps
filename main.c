@@ -81,7 +81,7 @@ extern Timer_t GravMFTm, GravQFTm, GravHFTm, GravQLTm;
 #ifdef CUDA
 static int has_cuda = 1;
 Timer_t PCISendTm, KernelTm, KernelHTm, KernelQTm, KernelMTm;
-Counter_t PCISendMB;
+Counter_t PCISend;
 #else
 static int has_cuda = 0;
 #endif
@@ -1347,7 +1347,7 @@ static SDF *startup(int argc, char **argv){
     EnableCounter(&SharedCnt, "Shared Cells");
     EnableCounter(&RequestCnt, "Requests");
     EnableCounter(&DeferCnt, "Deferred");
-    EnableCounter(&PCISendMB, "CUDA Send");
+    EnableCounter(&PCISend, "CUDA Send");
     EnableCounter(&MemCnt, "Memory (MB)");
     EnableCounter(&HeapCnt_, "Heap (MB)");
     return csdfp;
