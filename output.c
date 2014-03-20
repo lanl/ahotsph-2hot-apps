@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include "SDF.h"
-#include "malloc.h"
+#include "sw_malloc.h"
 #include "Malloc.h"
 #include "SDFwrite.h"
 #include "physics.h"

@@ -133,7 +133,6 @@ $(objdir)/main$(objsuf):
 $(objdir)/main$(objsuf): $(treedir)/include/fastflpt.h
 $(objdir)/main$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/error.h
 $(objdir)/main$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/SDF.h
-$(objdir)/main$(objsuf): $(treedir)/include/protos.h $(treedir)/include/macr.h $(treedir)/include/malloc.h
 $(objdir)/main$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/SDFwrite.h $(treedir)/include/SDFread.h
 $(objdir)/main$(objsuf): $(treedir)/include/timers.h
 $(objdir)/main$(objsuf): order.h physics.h $(treedir)/include/tree.h
@@ -210,7 +209,6 @@ $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf):
 $(objdir)/output$(objsuf): $(treedir)/include/SDF.h
-$(objdir)/output$(objsuf): $(treedir)/include/malloc.h $(treedir)/include/Malloc.h $(treedir)/include/error.h
 $(objdir)/output$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/SDFwrite.h physics.h
 $(objdir)/output$(objsuf): $(treedir)/include/tree.h $(treedir)/include/timers.h
 $(objdir)/output$(objsuf): $(treedir)/include/key.h

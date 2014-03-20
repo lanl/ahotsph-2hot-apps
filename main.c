@@ -13,7 +13,7 @@
 #include "SDF.h"
 #include "protos.h"
 #include "macr.h"
-#include "malloc.h"
+#include "sw_malloc.h"
 #include "Malloc.h"
 #include "SDFwrite.h"
 #include "SDFread.h"
@@ -77,11 +77,11 @@ extern Timer_t PQSortAtoaTm, PQSortAtoavTm;
 extern Counter_t PQSortSends, PQSortRecvs, PQSortMaxn;
 
 extern Timer_t GravMFTm, GravQFTm, GravHFTm, GravQLTm;
+Timer_t PCISendTm, KernelTm, KernelHTm, KernelQTm, KernelMTm;
+Counter_t PCISend;
 
 #ifdef CUDA
 static int has_cuda = 1;
-Timer_t PCISendTm, KernelTm, KernelHTm, KernelQTm, KernelMTm;
-Counter_t PCISend;
 #else
 static int has_cuda = 0;
 #endif
