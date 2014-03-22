@@ -642,12 +642,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	StopTimer(&GravSTm);
 	StopTimer(&GravTm);
 	VV(acc, += accd); phi += phid;
-	
-	if (Minteract == do_grav_sse16_ivec_asm) {
-	    /* Fix self-interaction for phi from fast asm code */
-	    /* If eps is very small, roundoff becomes a problem */
-	    phi += bp->mass*recipsqrtf(e);
-	}
+
 	if (mac->subtract_background) {
 	    float r[NDIM];
 	    VVV(r, = from->pos, - from->cen);
