@@ -1387,6 +1387,7 @@ main(int argc, char *argv[])
     singlPrintf("Bye!\n");
     Msgf(("Bye!\n"));
     Msg_flush();
+    MPMY_Finalize();
     exit(0);			/* trex seems to hang in __exit() */
 }
 

@@ -743,6 +743,8 @@ int main(int argc, char *argv[])
     SPHOutput(btab, nobj, outnamebase, iter, do_floatoutput);
     
     singlPrintf("Bye!\n");
+
+    MPMY_Finalize();
     
     return 0;
 }
