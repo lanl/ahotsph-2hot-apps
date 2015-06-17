@@ -7,7 +7,7 @@
 #include "mpmy.h"
 #include "SDF.h"
 #include "Assert.h"
-#include "bigmalloc.h"
+#include "Malloc.h"
 #include "Msgs.h"
 #include "error.h"
 #include "verify.h"

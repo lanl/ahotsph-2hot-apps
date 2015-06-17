@@ -2,7 +2,7 @@
 #include "randoms.h"
 #include "physics.h"
 #include "physics_sph.h"
-#include "bigmalloc.h"
+#include "Malloc.h"
 #include "vop.h"
 #include "singlio.h"
 #include "fastflpt.h"
