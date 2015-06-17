@@ -191,6 +191,13 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 }
 
 void
+WalkInitSrc(Stk *kstk, Stk *ostk)
+{
+    StkPushType(kstk, KeyInt(1), Key_t);
+    StkPushType(ostk, 0, int);
+}
+
+void
 RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
