@@ -194,7 +194,6 @@ void
 RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
-    Vxd(float a);
     int icnt = sink->icnt;
     int interactions = 0;
     float dr2;
@@ -210,8 +209,6 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 	for (i = 0; i < n; i++) result[i] = MAC_SPLIT_SINK;
 	return;
     }
-
-    VxS(a, = 0.F);
 
     for (i = 0; i < n; i++) {
 	const hcell *source = source_vec[i];
