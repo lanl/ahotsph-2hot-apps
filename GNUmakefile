@@ -4,8 +4,7 @@ treedir_sed=\.\.
 
 ifndef prog
 src=cofm.c eos.c grav.c mac.c main.c physics.c print.c integrate.c \
-	sphcofm.c sph.c sphinit.c shrink.c physics_sph.c sphprint.c sphplus.c \
-	SDFreadf.c
+	sphcofm.c sph.c sphinit.c shrink.c physics_sph.c sphprint.c sphplus.c
 
 programname=sph
 else
@@ -183,7 +182,7 @@ $(objdir)/sphinit$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsor
 $(objdir)/sphinit$(objsuf): $(treedir)/include/physics_generic.h physics_sph.h $(treedir)/include/vop.h
 $(objdir)/sphinit$(objsuf): $(treedir)/include/singlio.h $(treedir)/include/fastflpt.h
 $(objdir)/sphinit$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/gc.h $(treedir)/include/Msgs.h
-$(objdir)/sphinit$(objsuf): $(treedir)/include/SDF.h $(treedir)/include/SDFread.h SDFreadf.h
+$(objdir)/sphinit$(objsuf): $(treedir)/include/SDF.h $(treedir)/include/SDFread.h
 $(objdir)/physics_sph$(objsuf): physics_sph.h $(treedir)/include/tree.h
 $(objdir)/physics_sph$(objsuf):
 $(objdir)/physics_sph$(objsuf):
@@ -238,4 +237,4 @@ $(objdir)/SDFreadf$(objsuf): $(treedir)/include/mpmy.h
 $(objdir)/SDFreadf$(objsuf): $(treedir)/include/timers.h $(treedir)/include/SDF.h $(treedir)/include/Assert.h
 $(objdir)/SDFreadf$(objsuf): $(treedir)/include/error.h $(treedir)/include/gccextensions.h
 $(objdir)/SDFreadf$(objsuf): $(treedir)/include/Malloc.h $(treedir)/include/Msgs.h $(treedir)/include/verify.h
-$(objdir)/SDFreadf$(objsuf): SDFreadf.h $(treedir)/include/gc.h $(treedir)/include/singlio.h
+$(objdir)/SDFreadf$(objsuf): $(treedir)/include/gc.h $(treedir)/include/singlio.h
