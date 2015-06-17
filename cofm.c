@@ -11,14 +11,16 @@
 #include "fastflpt.h"
 #include "protos.h"
 
+tree_t *Tp;
 int MACtype = BMAX_MAC;		/* default */
 float Tol;
 float invTol;
 float RelTol;
 float invRelTol;
 
-void SetupCofm(int type, float tol, float rel_tol)
+void SetupCofm(tree_t *tp, int type, float tol, float rel_tol)
 {
+    Tp = tp;
     MACtype = type;
     Tol = tol;
     invTol = 1.0/tol;
@@ -140,8 +142,10 @@ static double rtnewt(void (*funcd)(double, double *, double *),
 		    double x1, double xacc);
 
 /* Turn the ptr from a cofmdata to a cell. */
-void CellFromCofm(cell *cp, cofmdata *cmp)
+void *CellFromCofm(cofmdata *cmp)
 {
+    cell *cp = ChnAlloc(&Tp->cellchn);
+
     cp->mass = cmp->mass;
     VV(cp->pos, = cmp->pos);
     cp->bmax = cmp->bmax;
@@ -185,6 +189,8 @@ void CellFromCofm(cell *cp, cofmdata *cmp)
 
     cp->daughters = cmp->ndaughters;
     Msgf(("Cell: %s\n", PrintCellContents(cp)));
+
+    return cp;
 }
 
 /* Use doubles here to avoid catastrophe from roundoff. */
