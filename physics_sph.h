@@ -5,6 +5,7 @@
 #include "tree.h"
 #include "key.h"
 #include "timers.h"
+#include "SDF.h"
 
 #define NDIM 3
 #define SPH_SAVE_ACC
@@ -348,3 +349,11 @@ double duvst(double t);
 float newtraph(double xl, double xr, double prec, double (*f)(double x), 
 	     double (*df)(double x));
 
+/* In wind.c */
+void SDFwritewind(const char *filename, int gnobj, int nobj, 
+                  const void *btab, int windnobj, const void *windbtab, 
+                  int bsize, int wsize, const char *winddesc, 
+                  const char *bodydesc, ...);
+SDF *SDFreadwind(char *name, void **btabp, int *gnobjp, int *nobjp, 
+		 int stride,
+		 /* char *name, offset_t offset, int *confirm */...);
