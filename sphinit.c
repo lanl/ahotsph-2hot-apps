@@ -95,7 +95,7 @@ DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp,
     int SPHgnobj, SPHnobj;
     SPHbody *SPHbtab, *q;
     float new_u;
-    float h, rsq;
+    float h;
 
     singlPrintf("Generating random dataset\n");
     if (SDFgetint(csdfp, "nobj", &gnobj))
@@ -117,10 +117,10 @@ DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 	    clear_tregs();	/* avoid system bug */
 #endif
 	p->mass = 1.0 / gnobj;		 /*   set masses equal */
-	if (periodic)
-	  rsq = cube_rand(&ranstate, NDIM, p->pos);
-	else
-	  rsq = sphere_rand(&ranstate, NDIM, p->pos);
+	/* if (periodic) */
+	/*   rsq = cube_rand(&ranstate, NDIM, p->pos); */
+	/* else */
+	/*   rsq = sphere_rand(&ranstate, NDIM, p->pos); */
 	VS(p->vel, = 0.0);
     }
     h = pow((float)8.5/SPHgnobj, .333333);
@@ -331,8 +331,6 @@ WindRead(char *name, void *csdfp, windbody **btabp, int *gnobjp, int *nobjp)
     int xconf, yconf, zconf;
     int vxconf, vyconf, vzconf;
     int rhoconf, vwindconf, uwindconf, identconf;
-    windbody *btab;
-    int nobj, gnobj;
     
     singlPrintf("Reading \"%s\"\n", name);
     sdfp = SDFreadwind(name, (void **)btabp, gnobjp, nobjp, sizeof(windbody),
@@ -347,9 +345,6 @@ WindRead(char *name, void *csdfp, windbody **btabp, int *gnobjp, int *nobjp)
 		       "uwind", offsetof(windbody, uwind), &uwindconf,
 		       "identwind", offsetof(windbody, ident), &identconf,
 		       NULL);
-    nobj = *nobjp;
-    gnobj = *gnobjp;
-    btab = *btabp;
     Msgf(("Wind data read, windnobj=%d, windgnobj=%d\n", *nobjp, *gnobjp));
     Msgf(("Nproc:%d, Procnum: %d, Doc: %d\n",
 	  MPMY_Nproc(), MPMY_Procnum(), ilog2(MPMY_Nproc())));

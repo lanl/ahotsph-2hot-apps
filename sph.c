@@ -250,7 +250,6 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VxdV(const float v, = sink->vel);
     const float h = sink->h;
     const float pro2 = sink->pr / (sink->rho_est * sink->rho_est);
-    const float mass = sink->mass;
     const float rho_est = sink->rho_est;
     const float vsound = sink->vsound;
     const float u = sink->u;
@@ -273,7 +272,7 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     float dq = (float)0.0;
     float vv, vv2;
     float dxx, dwdx, wtij, dgrwdx, grwtij;
-    float rapm, robar1, grpm, wpm;
+    float robar1, grpm, wpm;
     float poro2;
     float projv, vsbar, est_divv, t12;
     float rij, rij1;
@@ -326,7 +325,6 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	dgrwdx = (grwij[index+1] - grwij[index]) * invdvtable;
 	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
 
-	rapm = mass / bp->mass;
 	robar1 = (float)2.0 / (rho_est + bp->rho_est);
 	grpm = bp->mass * grwtij;
 	wpm = bp->mass * wtij;
@@ -740,6 +738,10 @@ do_SPHgrav(const float *p, const float *end, const float *pos0, float *mass0,
 	    phii=fpoten[index]*mass/h;
 	    mor3=mass*fmass[index]/dr2*recipsqrtf(dr2);
 	}
+        else {
+            phii = 0.0;
+            mor3 = 0.0;
+        }
 	phi -= phii;
 	VxVx(a, += mor3 * r); /* 6 flops */
     }
