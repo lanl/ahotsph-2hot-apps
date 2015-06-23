@@ -1202,7 +1202,7 @@ void WVTInitProbdist2(SPHbody **btabp, int *gnobj, int *nobj,
 
 
 void
-WVTgate(SinkSPH *sink, hcell **src_vec, int *result, int n)
+WVTgate(SinkSPH *sink, hcell **src_vec, int *flags, int *result, int n)
 {
     int i;
     

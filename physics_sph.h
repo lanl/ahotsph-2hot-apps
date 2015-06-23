@@ -415,7 +415,7 @@ char *PrintSPHBranch(const SPHcofmdata *cmp);
 void SetSPH(double visc_alpha, double visc_beta, double visc_epsilon, 
 	    double heat_f1, double eos_gamma, int gnobj,  
 	    void bfunc(), void cfunc());
-void SPHgate(SinkSPH *sink, hcell **src_vec, int *result, int n);
+void SPHgate(SinkSPH *sink, hcell **src_vec, int *flags, int *result, int n);
 void nbrMAC(SinkSPH *sink, hcell **src_vec, int *result, int n);
 void macRho(SinkSPH *sink, hcell **source, int *result, int n);
 void macSPH(SinkSPH *sink, hcell **source, int *result, int n);

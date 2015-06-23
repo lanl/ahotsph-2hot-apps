@@ -174,7 +174,7 @@ WalkInitSrc(Stk *kstk, Stk *ostk)
 }
 
 void
-RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
+RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 {
     VxdV(double pos_sink, = sink->pos);
     Vxd(double a);
@@ -236,7 +236,7 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
+DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 {
     VxdV(double pos_sink, = sink->pos);
     double bmax = sink->bmax;
