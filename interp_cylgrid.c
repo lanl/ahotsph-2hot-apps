@@ -88,13 +88,12 @@ struct cosmo_s{
 		     very close to 1 (exactly?) for flat models. */
 } cosmo;
 static double dt=0.;
-static double sysradius=0.;
 
 int main(int argc, char *argv[]) 
 {
     int iter;
     SDF *csdfp, *sdfp;
-    SPHbody *btab, *p, **btabp;
+    SPHbody *btab, *p;
     /*     void *decomp_info = NULL; */
     sortresult_t sortedbtab;
     tree_t SPHtree;
@@ -102,7 +101,6 @@ int main(int argc, char *argv[])
     int num[NDIM];  /* uniform mesh for now */
     float rmin[NDIM], rmax[NDIM];
     double outrmin[NDIM], outrmax[NDIM];
-    double sysradius;
     double sort_tol = 0.01;
     int i;
     int gnobj, nobj, targetnobj;
@@ -357,8 +355,6 @@ int main(int argc, char *argv[])
     singlPrintf("rmax: %g %g %g \n",rmax[0],rmax[1],rmax[2]);
     SPHFixNterms(btab, nobj);
     
-    btabp=&btab;
-    
     if (keepcenterfixed && MPMY_Procnum() == 0 && !do_externalstart) {
 	btab[0].pos[0]=0.;
 	btab[0].pos[1]=0.;
@@ -389,7 +385,6 @@ int main(int argc, char *argv[])
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	singlPrintf("rmin: %g %g %g \n",rmin[0],rmin[1],rmin[2]);
 	singlPrintf("rmax: %g %g %g \n",rmax[0],rmax[1],rmax[2]);
-	sysradius = 0.5*FixRsize(rmin, rmax);
 	
 	singlPrintf("BuildTree\n");
 	StartTimer(&BuildTot);
@@ -415,7 +410,6 @@ int main(int argc, char *argv[])
 	/* 	BoxGhosts(&btab, &nobj, outrmin, outrmax, &tothvol, totvol); */
 
 	SPHFindBbox(btab, nobj, rmin, rmax);
-	sysradius = 0.5*FixRsize(rmin, rmax);
 	
 	/* Initialize these variables, since they store the particle 
 	   separations in this code, instead of physical properties */
@@ -524,7 +518,6 @@ int main(int argc, char *argv[])
 	/* 	BoxGhosts(&btab, &nobj, outrmin, outrmax, &tothvol, totvol); */
 
 	SPHFindBbox(btab, nobj, rmin, rmax);
-	sysradius = 0.5*FixRsize(rmin, rmax);
 	
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	SPHFixNterms(btab, nobj);	      	
@@ -618,7 +611,6 @@ int main(int argc, char *argv[])
         for (p=btab; p<btab+nobj; p++) p->rho=0.;
 	
 	SPHFindBbox(btab, nobj, rmin, rmax);
-	sysradius = 0.5*FixRsize(rmin, rmax);
 	
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	
@@ -944,7 +936,6 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase,
     double tvel_out = tvel; /* changed in Integrate() */
     MPMY_Comm_request req;
     int output_gnobj;
-    double output_z, output_h, output_R0;
     char outname[256];
     sprintf(outname, "%s", outnamebase);
     singlPrintf("Saving to %s\n", outname);
@@ -988,10 +979,6 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase,
     MPMY_ICombine_Init(&req);
     MPMY_ICombine(&output_nobj, &output_gnobj, 1, MPMY_INT, MPMY_SUM, req);
     MPMY_ICombine_Wait(req);
-    output_z = 0.0;
-    output_h = 0.0;
-    output_R0 = sysradius;
-
 
     if ( do_outputfloat == 0 || do_outputfloat == 2 ) {
 

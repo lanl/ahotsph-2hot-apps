@@ -19,7 +19,7 @@ SDF *SPHReadf(char *name, SPHbody **btabp, int *gnobjp, int *nobjp)
     int hconf, uconf, identconf, windidconf;
     int rhoconf;
     SPHbody *btab; 
-    int nobj, gnobj, i;
+    int nobj, i;
     
     singlPrintf("Reading \"%s\"\n", name);
     sdfp = SDFreadf(NULL, name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
@@ -38,7 +38,6 @@ SDF *SPHReadf(char *name, SPHbody **btabp, int *gnobjp, int *nobjp)
 		    "windid", offsetof(SPHbody, windid), &windidconf,
 		    NULL);
     nobj = *nobjp;
-    gnobj = *gnobjp;
     btab = *btabp;
     
     Msgf(("Data read, SPHnobj=%d, SPHgnobj=%d\n", *nobjp, *gnobjp));

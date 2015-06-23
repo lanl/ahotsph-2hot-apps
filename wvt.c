@@ -175,7 +175,6 @@ void WVTInitCube(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -206,7 +205,6 @@ void WVTInitCube(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 	      
 		if ( (i >= start) && (i < start + *nobj) ) {
 		    q = StkPush(&s, sizeof(SPHbody));
-		    rsq = cube_rand(&ranstate, NDIM, randoffset);
 		    /* Take the 1e-20 out to "randomize" the grid */
  		    VVVV(q->pos, =randoffset,*1e-20*delta, + pos);
 		    q->rho = 1.0; /* Can be anything but 0...*/
@@ -241,7 +239,6 @@ void WVTInitHex(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -283,7 +280,6 @@ void WVTInitHex(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 		     pos[2] >= min[2] && pos[2] <=max[2] ) {
 		    if ( (i >= start) && (i < start + *nobj) ) {
 			q = StkPush(&s, sizeof(SPHbody));
-			rsq = cube_rand(&ranstate, NDIM, randoffset);
 			/* Take the 1e-20 out to "randomize" the grid */
 			VVVV(q->pos, =randoffset,*1e-20*delta, + pos);
 			q->rho = 1.0; /* Can be anything but 0...*/
@@ -318,7 +314,6 @@ void WVTInitCCP(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -380,7 +375,6 @@ void WVTInitCCP(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 		     pos[2] >= min[2] && pos[2] <=max[2] ) {
 		    if ( (i >= start) && (i < start + *nobj) ) {
 			q = StkPush(&s, sizeof(SPHbody));
-			rsq = cube_rand(&ranstate, NDIM, randoffset);
 			/* Take the 1e-20 out to "randomize" the grid */
 			VVVV(q->pos, =randoffset,*1e-20*delta, + pos);
 			q->rho = 1.0; /* Can be anything but 0...*/
@@ -416,7 +410,6 @@ void WVTInitHCP(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -478,7 +471,6 @@ void WVTInitHCP(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 		     pos[2] >= min[2] && pos[2] <=max[2] ) {
 		    if ( (i >= start) && (i < start + *nobj) ) {
 			q = StkPush(&s, sizeof(SPHbody));
-			rsq = cube_rand(&ranstate, NDIM, randoffset);
 			/* Take the 1e-20 out to "randomize" the grid */
 			VVVV(q->pos, =randoffset,*1e-20*delta, + pos);
 			q->rho = 1.0; /* Can be anything but 0...*/
@@ -514,7 +506,6 @@ void WVTInitHex2(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     /* INCORRECT VERSION !!! USE WVTINITHCP INSTEAD */
     double pos[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -572,7 +563,6 @@ void WVTInitHex2(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
             for (x = xmin; x <= sqrt(h*h - y*y); x += dx) {
 		if ( (i >= start) && (i < start + *nobj) ) {
 		    p = (SPHbody *)realloc(p, ++(*nobj) * sizeof(SPHbody));
-		    rsq = cube_rand(&ranstate, NDIM, randoffset);
 		    /* Take the 1e-20 out to "randomize" the grid */
 		    /* You need this factor for the tree not to fail due to 
 		     having "perfect planes" */
@@ -649,7 +639,6 @@ void WVTInitProbdist(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q, *qq;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0, j=0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -657,8 +646,6 @@ void WVTInitProbdist(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     int nadded;
     double tothvol=1.;
     double subtotrho, totrho=0.;
-    double testran;
-    long int nbox;
 
     if (num[0] < 0) num[0]=1024;
     if (num[1] < 0) num[1]=1024;
@@ -703,8 +690,6 @@ void WVTInitProbdist(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 	
     }
 
-    nbox = i;
-    
     StkInitEz(&ss);
     i=start;   
     subtotrho=0.;
@@ -732,8 +717,6 @@ void WVTInitProbdist(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 			 subtotrho/totrho <
 			 ((double)MPMY_Procnum()+1)/((double) MPMY_Nproc())) {
 			for (j=0; j<nadded; j++) {
-			    testran=uniform_rand(&ranstate);
-			    rsq = cube_rand(&ranstate, NDIM, randoffset);
 			    /* 	    VVVV(pos, =randoffset,*delta, + p->pos); */
 			    /* 	    VV(pos, =p->pos); */
 			    VVVV(q->pos, =randoffset,*delta,/2. + pos); 
@@ -786,7 +769,6 @@ void WVTInitProbdistlr(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     double tothvol=1.;
     double subtotrho, totrho=0.;
     double testran, testran2;
-    long int nbox;
     int id;
 
     if (num[0] < 0) num[0]=1024;
@@ -821,8 +803,6 @@ void WVTInitProbdistlr(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 	
     }
 
-    nbox = i;
-    
     StkInitEz(&ss);
     id=start;   
     subtotrho=0.;
@@ -897,7 +877,6 @@ void WVTInitProbdist_lotsmem(SPHbody **btabp, int *gnobj, int *nobj,
     SPHbody *q, *p, *qq;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0, j=0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -981,7 +960,6 @@ void WVTInitProbdist_lotsmem(SPHbody **btabp, int *gnobj, int *nobj,
 		
 		for (j=0; j<nadded; j++) {
 		    /*testran=uniform_rand(&ranstate);*/
-		    rsq = cube_rand(&ranstate, NDIM, randoffset);
 		    /* 	    VVVV(pos, =randoffset,*delta, + p->pos); */
 		    /* 	    VV(pos, =p->pos); */
 		    VVVV(pos, =randoffset,*delta,/2. + p->pos); 
@@ -1024,7 +1002,6 @@ void WVTInitCube2(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
     SPHbody *q;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -1056,7 +1033,6 @@ void WVTInitCube2(SPHbody **btabp, int *gnobj, int *nobj, double min[NDIM],
 		if ( (i >= start) && (i < start + *nobj) ) {
 		    q = StkPush(&s, sizeof(SPHbody));
 		    /* 		    VV(q->pos, = pos); */
-		    rsq = cube_rand(&ranstate, NDIM, randoffset);
  		    VVVV(q->pos, =randoffset,*delta, + pos);
 		    q->rho = 1.0; /* Can be anything but 0...*/
 		    q->u = 1.0; /* Can be anything but 0...*/
@@ -1089,7 +1065,6 @@ void WVTInitProbdist2(SPHbody **btabp, int *gnobj, int *nobj,
     SPHbody *q, *p, *qq;
     double pos[NDIM], delta[NDIM];
     int start = 0, i = 0;
-    double rsq;
     float randoffset[NDIM];
     ran_state ranstate;
     int seed=1;
@@ -1163,7 +1138,6 @@ void WVTInitProbdist2(SPHbody **btabp, int *gnobj, int *nobj,
 	/* 	  singlPrintf("%g ", p->rho); */
 	nadded=0;
 	testran=uniform_rand(&ranstate);
-	rsq = cube_rand(&ranstate, NDIM, randoffset);
 	/* 	    VVVV(pos, =randoffset,*delta, + p->pos); */
 	/* 	    VV(pos, =p->pos); */
 	r=sqrt(p->pos[0]*p->pos[0]+p->pos[1]*p->pos[1]+p->pos[2]*p->pos[2]);  
@@ -1220,7 +1194,6 @@ macWVT(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VxdV(const double pos_sink, = sink->pos);
     Vxd(double r);
     Vxd(double f);
-    Vxd(double smv);
     double min_nbr_dt = sink->min_nbr_dt;
     double extent_src;
     int daughters;
@@ -1239,7 +1212,7 @@ macWVT(SinkSPH *sink, hcell **source_vec, int *result, int n)
 		    enclosed */
     double res1=sink->udot, res2=sink->rho_est, res3=sink->vsound, 
 	res4=sink->temp; 
-    double wtij, hmean11, hmean21, v2, dxx, dwdx, h;
+    double hmean11, hmean21, v2, h;
     int index;
     /* Store the resolution in some other variables you don't need now */
     
@@ -1247,7 +1220,6 @@ macWVT(SinkSPH *sink, hcell **source_vec, int *result, int n)
     
     deltaj=1./pow(sink->h,fudge); 
     VxS(f, = (double)0.0); /* Initialize "force" to 0 */
-    VxS(smv, = (double)0.0);
     for (i = 0; i < n; i++) {
 	const hcellptr source = source_vec[i];
 	
@@ -1289,9 +1261,6 @@ macWVT(SinkSPH *sink, hcell **source_vec, int *result, int n)
  	v2 = dr2 * hmean21; 
  	index = v2 * invdvtable; 
  	if (index >= MAX_INDEX) Error("Index too large\n"); 
- 	dxx = v2 - index * dvtable; 
- 	dwdx = (wij[index+1] - wij[index]) * invdvtable; 
- 	wtij = (wij[index] + dwdx * dxx ) * hmean21 * hmean11; 
 
 /*  	norm=-deltaj/deltai * wtij;  */
 /*  	norm=-deltaj/deltai/((rij+eps)*(rij+eps));  */
@@ -1356,7 +1325,8 @@ void WVTupdate(SPHbody *btab, int nobj, int loop, int nloop, int dim,
 	/* h/N^.33 is the actual separation */
  	if (dim == 3) dt=1./((double) nneighbors)*10*h/
 			  (1.+0*3*( (double) loop/( (double) nloop))); 
- 	if (dim == 2) dt=h*h*h/32./(1.+2*( (double) loop/( (double) nloop))); 
+ 	else /* dim == 2 */
+            dt=h*h*h/32./(1.+2*( (double) loop/( (double) nloop))); 
 /*  	dt=h*h*h/10.;  */
 	if (!(p->ident & GHOST_FLAG)) {
 	    delx=dt*p->acc[0];
@@ -1402,15 +1372,11 @@ void WVT_hofpos_pwl(SPHbody *btab, int nobj, double totvol, double *tothvol,
 		    int dim)
 {
     SPHbody *p;
-    double center[3];
     double rad;
     double q=1.;
     int redo_tothvol=0;
     if (*tothvol < 0) redo_tothvol=1;
     
-    center[0]=0.;
-    center[1]=0.;
-    center[2]=0.;
     if (redo_tothvol)  *tothvol=0.;
     
     for (p=btab; p<btab+nobj; p++) {
@@ -1689,12 +1655,10 @@ void WVT_hofpos_inputh(SPHbody *btab, int nobj, double totvol,
 		       double *tothvol, int dim)
 {
     SPHbody *p;
-    double center[3];
     double rad;
     double q=0.5;
     FILE *fp;
     double rin, hin;
-    int fstatus;
     /*   double *r, *h; */
     int i, index;
     int redo_tothvol=0;
@@ -1709,7 +1673,7 @@ void WVT_hofpos_inputh(SPHbody *btab, int nobj, double totvol,
 	fp = fopen("inputh.dat", "r");
 	i=0;
 	while ( !feof(fp) ) {
-	    fstatus=fscanf(fp, "%lf %lf\n", &rin, &hin);
+	    fscanf(fp, "%lf %lf\n", &rin, &hin);
 	    i++;
 	}
 	fclose(fp);
@@ -1720,7 +1684,7 @@ void WVT_hofpos_inputh(SPHbody *btab, int nobj, double totvol,
 	fp = fopen("inputh.dat", "r");
 	i=0;
 	while ( !feof(fp) ) {
-	    fstatus=fscanf(fp, "%lf %lf\n", &rin, &hin);
+	    fscanf(fp, "%lf %lf\n", &rin, &hin);
 	    rglob[i]=rin;
 	    hglob[i]=hin;
 	    i++;
@@ -1730,9 +1694,6 @@ void WVT_hofpos_inputh(SPHbody *btab, int nobj, double totvol,
     } 
     else {	
 	i=iglob;
-	center[0]=0.;
-	center[1]=0.;
-	center[2]=0.;
 	for (p=btab; p<btab+nobj; p++) {
 	    rad=sqrt( p->pos[0]*p->pos[0] + p->pos[1]*p->pos[1] + 
 		      p->pos[2]*p->pos[2]);
@@ -1763,7 +1724,6 @@ void WVT_hofpos_cylgrid(SPHbody *btab, int nobj, double totvol,
 			double *tothvol, int dim)
 {
     SPHbody *p;
-    double center[3];
     double q=1.;
     int redo_tothvol=0;
     double bgrho=1e-5;
@@ -1772,11 +1732,6 @@ void WVT_hofpos_cylgrid(SPHbody *btab, int nobj, double totvol,
     
     if (*tothvol < 0) redo_tothvol=1;
     if (redo_tothvol)  *tothvol=0.;
-    
-    
-    center[0]=0.;
-    center[1]=0.;
-    center[2]=0.;
     
     /* What we need now is the function that loads the grid data*/
 
@@ -1926,7 +1881,7 @@ void init_cylindricalgrid(int dimr, int dimz,
 			  double mintheta, double maxtheta, double center[3])
 {
     int j, k, l;
-    double r, z, theta, ddata, dr, dz, dtheta;
+    double ddata, dr, dz, dtheta;
     FILE *infile, *infile2;
     
     dr=(double) (maxr-minr)/(dimr-1.);
@@ -1960,11 +1915,8 @@ void init_cylindricalgrid(int dimr, int dimz,
        beginning and end. Remember, data is little endian */
     
     for (l=0; l<dimtheta; l++) {
-	theta=(double) mintheta+l*dtheta;
 	for (k=0; k<dimz; k++) {
-	    z=(double) minz+k*dz;
 	    for (j=0; j<dimr; j++) {
-		r=(double) minr+j*dr;
 		fread(&ddata, sizeof(ddata),1,infile); 
 		cylgrid[j][k][l]=ddata;
 		fread(&ddata, sizeof(ddata),1,infile2); 
@@ -2151,7 +2103,6 @@ void WVT_hofpos_cartgrid(SPHbody *btab, int nobj, double totvol,
 			 double *tothvol, int dim)
 {
     SPHbody *p;
-    double center[3];
     double q=1.;
     int redo_tothvol=0;
     double bgrho=1e-5;
@@ -2160,11 +2111,6 @@ void WVT_hofpos_cartgrid(SPHbody *btab, int nobj, double totvol,
     
     if (*tothvol < 0) redo_tothvol=1;
     if (redo_tothvol)  *tothvol=0.;
-    
-    
-    center[0]=0.;
-    center[1]=0.;
-    center[2]=0.;
     
     /* What we need now is the function that loads the grid data*/
 
