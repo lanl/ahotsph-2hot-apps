@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "stk.h"
-#include "bigmalloc.h"
+#include "Malloc.h"
 #include "randoms.h"
 
 

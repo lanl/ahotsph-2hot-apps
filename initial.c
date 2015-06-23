@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "stk.h"
-#include "bigmalloc.h"
+#include "Malloc.h"
 #include "randoms.h"
 #include "singlio.h"
 #include "ranlib.h"

@@ -13,7 +13,7 @@ Modification History, starting 08/23/2005
 #include "physics.h"
 #include "physics_sph.h"
 #include "vop.h"
-#include "bigmalloc.h"
+#include "Malloc.h"
 #include "error.h"
 #include "singlio.h"
 #include "mpmy.h"
