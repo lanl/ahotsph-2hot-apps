@@ -401,7 +401,8 @@ Key_t SPHShortOutIdentKey(const SPHshortoutbody *bp);
 
 /* In sphcofm.c */
 void SPHSetupCofm(int MACtype, double tol, double rel_tol);
-void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
+void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *);
+int SPHCellSz(void *p);
 void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp);
 
 /* In sphprint.c */

@@ -372,10 +372,10 @@ int main(int argc, char *argv[])
     }
     
     
-    SetupTree(&SPHtree, NDIM, sizeof(SPHbody), sizeof(SPHcell),
+    SetupTree(&SPHtree, NDIM, sizeof(SPHbody), sizeof(SPHcell), 0, 0,
 	      SPHTBODYSZ, sizeof(SPHcofmdata), 
 	      (pq_keyproto)SPHGetKeyFromStruct, (pq_wgtproto)SPHGetCost,
-	      SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm);
+	      SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm, SPHCellSz);
     
     SPH_setup(NDIM, kernel_ncoef1, kernel_coef1, kernel_ncoef2, kernel_coef2);
     WVT_setup(NDIM, kernel_ncoef1, kernel_coef1, kernel_ncoef2, kernel_coef2);
