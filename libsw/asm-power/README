@@ -1,6 +1,0 @@
-WARNING - UGLY HACK!
-
-To avoid keeping a copy of the proprietary readrtc.s, I am keeping
-the compiled version in a file called readrtc.O, and I'm telling make
-that it can create readrtc.o from readrtc.O with cp.  This way it
-shouldn't disappear from the Objfiles directories quite so often.

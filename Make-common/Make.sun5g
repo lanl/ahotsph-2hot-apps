@@ -1,2 +1,0 @@
-include $(TREEHOME)/Make-common/Make.sun5
-CFLAGS:=-g -Wall -D__SUN5__

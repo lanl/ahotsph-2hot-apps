@@ -1,7 +1,0 @@
-#!/bin/sh
-PAROS=swampi
-base=`basename $0`
-exec $TREEHOME/$base/$base.$ARCH-$PAROS "$@"
-# another option might be:
-# exec $0.$ARCH "$@"
-# which requires that sym-links be set up in the bin directory.

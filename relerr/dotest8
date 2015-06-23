@@ -1,1 +1,0 @@
-mpirun -np 1 relerr.O2k-mpi test10knln.ctl > test8.out < /dev/null 
