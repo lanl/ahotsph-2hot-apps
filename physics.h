@@ -194,6 +194,7 @@ void DLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
 void RcritMAC(Sink *sink, const hcell **source, int *result, int n);
 void SetGravOffset(double *off);
 void UnSetGravOffset(void);
+void WalkInitSrc(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
 
 /* In grav.c */

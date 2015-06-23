@@ -458,8 +458,8 @@ int main(int argc, char *argv[])
 	singlPrintf("Walk\n");
 	
 	
-	WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), (macv_t)WVTgate,
-		 (inherit_t)InheritWVT);
+	WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), WalkInitSrc,
+                 (macv_t)WVTgate, (inherit_t)InheritWVT);
 	singlPrintf("Walkinit done\n");
 	WalkNT(&SPHtree);
 	singlPrintf("WalkNT done\n");
@@ -534,8 +534,8 @@ int main(int argc, char *argv[])
 	       macConstNeigh, nbrMAC);
 	
 	singlPrintf("Walk\n");	
-	WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), (macv_t)SPHgate,
-		 (inherit_t)InheritSPH);
+	WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), WalkInitSrc,
+                 (macv_t)SPHgate, (inherit_t)InheritSPH);
 	singlPrintf("Walkinit done\n");
 	WalkNT(&SPHtree);
 	singlPrintf("WalkNT done\n");
@@ -626,8 +626,8 @@ int main(int argc, char *argv[])
 	       macRho, nbrMAC);
 	
 	singlPrintf("Walk\n");	
-	WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), (macv_t)SPHgate,
-		 (inherit_t)InheritSPH);
+	WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), WalkInitSrc,
+                 (macv_t)SPHgate, (inherit_t)InheritSPH);
 	singlPrintf("Walkinit done\n");
 	WalkNT(&SPHtree);
 	singlPrintf("WalkNT done\n");
