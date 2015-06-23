@@ -674,6 +674,7 @@ main(int argc, char *argv[])
 
 	if (do_reduction) {
 	    singlPrintf("BuildTree\n");
+            SPHSetupCofm(&SPHtree);
 	    StartTimer(&BuildTot);
 	    pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
 	    BuildTree(&SPHtree, &SPHsortedbtab);
@@ -696,7 +697,7 @@ main(int argc, char *argv[])
 	    /* FixKeys(btab, nobj, GETKEY); keys copied in GravPlusSPH */
 	    
 	    if (MACtype == AREL_MAC) this_tol = tol*mtot/(sysradius*sysradius);
-	    SetupCofm(MACtype, this_tol, frac_tol);
+	    SetupCofm(&thetree, MACtype, this_tol, frac_tol);
 	    singlPrintf("BuildTree, tol=%g, frac_tol=%g\n", this_tol, frac_tol);
 	    
 	    StartTimer(&BuildTot);
@@ -794,6 +795,7 @@ main(int argc, char *argv[])
 	/* We need to have the proper gshift data for update_intermediate() */
 	/* Thus, we have to do an extra SPH domain decomp, since we can't */
 	/* put the grav accs into the SPH particles after the usual Build */
+          SPHSetupCofm(&SPHtree);
 	  decomp_info = SaveDecomp19();
 	  pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
 	  BuildTree(&SPHtree, &SPHsortedbtab);
@@ -835,6 +837,7 @@ main(int argc, char *argv[])
 	      pghost(&SPHbtab, &SPHnobj, &SPHgnobj, rb, vb, rbout, 
 		     iextf, icore, cosmo.GNewt, xmcore, aleph, do_ghosts);
 	    }
+            SPHSetupCofm(&SPHtree);
 	    singlPrintf("BuildTree\n");
 	    StartTimer(&BuildTot);
 	    pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
@@ -925,6 +928,7 @@ main(int argc, char *argv[])
 			memcpy(SPHsinkbtab+n++, q, sizeof(SPHbody));
 		    }
 		}
+                SPHSetupCofm(&SPHsinktree);
 		singlPrintf("Build Sink Tree\n");
 		StartTimer(&BuildTot);
 		pqsortsetup(&SPHsortedbtab, SPHsinkbtab, SPHsinknobj, sizeof(SPHbody), sort_tol, Realloc_f);
@@ -936,6 +940,7 @@ main(int argc, char *argv[])
 		StopTimer(&BuildTot);
 		sinkptr = &SPHsinktree;
 	    }
+            SPHSetupCofm(&SPHtree);
 	    singlPrintf("BuildTree\n");
 	    StartTimer(&BuildTot);
 	    if (did_dark_update || make_sink_tree) decomp_info = SaveDecomp19();

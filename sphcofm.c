@@ -11,8 +11,11 @@
 #include "fastflpt.h"
 #include "protos.h"
 
-void SPHSetupCofm(int type, float tol, float rel_tol)
+static tree_t *Tp;
+
+void SPHSetupCofm(tree_t *tp)
 {
+    Tp = tp;
 }
 
 void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[],
@@ -175,8 +178,10 @@ int SPHCellSz(void *p)
 }
 
 /* Turn the ptr from a cofmdata to a cell. */
-void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp)
+void *SPHCellFromCofm(SPHcofmdata *cmp)
 {
+    SPHcell *cp = ChnAlloc(&Tp->cellchn);
+
     cp->mass = cmp->mass;
     VV(cp->pos, = cmp->pos);
     VV(cp->vel, = cmp->vel);
@@ -200,5 +205,7 @@ void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp)
     cp->unux = cmp->unux;
     cp->ufreez = cmp->ufreez;
     Msgf(("Cell: %s\n", PrintSPHCellContents(cp)));
+
+    return cp;
 }
 
