@@ -1,2 +1,0 @@
-#!/bin/csh
-mpirun -d . -p flagtail,ironside 32 relerr.O2k-mpi test10Mnln.ctl >& test13.out < /dev/null 
