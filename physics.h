@@ -183,9 +183,9 @@ extern Counter_t TranslateCnt;
 
 void SetTol(float tol, float frac_tol, float newton_const, float eps, int gnobj);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
-void SPHDLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
-void DLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
-void RcritMAC(Sink *sink, const hcell **source, int *result, int n);
+void SPHDLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
+void DLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
+void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
 void SetGravOffset(float *off);
 void UnSetGravOffset(void);
 void WalkInitSrc(Stk *kstk, Stk *ostk);
