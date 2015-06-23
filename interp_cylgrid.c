@@ -380,6 +380,8 @@ int main(int argc, char *argv[])
     SPH_setup(NDIM, kernel_ncoef1, kernel_coef1, kernel_ncoef2, kernel_coef2);
     WVT_setup(NDIM, kernel_ncoef1, kernel_coef1, kernel_ncoef2, kernel_coef2);
 
+    SPHSetupCofm(&SPHtree);
+
     for(i = 1; i < nloop; ++i) {
 
 	singlPrintf("ITER %d", i);
