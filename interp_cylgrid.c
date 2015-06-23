@@ -438,6 +438,9 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
+        sortedbtab.method = 0;
+        sortedbtab.decomp_cycles = 1;
+        sortedbtab.first_cycle = 0;
 	singlPrintf("nobj:%d\n", nobj);
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	singlPrintf("nobj:%d\n", nobj);
@@ -527,6 +530,9 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);	      	
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
+        sortedbtab.method = 0;
+        sortedbtab.decomp_cycles = 1;
+        sortedbtab.first_cycle = 0;
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	BuildTree(&SPHtree, &sortedbtab);
 	btab = sortedbtab.data;
@@ -619,6 +625,9 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
+        sortedbtab.method = 0;
+        sortedbtab.decomp_cycles = 1;
+        sortedbtab.first_cycle = 0;
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	BuildTree(&SPHtree, &sortedbtab);
 	btab = sortedbtab.data;
@@ -967,6 +976,9 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase,
     singlPrintf("Trying to sort output\n");
     pqsortsetup_order(&outputsort, output_btab, output_nobj,
 		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
+    outputsort.method = 1;
+    outputsort.decomp_cycles = 1;
+    outputsort.first_cycle = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
     
