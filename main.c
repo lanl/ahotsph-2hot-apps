@@ -718,7 +718,8 @@ main(int argc, char *argv[])
 	    }
 	    
 	    StartTimer(&FindForcesTm);
-	    WalkInit(&thetree, &thetree, sizeof(Sink), mac, inherit);
+	    WalkInit(&thetree, &thetree, sizeof(Sink), WalkInitSrc, mac,
+                     inherit);
 	    StartTimer(&PerTm);
 	    if (do_periodic) {
 		singlPrintf("FindForces (periodic), this_eps=%g\n", this_eps);
@@ -866,7 +867,7 @@ main(int argc, char *argv[])
 		}
 
 	    }
-	    WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), 
+	    WalkInit(&SPHtree, &SPHtree, sizeof(SinkSPH), WalkInitSrc,
 		     (macv_t)SPHgate, (inherit_t)InheritSPH);
 	    if (do_periodic) {
 		singlPrintf("FindRho (periodic)\n");
@@ -972,7 +973,7 @@ main(int argc, char *argv[])
 		}
 	    }
 	    
-	    WalkInit(&SPHtree, sinkptr, sizeof(SinkSPH), 
+	    WalkInit(&SPHtree, sinkptr, sizeof(SinkSPH), WalkInitSrc,
 		     (macv_t)SPHgate, (inherit_t)InheritSPH);
 	    StartTimer(&PerTmSPH);
 	    if (do_periodic) {
