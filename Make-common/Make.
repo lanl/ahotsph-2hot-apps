@@ -1,2 +1,0 @@
-ARCH:=default
-include $(treedir)/Make-common/Make.default

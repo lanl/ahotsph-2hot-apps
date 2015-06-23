@@ -1,7 +1,0 @@
-The levels in this tree use the opposite convention from the Fortran code.
-
-The root of the tree is at level 0.
-The first level of refinement (8 cubes) is level 1.
-The second level of refinement (64 cubes) is level 2.
-etc.
-

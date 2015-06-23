@@ -1,7 +1,0 @@
-# SDF
-struct {
-   float real;
-}[];
-# SDF-EOH
-
-	

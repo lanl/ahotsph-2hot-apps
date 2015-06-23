@@ -1,4 +1,0 @@
-# runcdm
-# qsub -q q512 -lT 18000,17600 -re -ro -nr runcdm
-cd /pfs/msw
-/disk/sampson8/msw/tree16/relerr/relerr.paragon /pfs/msw/256md.ctl

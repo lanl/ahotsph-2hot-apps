@@ -1,1 +1,0 @@
-src:=$(src) alloca.c memmove.c finite.c

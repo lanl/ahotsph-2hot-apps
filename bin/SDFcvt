@@ -1,6 +1,0 @@
-#!/bin/sh
-base=`basename $0`
-exec $TREEHOME/$base/$base.$ARCH "$@"
-# another option might be:
-# exec $0.$ARCH "$@"
-# which requires that sym-links be set up in the bin directory.

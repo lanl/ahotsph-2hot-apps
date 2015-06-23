@@ -1,6 +1,0 @@
-# scalable placement_file for MPI
-memories ($MPI_NP + 1)/2 in topology cluster # set up memories which are close
-threads $MPI_NP + 1                   # number of threads
-# ignore the lazy thread
-distribute threads 1:$MPI_NP across memories
-

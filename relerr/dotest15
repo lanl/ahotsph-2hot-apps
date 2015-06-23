@@ -1,3 +1,0 @@
-#!/bin/csh
-# ironside
-mpirun -np 32 relerr.O2k-mpi test20Mnln.ctl >& test15.out < /dev/null 

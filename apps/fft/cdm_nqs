@@ -1,3 +1,0 @@
-cd /pfs-temp/msw
-/home/sampson8/msw/s/tree16/apps/fft/cdm.paragon -sz 64 /home/sampson8/msw/s/tree16/apps/fft/cdm_c02flat.ctl
-

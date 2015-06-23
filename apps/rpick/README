@@ -1,7 +1,0 @@
-rpick:
-Select all particles within a given cube or sphere of a given center.
-Optionally recenter output.
-
-mrpick:
-Select all particles within the spherical halos of a given halo file.
-
