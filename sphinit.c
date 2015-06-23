@@ -4,7 +4,7 @@
 #include "Msgs.h"
 #include "physics_sph.h"
 #include "SDF.h"
-#include "SDFreadf.h"
+#include "SDFread.h"
 #include "singlio.h"
 
 
@@ -22,7 +22,7 @@ SDF *SPHReadf(char *name, SPHbody **btabp, int *gnobjp, int *nobjp)
     int nobj, gnobj, i;
     
     singlPrintf("Reading \"%s\"\n", name);
-    sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
+    sdfp = SDFreadf(NULL, name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
 		    "mass", offsetof(SPHbody, mass), &massconf,
 		    "grav_mass", offsetof(SPHbody, grav_mass), &gravmassconf,
 		    "rho", offsetof(SPHbody, rho), &rhoconf,
