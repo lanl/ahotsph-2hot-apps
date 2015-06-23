@@ -15,7 +15,8 @@ void SPHSetupCofm(int type, float tol, float rel_tol)
 {
 }
 
-void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
+void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[],
+                      sortresult_t *bodies){
     int i;
     SPHcofmdata *dp;
     SPHcofmdata *cmp;
@@ -165,6 +166,12 @@ void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     newbmax = sqrtf_fast(Dotx(dx, dx));
     cmp->bmax = (newbmax < cmp->bmax) ? newbmax : cmp->bmax;
     hptr->ptr = cmp;
+}
+
+/* Tell the tree internals how big an object to copy */
+int SPHCellSz(void *p)
+{
+    return sizeof(SPHcell);
 }
 
 /* Turn the ptr from a cofmdata to a cell. */

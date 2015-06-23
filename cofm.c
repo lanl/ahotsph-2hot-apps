@@ -26,7 +26,8 @@ void SetupCofm(int type, float tol, float rel_tol)
     invRelTol = 1.0/rel_tol;
 }
 
-void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
+void CofmFromDaugh(hcellptr hptr, hcellptr daughters[],
+                   sortresult_t *bodies){
     int i;
     cofmdata *dp;
     cofmdata *cmp;
@@ -126,6 +127,12 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
 #endif
 
     hptr->ptr = cmp;
+}
+
+/* Tell the tree internals how big an object to copy */
+int CellSz(void *p)
+{
+    return sizeof(cell);
 }
 
 static double a[6];		/* coef of error poly */

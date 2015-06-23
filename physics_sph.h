@@ -517,7 +517,8 @@ Key_t SPHOutIdentKey(const SPHoutbody *bp);
 
 /* In sphcofm.c */
 void SPHSetupCofm(int MACtype, float tol, float rel_tol);
-void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
+void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies);
+int SPHCellSz(void *p);
 void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp);
 
 /* In sphprint.c */

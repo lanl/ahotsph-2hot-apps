@@ -163,7 +163,8 @@ Key_t getkey(const body *);
 
 /* In cofm.c */
 void SetupCofm(int MACtype, float tol, float rel_tol);
-void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
+void CofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies);
+int CellSz(void *p);
 void CellFromCofm(cell *cp, cofmdata *cmp);
 
 /* In print.c */
