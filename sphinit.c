@@ -11,7 +11,6 @@
 #include "Msgs.h"
 #include "SDF.h"
 #include "SDFread.h"
-#include "SDFreadf.h"
 
 void *
 InitRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, 
@@ -177,7 +176,7 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
     int nobj, gnobj;
     
     singlPrintf("Reading \"%s\"\n", name);
-    sdfp = SDFreadf(name, (void **)&obtab, gnobjp, nobjp, sizeof(SPHoutbody),
+    sdfp = SDFreadf(NULL, name, (void **)&obtab, gnobjp, nobjp, sizeof(SPHoutbody),
 		      "mass", offsetof(SPHoutbody, mass), &massconf,
 		      "x", offsetof(SPHoutbody, pos[0]), &xconf,
 		      "y", offsetof(SPHoutbody, pos[1]), &yconf,
@@ -332,7 +331,7 @@ DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
     int nobj, gnobj;
     
     singlPrintf("Reading \"%s\"\n", name);
-    sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(body),
+    sdfp = SDFreadf(NULL, name, (void **)btabp, gnobjp, nobjp, sizeof(body),
 		      "mass", offsetof(body, mass), &massconf,
 		      "x", offsetof(body, pos[0]), &xconf,
 		      "y", offsetof(body, pos[1]), &yconf,
