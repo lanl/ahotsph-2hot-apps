@@ -81,7 +81,6 @@ SetTol(float tol, float frac_tol, float newton_const, float eps, int gnobj)
 #undef INTERACTF
 #undef UNROLL
 #define INTERACTF do_SPHgrav
-#warning SPH_GRAV is #defined; INTERACTF points to do_SPHgrav
 #endif
 
 /* This should be dynamically extensible */
