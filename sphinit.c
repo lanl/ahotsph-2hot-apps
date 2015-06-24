@@ -99,7 +99,7 @@ DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp,
     int SPHgnobj, SPHnobj;
     SPHbody *SPHbtab, *q;
     float new_u;
-    float h, rsq;
+    float h;
 
     singlPrintf("Generating random dataset\n");
     if (SDFgetint(csdfp, "nobj", &gnobj))
@@ -121,10 +121,6 @@ DarkSPHTestData(void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 	    clear_tregs();	/* avoid system bug */
 #endif
 	p->mass = 1.0 / gnobj;		 /*   set masses equal */
-	if (periodic)
-	  rsq = cube_rand(&ranstate, NDIM, p->pos);
-	else
-	  rsq = sphere_rand(&ranstate, NDIM, p->pos);
 	VS(p->vel, = 0.0);
     }
     h = pow((float)8.5/SPHgnobj, .333333);
@@ -378,6 +374,7 @@ SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic)
     SPHbody *btab, *p;
     float new_u;
     float h, rsq;
+    float pos[NDIM];
 
     singlPrintf("Generating random dataset\n");
     if (SDFgetint(csdfp, "nobj", gnobjp))
@@ -398,10 +395,11 @@ SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic)
 	clear_tregs();	/* avoid system bug */
 #endif
 	p->mass = 1.0 / gnobj;		 /*   set masses equal */
+        VV(pos, = p->pos);
 	if (periodic) {
-	    rsq = cube_rand(&ranstate, NDIM, p->pos);
+	    rsq = cube_rand(&ranstate, NDIM, pos);
 	} else {
-	    rsq = sphere_rand(&ranstate, NDIM, p->pos);
+	    rsq = sphere_rand(&ranstate, NDIM, pos);
 	}
 	if (cencon == 1) {
 	    rsq = -1.0/sqrt(rsq);

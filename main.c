@@ -177,7 +177,7 @@ main(int argc, char *argv[])
     double pe, ke, te;
     double dark_ke, dark_pe;
     double etot;
-    double mtot, SPHmtot;
+    double mtot = 0.0, SPHmtot;
     sortresult_t sortedbtab, SPHsortedbtab, sortedatab;
     tree_t thetree, SPHtree, SPHsinktree, *sinkptr = NULL;
     char name[256];
@@ -201,8 +201,8 @@ main(int argc, char *argv[])
     float min_h, max_h;
     int udot_limit[2];
     float vsz;
-    float tmin;
-    int tbad;
+    float tmin = 1e30;
+    int tbad = 0;
     int tlow_cut, dt_short, dt_long;
     accbody *SPHatab, *pa;
     int SPHanobj;
@@ -1602,7 +1602,7 @@ set_vels(body *p, int n, float real_time)
     body *end = p + n;
     float H;
     float acc_back;
-    float vel_fac, pos_fac;
+    float vel_fac;
     float a;
     float asum1, asum2;
     
@@ -1614,7 +1614,6 @@ set_vels(body *p, int n, float real_time)
     acc_back = (0.5*cosmo.Omega0/(a*a*a) - cosmo.Lambda)*cosmo.H0*cosmo.H0;
 
     vel_fac = (a*a*a* cosmo.Zel_f * H)/(1.5F * cosmo.Omega0 * cosmo.H0 * cosmo.H0);
-    pos_fac = H;
     /* Velocities really store dx/dp = dx/dt * (dp/dt)^-1, but that
        correction is done elsewhere! */
 

@@ -420,7 +420,6 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     VxdV(const float v, = sink->vel);
     const float h = sink->h;
     const double pro2 = (sink->pr+sink->prnu) / sink->rho_est / sink->rho_est;
-    const float mass = sink->mass;
     const float rho_est = sink->rho_est;
     const float vsound = sink->vsound;
     const float u = sink->u;
@@ -451,15 +450,15 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
     float vv, vv2;
     float dxx, dwdx, dgrwdx;
     double wtij, grwtij;
-    float rapm, robar1;
+    float robar1;
     double grpm, wpm;
     double poro2;
     double projv, vsbar, est_divv, t12;
 #if NDIM != 3
     double projv2d;
+    float xfac;
 #endif
     float rij, rij1;
-    float xfac;
     int interactions = 0;
 
     Konst = (void *)&Fortran(konst);
@@ -520,7 +519,6 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 #if NDIM==3
 	wtij = (wij[index] + dwdx * dxx) * hmean21 * hmean11;
 	grwtij = (grwij[index] + dgrwdx * dxx) * hmean21 * hmean21;
-	xfac = 1.0;
 #else
 	wtij = (wij[index] + dwdx * dxx) * hmean21;
 	/* Note: we're using the 3d expression for grwtij */
@@ -530,7 +528,6 @@ macSPH(SinkSPH *sink, hcell **source_vec, int *result, int n)
 	  ((fabs(bp->pos[0]) > bp->h*0.125) ? fabs(bp->pos[0]) : bp->h*0.125);
 #endif
 
-	rapm = mass / bp->mass;
 	robar1 = (float)2.0 / (rho_est + bp->rho_est);	
 	grpm = bp->mass * grwtij;
 	wpm = bp->mass * wtij;
@@ -1007,8 +1004,6 @@ update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low,
 	    ++*limit_low;
 	}
 	{
-	  float tmp;
-	  tmp = p->udot;
 	  p->dq = p->udot;
 
 	  p->udot -= p->dunu;
@@ -1172,11 +1167,10 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     int ifleos;
     int iident;
     int i;
-    float gshift, steps, h, mass;
+    float steps, mass;
     float enuef, enuebf, enuxf, e2nuef, e2nuebf, e2nuxf;
     float enues, enuebs, enuxs, dee, deeb, dex;
     float rlumnuef,rlumnuebf,rlumnuxf;
-    float dlumnu;
     float xlumnu,ylumnu,zlumnu;
     double hgw1,hgw2,hgw3,hgw4,hgw5,hgw6;
     double ixx, iyy, izz, ixy, ixz, iyz;
@@ -1197,7 +1191,6 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
     Nubeta = (void *)&Fortran(beta);
     Nutrap = (void *)&Fortran(nutrap);
     rlumnuef = rlumnuebf = rlumnuxf = 0.0;
-    dlumnu = 0.0;
     xlumnu = ylumnu = zlumnu = 0.0;
     hgw1 = hgw2 = hgw3 = hgw4 = hgw5 = hgw6 = 0.0;
     ixx = iyy = izz = ixy = ixz = iyz = 0.0;
@@ -1275,9 +1268,7 @@ update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit
 	p->xnprev = xnprev;
 #endif
 	p->ufreez = ufreez;
-	h=p->h;
 	mass=p->mass;
-	gshift = p->gshift;
 	Nu_lums->enue = old_nu_lums.enue;
 	Nu_lums->enueb = old_nu_lums.enueb;
 	Nu_lums->enux = old_nu_lums.enux;
@@ -1657,21 +1648,21 @@ update_bardeen(SPHbody *btab, int nobj, float G, float c, bndry_t b)
     /* From Nelson & Papaloizou (2000), eqs. 8 and 14 */
     SPHbody *p;
     Vxd(float r);
-    Vxd(float v);
-    Vxd(float S);
+    /* Vxd(float v); */
+    /* Vxd(float S); */
     Vxd(float ppos);
-    Vxd(float pvel);
+    /* Vxd(float pvel); */
     float dr2, oneor, A;
 /*     float B, C; */
 /*     float rplus = G*b.mass/(c*c); */
 
     VxS(ppos, = (float)0.0);  /* BH fixed at origin */
-    VxS(pvel, = (float)0.0);
-    VxV(S, = G/(c*c)*b.j);
+    /* VxS(pvel, = (float)0.0); */
+    /* VxV(S, = G/(c*c)*b.j); */
 
     for (p = btab; p < btab+nobj; p++) {
 
-	VxVVx(v, = p->vel, - pvel);
+	/* VxVVx(v, = p->vel, - pvel); */
 	VxVVx(r, = p->pos, - ppos);
 	dr2 = Dotx(r, r);
 	oneor = recipsqrtf(dr2);
@@ -1739,7 +1730,11 @@ do_SPHgrav(const float *p, const float *end, const float *pos0, float *mass0,
 	    index = v2 * invdvtable;
 	    phii=fpoten[index]*mass/h;
 	    mor3=mass*fmass[index]/dr2*recipsqrtf(dr2);
-	}
+        }
+        else {
+            phii = 0.0;
+            mor3 = 0.0;
+        }
 	phi -= phii;
 	VxVx(a, += mor3 * r); /* 6 flops */
     }
