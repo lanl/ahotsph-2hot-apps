@@ -1011,6 +1011,7 @@ main(int argc, char *argv[])
 		pqsortsetup(&sortedatab, SPHatab, SPHanobj, sizeof(accbody), sort_tol, Realloc_f);
                 sortedatab.decomp_cycles = 1;
                 sortedatab.first_cycle = 0;
+                sortedatab.cycle = 0;
 		SPHatab = pqsort(&sortedatab, UnityCost, accbodyGetKey);
 		SPHanobj = sortedatab.nobj;
 		if (!make_sink_tree) ClearDecomp19(decomp_info);
