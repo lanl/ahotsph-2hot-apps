@@ -677,7 +677,7 @@ main(int argc, char *argv[])
             SPHSetupCofm(&SPHtree);
 	    StartTimer(&BuildTot);
 	    pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
-            SPHsortedbtab.method = 0;
+            SPHsortedbtab.method = 1;
             SPHsortedbtab.decomp_cycles = 1;
             SPHsortedbtab.first_cycle = 0;
 	    BuildTree(&SPHtree, &SPHsortedbtab);
@@ -705,7 +705,7 @@ main(int argc, char *argv[])
 	    
 	    StartTimer(&BuildTot);
 	    pqsortsetup(&sortedbtab, btab, nobj, sizeof(body), sort_tol, Realloc_f);
-            sortedbtab.method = 0;
+            sortedbtab.method = 1;
             sortedbtab.decomp_cycles = 1;
             sortedbtab.first_cycle = 0;
 	    BuildTree(&thetree, &sortedbtab);
@@ -804,7 +804,7 @@ main(int argc, char *argv[])
           SPHSetupCofm(&SPHtree);
 	  decomp_info = SaveDecomp19();
 	  pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
-          SPHsortedbtab.method = 0;
+          SPHsortedbtab.method = 1;
           SPHsortedbtab.decomp_cycles = 1;
           SPHsortedbtab.first_cycle = 0;
 	  BuildTree(&SPHtree, &SPHsortedbtab);
@@ -815,9 +815,10 @@ main(int argc, char *argv[])
 	  SetDecomp19(decomp_info);
 	  singlPrintf("Re-arrange acctab\n");
 	  pqsortsetup(&sortedatab, SPHatab, SPHanobj, sizeof(accbody), sort_tol, Realloc_f);
-          sortedatab.method = 0;
+          sortedatab.method = 1;
           sortedatab.decomp_cycles = 1;
           sortedatab.first_cycle = 0;
+          sortedatab.cycle = 0;
 	  SPHatab = pqsort(&sortedatab, UnityCost, accbodyGetKey);
 	  SPHanobj = sortedatab.nobj;
 	  ClearDecomp19(decomp_info);
@@ -853,7 +854,7 @@ main(int argc, char *argv[])
 	    singlPrintf("BuildTree\n");
 	    StartTimer(&BuildTot);
 	    pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
-            SPHsortedbtab.method = 0;
+            SPHsortedbtab.method = 1;
             SPHsortedbtab.decomp_cycles = 1;
             SPHsortedbtab.first_cycle = 0;
 	    SPHFixKeys(SPHbtab, SPHnobj, SPHGetKey);
@@ -947,7 +948,7 @@ main(int argc, char *argv[])
 		singlPrintf("Build Sink Tree\n");
 		StartTimer(&BuildTot);
 		pqsortsetup(&SPHsortedbtab, SPHsinkbtab, SPHsinknobj, sizeof(SPHbody), sort_tol, Realloc_f);
-                SPHsortedbtab.method = 0;
+                SPHsortedbtab.method = 1;
                 SPHsortedbtab.decomp_cycles = 1;
                 SPHsortedbtab.first_cycle = 0;
 		Msgf(("Build Sink Tree, nobj = %d\n", SPHsinknobj));
@@ -963,7 +964,7 @@ main(int argc, char *argv[])
 	    StartTimer(&BuildTot);
 	    if (did_dark_update || make_sink_tree) decomp_info = SaveDecomp19();
 	    pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), sort_tol, Realloc_f);
-            SPHsortedbtab.method = 0;
+            SPHsortedbtab.method = 1;
             SPHsortedbtab.decomp_cycles = 1;
             SPHsortedbtab.first_cycle = 0;
 	    Msgf(("Build Tree, nobj = %d\n", SPHnobj));
@@ -1038,7 +1039,7 @@ main(int argc, char *argv[])
 		/* Make sinkbtab congruent with SPHbtab */
 		SetDecomp19(decomp_info);
 		pqsortsetup(&SPHsortedbtab, SPHsinkbtab, SPHsinknobj, sizeof(SPHbody), sort_tol, Realloc_f);
-                SPHsortedbtab.method = 0;
+                SPHsortedbtab.method = 1;
                 SPHsortedbtab.decomp_cycles = 1;
                 SPHsortedbtab.first_cycle = 0;
 		singlPrintf("Re-arrange sinks\n");
@@ -2000,7 +2001,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     singlPrintf("Trying to sort output\n");
     pqsortsetup_order(&outputsort, output_btab, output_nobj,
 		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
-    outputsort.method = 0;
+    outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
@@ -2170,7 +2171,7 @@ static void accOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     singlPrintf("Trying to sort output\n");
     pqsortsetup_order(&outputsort, output_btab, output_nobj,
 		      sizeof(SPHoutbody), 0.1F, 1, Realloc_f);
-    outputsort.method = 0;
+    outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
@@ -2287,7 +2288,7 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
     singlPrintf("Trying to sort output\n");
     pqsortsetup_order(&outputsort, output_btab, output_nobj,
 		      sizeof(outbody), 0.1F, 1, Realloc_f);
-    outputsort.method = 0;
+    outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     output_btab = pqsort(&outputsort,
