@@ -385,6 +385,7 @@ int main(int argc, char *argv[])
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	singlPrintf("rmin: %g %g %g \n",rmin[0],rmin[1],rmin[2]);
 	singlPrintf("rmax: %g %g %g \n",rmax[0],rmax[1],rmax[2]);
+	FixRsize(rmin, rmax);
 	
 	singlPrintf("BuildTree\n");
 	StartTimer(&BuildTot);
@@ -410,6 +411,7 @@ int main(int argc, char *argv[])
 	/* 	BoxGhosts(&btab, &nobj, outrmin, outrmax, &tothvol, totvol); */
 
 	SPHFindBbox(btab, nobj, rmin, rmax);
+	FixRsize(rmin, rmax);
 	
 	/* Initialize these variables, since they store the particle 
 	   separations in this code, instead of physical properties */
@@ -518,6 +520,7 @@ int main(int argc, char *argv[])
 	/* 	BoxGhosts(&btab, &nobj, outrmin, outrmax, &tothvol, totvol); */
 
 	SPHFindBbox(btab, nobj, rmin, rmax);
+	FixRsize(rmin, rmax);
 	
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	SPHFixNterms(btab, nobj);	      	
@@ -611,6 +614,7 @@ int main(int argc, char *argv[])
         for (p=btab; p<btab+nobj; p++) p->rho=0.;
 	
 	SPHFindBbox(btab, nobj, rmin, rmax);
+	FixRsize(rmin, rmax);
 	
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	
