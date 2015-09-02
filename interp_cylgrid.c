@@ -286,6 +286,7 @@ int main(int argc, char *argv[])
     /* Set sortresult_t parameters */
     sortedbtab.decomp_cycles = 1;
     sortedbtab.first_cycle = 0;
+    sortedbtab.log = 0;
 
     ClearEnabledTimers();
     ClearEnabledCounters();
@@ -972,6 +973,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase,
     outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
     
