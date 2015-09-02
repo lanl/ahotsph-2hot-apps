@@ -1941,6 +1941,7 @@ static void WindOutput(SPHbody *btab, int nobj, windbody *windbtab,
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     outputsort.cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
     Msgf(("After pqsort, %d outbodies\n", output_nobj));
@@ -2035,6 +2036,7 @@ static void ShortWindOutput(SPHbody *btab, int nobj, windbody *windbtab,
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     outputsort.cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHShortOutIdentKey);
     output_nobj = outputsort.nobj;
     Msgf(("After pqsort, %d outbodies\n", output_nobj));
@@ -2129,6 +2131,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     outputsort.cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
 /*     Msg("output", ("After pqsort, %d outbodies\n", output_nobj)); */
@@ -2232,6 +2235,7 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
     outputsort.cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort,
 			 (pq_wgtproto)UnityCost, 
 			 (pq_keyproto)OutIdentKey);
