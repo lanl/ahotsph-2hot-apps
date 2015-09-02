@@ -283,6 +283,10 @@ int main(int argc, char *argv[])
     SDFclose(csdfp);
     singlPrintf("number of arguments: %d %s", argc, argv[2]);
     
+    /* Set sortresult_t parameters */
+    sortedbtab.decomp_cycles = 1;
+    sortedbtab.first_cycle = 0;
+
     ClearEnabledTimers();
     ClearEnabledCounters();
     StartTimer(&StepTotWC);
@@ -434,9 +438,7 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
-        sortedbtab.method = 0;
-        sortedbtab.decomp_cycles = 1;
-        sortedbtab.first_cycle = 0;
+        sortedbtab.method = 1;
 	singlPrintf("nobj:%d\n", nobj);
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	singlPrintf("nobj:%d\n", nobj);
@@ -526,9 +528,7 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);	      	
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
-        sortedbtab.method = 0;
-        sortedbtab.decomp_cycles = 1;
-        sortedbtab.first_cycle = 0;
+        sortedbtab.method = 1;
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	BuildTree(&SPHtree, &sortedbtab);
 	btab = sortedbtab.data;
@@ -621,9 +621,7 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
-        sortedbtab.method = 0;
-        sortedbtab.decomp_cycles = 1;
-        sortedbtab.first_cycle = 0;
+        sortedbtab.method = 1;
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	BuildTree(&SPHtree, &sortedbtab);
 	btab = sortedbtab.data;
