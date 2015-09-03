@@ -283,6 +283,11 @@ int main(int argc, char *argv[])
     SDFclose(csdfp);
     singlPrintf("number of arguments: %d %s", argc, argv[2]);
     
+    /* Set sortresult_t parameters */
+    sortedbtab.decomp_cycles = 1;
+    sortedbtab.first_cycle = 0;
+    sortedbtab.log = 0;
+
     ClearEnabledTimers();
     ClearEnabledCounters();
     StartTimer(&StepTotWC);
@@ -385,6 +390,7 @@ int main(int argc, char *argv[])
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	singlPrintf("rmin: %g %g %g \n",rmin[0],rmin[1],rmin[2]);
 	singlPrintf("rmax: %g %g %g \n",rmax[0],rmax[1],rmax[2]);
+	FixRsize(rmin, rmax);
 	
 	singlPrintf("BuildTree\n");
 	StartTimer(&BuildTot);
@@ -410,6 +416,7 @@ int main(int argc, char *argv[])
 	/* 	BoxGhosts(&btab, &nobj, outrmin, outrmax, &tothvol, totvol); */
 
 	SPHFindBbox(btab, nobj, rmin, rmax);
+	FixRsize(rmin, rmax);
 	
 	/* Initialize these variables, since they store the particle 
 	   separations in this code, instead of physical properties */
@@ -432,9 +439,7 @@ int main(int argc, char *argv[])
 	SPHFixNterms(btab, nobj);
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
-        sortedbtab.method = 0;
-        sortedbtab.decomp_cycles = 1;
-        sortedbtab.first_cycle = 0;
+        sortedbtab.method = 1;
 	singlPrintf("nobj:%d\n", nobj);
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	singlPrintf("nobj:%d\n", nobj);
@@ -518,14 +523,13 @@ int main(int argc, char *argv[])
 	/* 	BoxGhosts(&btab, &nobj, outrmin, outrmax, &tothvol, totvol); */
 
 	SPHFindBbox(btab, nobj, rmin, rmax);
+	FixRsize(rmin, rmax);
 	
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	SPHFixNterms(btab, nobj);	      	
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
-        sortedbtab.method = 0;
-        sortedbtab.decomp_cycles = 1;
-        sortedbtab.first_cycle = 0;
+        sortedbtab.method = 1;
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	BuildTree(&SPHtree, &sortedbtab);
 	btab = sortedbtab.data;
@@ -611,15 +615,14 @@ int main(int argc, char *argv[])
         for (p=btab; p<btab+nobj; p++) p->rho=0.;
 	
 	SPHFindBbox(btab, nobj, rmin, rmax);
+	FixRsize(rmin, rmax);
 	
 	MPMY_Combine(&nobj, &gnobj, 1, MPMY_INT, MPMY_SUM);
 	
 	SPHFixNterms(btab, nobj);
 	pqsortsetup(&sortedbtab, btab, nobj, sizeof(SPHbody), sort_tol,
 		    Realloc_f);
-        sortedbtab.method = 0;
-        sortedbtab.decomp_cycles = 1;
-        sortedbtab.first_cycle = 0;
+        sortedbtab.method = 1;
 	SPHFixKeys(btab, nobj, SPHGetKey);
 	BuildTree(&SPHtree, &sortedbtab);
 	btab = sortedbtab.data;
@@ -970,6 +973,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase,
     outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
     
