@@ -680,6 +680,7 @@ main(int argc, char *argv[])
             SPHsortedbtab.method = 1;
             SPHsortedbtab.decomp_cycles = 1;
             SPHsortedbtab.first_cycle = 0;
+            SPHsortedbtab.log = 0;
 	    BuildTree(&SPHtree, &SPHsortedbtab);
 	    SPHbtab = SPHsortedbtab.data;
 	    SPHnobj = SPHsortedbtab.nobj;
@@ -708,6 +709,7 @@ main(int argc, char *argv[])
             sortedbtab.method = 1;
             sortedbtab.decomp_cycles = 1;
             sortedbtab.first_cycle = 0;
+            sortedbtab.log = 0;
 	    BuildTree(&thetree, &sortedbtab);
 	    /* PrintTree(&thetree, PrintBodyContents, PrintCellContents); */
 	    btab = sortedbtab.data;
@@ -807,6 +809,7 @@ main(int argc, char *argv[])
           SPHsortedbtab.method = 1;
           SPHsortedbtab.decomp_cycles = 1;
           SPHsortedbtab.first_cycle = 0;
+          SPHsortedbtab.log = 0;
 	  BuildTree(&SPHtree, &SPHsortedbtab);
 	  SPHbtab = SPHsortedbtab.data;
 	  SPHnobj = SPHsortedbtab.nobj;
@@ -819,6 +822,7 @@ main(int argc, char *argv[])
           sortedatab.decomp_cycles = 1;
           sortedatab.first_cycle = 0;
           sortedatab.cycle = 0;
+          sortedatab.log = 0;
 	  SPHatab = pqsort(&sortedatab, UnityCost, accbodyGetKey);
 	  SPHanobj = sortedatab.nobj;
 	  ClearDecomp19(decomp_info);
@@ -857,6 +861,7 @@ main(int argc, char *argv[])
             SPHsortedbtab.method = 1;
             SPHsortedbtab.decomp_cycles = 1;
             SPHsortedbtab.first_cycle = 0;
+            SPHsortedbtab.log = 0;
 	    SPHFixKeys(SPHbtab, SPHnobj, SPHGetKey);
 	    BuildTree(&SPHtree, &SPHsortedbtab);
 	    SPHbtab = SPHsortedbtab.data;
@@ -951,6 +956,7 @@ main(int argc, char *argv[])
                 SPHsortedbtab.method = 1;
                 SPHsortedbtab.decomp_cycles = 1;
                 SPHsortedbtab.first_cycle = 0;
+                SPHsortedbtab.log = 0;
 		Msgf(("Build Sink Tree, nobj = %d\n", SPHsinknobj));
 		BuildTree(&SPHsinktree, &SPHsortedbtab);
 		SPHsinkbtab = SPHsortedbtab.data;
@@ -967,6 +973,7 @@ main(int argc, char *argv[])
             SPHsortedbtab.method = 1;
             SPHsortedbtab.decomp_cycles = 1;
             SPHsortedbtab.first_cycle = 0;
+            SPHsortedbtab.log = 0;
 	    Msgf(("Build Tree, nobj = %d\n", SPHnobj));
 	    BuildTree(&SPHtree, &SPHsortedbtab);
 	    SPHbtab = SPHsortedbtab.data;
@@ -1042,6 +1049,7 @@ main(int argc, char *argv[])
                 SPHsortedbtab.method = 1;
                 SPHsortedbtab.decomp_cycles = 1;
                 SPHsortedbtab.first_cycle = 0;
+                SPHsortedbtab.log = 0;
 		singlPrintf("Re-arrange sinks\n");
 		Msgf(("Re-arrange sinks, nobj = %d\n", SPHsinknobj));
 		SPHsinkbtab = pqsort(&SPHsortedbtab, UnityCost, SPHGetKey);
@@ -2004,6 +2012,7 @@ static void SPHOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
     Msg("output", ("After pqsort, %d outbodies\n", output_nobj));
@@ -2174,6 +2183,7 @@ static void accOutput(SPHbody *btab, int nobj, const char *outnamebase, int iter
     outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort, UnityCost, (pq_keyproto)SPHOutIdentKey);
     output_nobj = outputsort.nobj;
     Msg("output", ("After pqsort, %d outbodies\n", output_nobj));
@@ -2291,6 +2301,7 @@ static void Output(body *btab, int nobj, const char *outnamebase, int iter)
     outputsort.method = 1;
     outputsort.decomp_cycles = 1;
     outputsort.first_cycle = 0;
+    outputsort.log = 0;
     output_btab = pqsort(&outputsort,
 			 (pq_wgtproto)UnityCost, 
 			 (pq_keyproto)OutIdentKey);
