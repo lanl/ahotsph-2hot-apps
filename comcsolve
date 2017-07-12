@@ -1,0 +1,15 @@
+
+c..include file comcsolve (5/9/99) network matrices
+
+      real*8     a(ndim,ndim), x(ndim), y(ndim), b(ndim),
+     1           weaksum,sumx,sumz,checksum,eta,taus
+      real*8     bt(ndim),bv(ndim),ydcon(ndim),pf(nnuc)
+
+      integer*4  ireac,itot,inuc,nucleu
+
+      common /csolve/ a
+    
+
+      common /csolve2/ x, y, b, bt, bv, ydcon, pf,
+     1 weaksum,sumx,sumz,checksum,eta,taus,
+     2 ireac,itot,inuc,nucleu

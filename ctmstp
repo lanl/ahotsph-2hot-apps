@@ -1,0 +1,17 @@
+
+c..include file ctmstp
+
+c..dimension of time step arrays
+      integer*4 condim
+      parameter( condim = 30 )
+
+c..tmin is value of minimun timestep, for each condition
+      real*8      tmin(condim)
+
+c..kkmin is zone where minimum occurs, for each condition
+      integer*4   kkmin(condim), nxdt(condim), nnxdt, idt 
+
+c..character flag to identify each time step condition
+      character*2 dthflag(condim+4)
+
+      common/ctmstp/ tmin, kkmin, nxdt, nnxdt, idt, dthflag

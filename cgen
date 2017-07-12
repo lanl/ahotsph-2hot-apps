@@ -1,0 +1,18 @@
+
+c..include file for common cgen
+c..prefix(2) is the prefix label for model dumps and
+c..the postfix label for convection (cv.??) and 
+c..HR (hr.??) files
+c..note is header line for dumped models
+c..zpop is
+c..zhyd is hydrogen fraction by mass
+c..zsol is
+c..iflag is
+c..ipause is
+
+      character    prefix(2)
+      character*80 note
+      real*8       zpop,zhyd,zsol
+      integer      iflag, ipause
+
+      common/cgen/ zpop,zhyd,zsol,iflag,ipause,note,prefix

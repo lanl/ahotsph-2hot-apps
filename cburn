@@ -1,0 +1,44 @@
+
+c..include file for common cburn
+c..must follow dimenfile
+c..see also file cnetrc
+c..dlibeb is flag for light element burning; automatically inferred
+c..from network
+      real*8    xa(ndim)
+      integer*4 iburnop,ncytot,netsize,dlibeb
+      common/cburn/xa,iburnop,ncytot,netsize,dlibeb
+
+      integer*4   lz(ndim), ln(ndim), newnet, nucpg
+c..limit of margins in pgplot for nuclei id's
+c      parameter( nucpg = 60 ) !cie: don't have pgplot in snsph... set equal to ndim?
+      parameter( nucpg = ndim )
+      integer*4 nucp(nucpg), mnucpg
+      character*5 cnuc(ndim)
+      real*8      qex(ndim), solarx(ndim), gspin(ndim)
+c..weak screening zeta
+      real*8 wszeta(kdm)
+
+
+c..indices for C12, N14 and O16 for OPAL
+      integer*4 lc12,ln14,lo16
+c..indices for deuterium, li7, be9, b10, b11
+c..needed for loburn and rezoning
+      integer*4 ldeut,lli7,lbe9,lb10,lb11
+c..needed for state
+      integer*4 lhe3
+c..needed for solar tests
+      integer*4 lc13,lo18
+
+      common /cnetrc/qex, solarx, gspin, wszeta,
+     1 lz,ln,newnet,nucp,mnucpg,lc12,lo16,ln14, 
+     1 ldeut,lli7,lbe9,lb10,lb11,lhe3,lc13,lo18,
+     2 cnuc
+
+
+      real*8 tburnlo, tburnd, tqse, tnse
+c..cccccccc.force no nse, qse.cccc....................c..........c
+      parameter(tburnlo=1.0d-2,tburnd=5.0d-4,tnse=5.0d0,tqse=4.7d1)
+
+c..   fkt if T9>0.01 = 1e7 K
+c..   only decay if T9< 5.0d-4 = 5e5 K
+c..   loburn otherwise

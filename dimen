@@ -1,0 +1,41 @@
+
+c..dimenfile
+
+c..maximum possible number of zones in hydro model + 2
+      integer*4 kdm
+      parameter( kdm = 1 )
+
+c..IMPORTANT: nnuc must be number of equations (nuclei) in network 
+c..to get the dimensions right
+c..nnuc   =  number of nuclei + n + p + alpha   
+c..nreac  = max dimension for reaction links
+c..nrtype = number of reaction types(do not change without recoding)
+c..ndim   = dimension of composition arrays (include e- for Ye)
+c..set nnuc to the value given by Numnuc in burn.dir
+      integer*4 nnuc, nreac, nrtype, ndim, wkreac, tsize, rhosize
+      parameter (nnuc=20, nreac=1000, nrtype=15, ndim=nnuc+1, 
+     1           wkreac=500, tsize=13, rhosize=11)
+c      parameter (nnuc=177, nreac=6000, nrtype=15, ndim=nnuc+1, 
+c     1           wkreac=500, tsize=13, rhosize=11)
+c      parameter (nnuc=3303, nreac=1000000, nrtype=15, ndim=nnuc+1, 
+c     1           wkreac=10000, tsize=13, rhosize=11)
+c      parameter  (nnuc=524,  nreac=160000, nrtype=15, ndim=nnuc+1,
+c     1           wkreac=5000, tsize=13, rhosize=11)
+c       parameter  (nnuc=80,  nreac=2000, nrtype=15, ndim=nnuc+1,
+c     1           wkreac=500, tsize=13, rhosize=11)
+c      parameter (nnuc=203, nreac=8000, nrtype=15, ndim=nnuc+1, 
+c     1           wkreac=5000, tsize=13, rhosize=11)
+
+c      parameter (nnuc=80, nreac=800, nrtype=15, ndim=nnuc+1)
+
+c..short list of nuclei
+c..low T network:
+c..lonuc 	dimension for nuclei = number of nuclei
+c..lodim        dimension for loleqs solver
+c..lrdim	dimension for rate arrays
+      integer*4 lonuc,lodim,lrdim
+      parameter( lonuc = 34, lodim = lonuc+1, lrdim = 600 )
+
+c..dimension of henyey matrices (half the number of equations)
+      integer*4 jyey
+      parameter( jyey = 2 )

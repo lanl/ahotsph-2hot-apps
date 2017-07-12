@@ -4,23 +4,21 @@
 #include "physics.h"
 #include "vop.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "error.h"
 #include "Assert.h"
 #include "fastflpt.h"
 #include "protos.h"
 
-tree_t *Tp;
 int MACtype = BMAX_MAC;		/* default */
 float Tol;
 float invTol;
 float RelTol;
 float invRelTol;
 
-void SetupCofm(tree_t *tp, int type, float tol, float rel_tol)
+void SetupCofm(int type, float tol, float rel_tol)
 {
-    Tp = tp;
     MACtype = type;
     Tol = tol;
     invTol = 1.0/tol;
@@ -28,17 +26,15 @@ void SetupCofm(tree_t *tp, int type, float tol, float rel_tol)
     invRelTol = 1.0/rel_tol;
 }
 
-void CofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies){
+void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     int i;
     cofmdata *dp;
     cofmdata *cmp;
     body *bp;
     float dmass;
     float newbmax;
-#ifndef SPH_GRAV
     float center[NDIM], cellsz;
     Vxd(float dx);
-#endif
 
     assert(Sub_Flags(hptr));
 
@@ -130,22 +126,14 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies){
     hptr->ptr = cmp;
 }
 
-/* Tell the tree internals how big an object to copy */
-int CellSz(void *p)
-{
-    return sizeof(cell);
-}
-
 static double a[6];		/* coef of error poly */
 static void rcrit_poly(double r, double *value, double *deriv);
 static double rtnewt(void (*funcd)(double, double *, double *),  
 		    double x1, double xacc);
 
 /* Turn the ptr from a cofmdata to a cell. */
-void *CellFromCofm(cofmdata *cmp)
+void CellFromCofm(cell *cp, cofmdata *cmp)
 {
-    cell *cp = ChnAlloc(&Tp->cellchn);
-
     cp->mass = cmp->mass;
     VV(cp->pos, = cmp->pos);
     cp->bmax = cmp->bmax;
@@ -158,11 +146,11 @@ void *CellFromCofm(cofmdata *cmp)
 	bmaxhalf = cmp->bmax * (float)0.5;
 	rcritmax = bmaxhalf + sqrtf_fast(bmaxhalf*bmaxhalf
 					 + sqrtf_fast((float)3.*invTol*B2));
-	if (!finite(rcritmax))
+	if (!isfinite(rcritmax))
 	  Error("Bad rcritmax, q->bmax = %g, B2 = %g\n", cmp->bmax, B2);
 	if (B2 == (float)0.0) Error("B2 is zero\n");
 	B3 = B2 * sqrtf_fast(B2*cmp->massinv); 
-	if (!finite(B2) || !finite(B3) || !finite(cmp->bmax))
+	if (!isfinite(B2) || !isfinite(B3) || !isfinite(cmp->bmax))
 	  Error("Bad value B2 = %g, B3 = %g, bmax = %g\n", B2, B3, cmp->bmax);
 	a[0] = 2.*B3;
 	a[1] = -3. * B2;
@@ -189,8 +177,6 @@ void *CellFromCofm(cofmdata *cmp)
 
     cp->daughters = cmp->ndaughters;
     Msgf(("Cell: %s\n", PrintCellContents(cp)));
-
-    return cp;
 }
 
 /* Use doubles here to avoid catastrophe from roundoff. */
@@ -204,7 +190,7 @@ static void rcrit_poly(double r, double *value, double *deriv)
     /* See pg. 149 of Numerical Rec. */
     /* We could unroll it... */
     while(n>0) { dp = dp*r + p; p = p*r + a[--n]; }
-    if (!finite(p) || !finite(dp))
+    if (!isfinite(p) || !isfinite(dp))
       Error("Bad p or dp, p = %g, dp = %g, n = %d\n", p, dp, n);
     *value = p;
     *deriv = dp;
@@ -214,7 +200,7 @@ static void rcrit_poly(double r, double *value, double *deriv)
 /* It's even more dangerous than the version that NR says is too */
 /* dangerous to use...No checking of bounds.  We might just run off */
 /* to infinity... */
-#define JMAX 20
+#define JMAX 40
 
 static double
 rtnewt(void (*funcd)(double, double *, double *), double x1, double xacc)

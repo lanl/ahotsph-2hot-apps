@@ -1,0 +1,49 @@
+SOURCE FILES:
+build.f
+  - getfkt.f
+    ~ find.f
+  - abinit.f
+  - masses.f 
+  - naray.f
+    ~ sparse_ma28.f
+  - weakread.f 
+
+solven.f
+  - rate.f
+    ~ locate.f
+    ~ partfun.f
+    ~ weakintp.f
+      = bilenshort.f
+  - rhside.f
+  - jacob.f
+  - sparse_ma28.f
+  - dtnuc.f
+  - nse.f
+  - leqs.f 
+  - rated.f
+
+
+INCLUDED FILES (COMMON BLOCKS):
+caeps
+cbug
+cburn
+cconst
+cdeuter
+cdtnuc
+ceoset
+cgen
+cinput
+comcsolve
+comod
+crate
+ctmstp
+dimen
+
+
+INPUT FILES (IN WORKDIR):
+isotope.lib
+netsu
+netwinv
+netweak
+system.dat
+net.rc

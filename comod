@@ -1,0 +1,154 @@
+
+c..comod common block for includes
+c..must follow dimenfile
+c..	contains data for models
+c..
+c..	variables:
+c..	r	radius R(n,k) where n is step index (1=start,2=end)
+c..		and k is zone indes
+c..	u	bulk velocity
+c..	tl	luminosity
+c..	h	convective velocity (at beginning of time step)
+c..	du	bulk acceleration
+c..	duold	previous acceleration for implicit hydrodynamics
+c..	dmh	zone mass (center)
+c..	dmi	zone mass (boundary)
+c..	xm	enclosed mass
+c..	hp	convective velocity (at end of time step)
+c..	t	temperature T
+c..	v	specific volume V = 1/density
+c..	p	pressure P
+c..	e	energy per unit mass E
+c..	q	pseudoviscous pressure (for shocks)
+c..	et	dE/dT at constant V, composition
+c..	ev	dE/dV at constant T, composition
+c..	pt	dP/dT at constant V, composition
+c..	pv	dP/dV at constant T, composition
+c..	ak	opacity
+c..	akt	d(opacity)/dT at constant V, composition
+c..	akv	d(opacity)/dV at constant T, composition
+c..	x	molar composition (mass fraction= x(n,k)*xa(n)
+c..		where n is index for nucleus and k is zone index
+c..	entropy	dimensionless entropy per nucleon
+c..	sound	adiabatic sound speed
+c..	ss	nuclear energy generation rate
+c..	sa	d ln(ss)/d ln(T) at constant V, composition
+c..	sb	d ln(ss)/d ln(V) at constant T, composition
+c..	snu	nonnuclear neutrino energy generation rate (-=cooling)
+c..	snua	d ln(snu)/d ln(T) at constant V, composition
+c..	snub	d ln(snu)/d ln(V) at constant T, composition
+c..	dth	time step from 1 to 2
+c..	dti	time step from 3/2 to 5/2
+c..	time	time elapsed
+c..
+c..	parameters:
+c..	qcons	pseudoviscosity factor
+c..	temin
+c..	cdelt	fraction change in T per time step
+c..	cdelv	fraction change in V per time step
+c..	cdeln	fraction change in composition per time step
+c..	etar
+c..	resid	residual normalized error after iteration
+c..	tenvelop
+c..	stime	stop at time = stime
+c..	xstop	stop at x = xstop
+c..	epsmax
+c..	talimit
+c..	peryear	mass accretion rate (loss is negative)
+c..	fmxenv	maximum fraction of mass in envelope
+c..	fmnenv	minimum fraction of mass in envelope
+c..	tmenv
+c..	zmetal	OPAL metallicity
+c..	opalc	OPAL carbon   fraction by mass
+c..	opaln	OPAL nitrogen fraction by mass
+c..	opalo	OPAL oxygen   fraction by mass
+c..	alpha	mixing length parameter in pressure scale heights
+
+      real*8 r,u,tl,h,du,duold, dmh,dmi,xm,hp, t,v,p,e,q,
+     1 et,ev,pt,pv,ak,akt,akv, x, entropy,sound, 
+     2 ss,sa,sb,snu,snua,snub,epsnuc,dth,dti,time,
+     3 qcons,temin,cdelt,cdelv,cdeln,etar,resid,
+     4 tenvelop,stime,xstop,epsmax,talimit,peryear,
+     5 fmxenv,fmnenv,tmenv,zmetal,opalc,opaln,opalo,alpha
+      common/comodr/
+     1 r(2,kdm),u(2,kdm),tl(2,kdm),h(kdm),du(kdm), duold(kdm),
+     1 dmh(kdm),dmi(kdm),xm(kdm),  hp(kdm),
+     1 t(2,kdm),v(2,kdm),p(2,kdm),e(2,kdm),q(2,kdm),
+     1 et(kdm),ev(kdm),pt(kdm),pv(kdm),ak(kdm),akt(kdm),akv(kdm),
+     1 x(ndim,kdm), entropy(kdm), sound(kdm),
+     1 ss(kdm),sa(kdm),sb(kdm),snu(kdm),snua(kdm),snub(kdm),
+     1 epsnuc(kdm),
+     1 dth(2),dti(2),time,
+     1 qcons,temin,cdelt,cdelv,cdeln,etar,resid,
+     1 tenvelop,stime,xstop,epsmax,talimit,peryear,
+     1 fmxenv,fmnenv,tmenv,zmetal,opalc,opaln,opalo,alpha
+
+c..	omeg	angular velocity (sec**-1) 
+c..	ajay	angular momentum per gram (cm/sec**2)
+      real*8 omeg,ajay
+      common/crotate/omeg(kdm),ajay(kdm)
+
+
+c..	kk	outer index of interior zones
+c..	model	model number
+c..	l1	
+c..	l2	print interval
+c..	l3	model dump interval
+c..	mode	mode of hydrodynamic solution
+c..	iter	maximum number of iterations to be tryed
+c..	it	number of iterations done
+c...	ncond	time step condition
+c..	ieos	flag for reading eos data
+c..	nfall	index for bound.f
+c..	nshel
+c..	nup	number of failures on updating (nonconvergences)
+c..	istep	debugging: zone for detailed output
+c..	modec	convection mode
+c..	modes	surface condition mode
+c..	modex	mixing mode
+c..	modez	zoning mode flag
+c..	newt	gravitation mode
+c..	nouter	keep outer boundary fixed for nouter=1
+c..	mset	flag to freeze abundances
+c..	ixstop	index of nucleus for xstop to act on
+c..	mloss	flag for mass loss or accretion
+c..	nopac	opacity flag
+c..	noion	flag for ionization
+c..	norad	flag for radiation pressure
+c..	nomole	flag for H molecules
+c..	nocoul	flag for coulomb interactions in plasma
+c..	nburn	flag for nuclear burning
+c..	neutro  flag for non-nuclear neutrino emissivity
+c..	izams	flag for stopping on zams
+c..	ncytest	index for too many cycles of network
+c..	ncymax	number of network calculations done
+c..	nrot	flag for rotation
+c..	nsemi   choice for mixing condition 
+c..             (adiabatic, etc.) in cmix.f
+c..	nsoltest	flag for solar test using tests.dir
+c..	nopaleos flag for opal eos, 0=no (default), 1=yes
+c..	altloss  flag for advec.f mass loss options
+
+      integer*4 kk,model,ll,l2,l3,mode,iter,it,ncond,
+     1 ieos,nfall,nshel,nup,istep,
+     2 modec,modes,modex,modez,newt,nouter,
+     3 mset,ixstop,mloss,nopac,noion,norad,nomole,nocoul,
+     4 nburn,neutro,izams,ncytest,ncymax,nrot,mapenv,nsemi,
+     5 nsoltest,nopaleos,altloss
+
+      common/comodi/
+     1 kk,model,ll,l2,l3,mode,iter,it,ncond,
+     1 ieos,nfall,nshel,nup,istep,
+     1 modec,modes,modex,modez,newt,nouter,
+     1 mset,ixstop,mloss,nopac,noion,norad,nomole,nocoul,
+     1 nburn,neutro,izams,ncytest,ncymax,nrot,mapenv,nsemi,
+     1 nsoltest,nopaleos,altloss
+
+c..	ctstamp		time stamp
+c..	copal		OPAL stamp
+c..	crevision	Tycho version stamp 
+
+      character*10 ctstamp, copal
+      character*72 crevision
+      common/cname/ctstamp,crevision,copal
+

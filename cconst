@@ -1,0 +1,83 @@
+
+c..included common file: cconst
+      real*8 grav,arad,crad,rgas,pi,pi4,pi43,sol,sollum,cflux,
+     1 cergs,sigma,solrad,pcons,secpy,crad2,bohr,fine,avagadro,
+     2 boltz,planck,evrestm,egrestm,ergspermev,echarge
+
+c..commonly used constants 
+c..fundamental constants
+c..grav      = gravitational constant G
+c..crad      = speed of light c
+c..erestmass = rest mass of electron in Mev
+c..bohr      = radius of bohr orbit for hydrogen in cm
+c..fine      = fine structure constant e**2/hbar c = 1/137
+c..avagadro  = Avagadro's number
+c..boltz     = boltzmann constant in erg/kelvin
+c..planck    = planck's constant in erg seconds
+c..echarge   = electron charge (coulomb) * crad * abcoulomb/coulomb
+c..            (used in Thoul diffusion)
+
+c..astronomical constants
+c..(solar values from Bahcall,Neutrino Astrophysics, 1989, CUP, p.79)
+c..(except for new value of G, M sun, which is from J. Grundlach, U.W.)
+c..sol       = solar mass in grams
+c..sollum    = solar luminosity in erg/sec
+c..solrad    = solar radius in cm
+c..secpy     = seconds per year of 365.25 days
+
+c..derived constants
+c..arad      = radiation pressure constant a = sigma * 4 / c
+c..rgas      = gas constant = avagadro's number * boltzmann constant k
+c..pi4 	     = 4 pi,   pi43 = 4 pi/3
+c..cergs     = conversion of Mev/amu to ergs/gram 
+c..sigma     = stefan-boltzmann constant
+c..pconst    = pressure constant for fermi dirac e- gas 
+c..          = 8 pi (mc/h)**3 mc**2
+
+c The American Institute of Physics Bulletin of Physics News
+c Number 482   May 3, 2000   by Phillip F. Schewe and Ben Stein
+c BEST MEASUREMENT OF THE GRAVITATIONAL
+c CONSTANT.  At this week's American Physical Society Meeting in
+c Long Beach, Jens H. Gundlach of the University of Washington
+c (paper P11.3) reported a long-awaited higher precision measurement
+c of the gravitational constant, usually denoted by the letter G. 
+c Although G has been of fundamental importance to physics and
+c astronomy ever since it was introduced by Isaac Newton in the
+c seventeenth century (the gravitational force between two objects
+c equals G times the masses of the two objects and divided by their
+c distance apart squared), it has been relatively hard to measure,
+c owing to the weakness of gravity.  Now a group at the University of
+c Washington has reduced the uncertainty in the value of G by almost
+c a factor of ten.  Their preliminary value is G=6.67390 x 10^-11 
+c m^3/kg/s^2 with an uncertainty of 0.0014%. Combining this new
+c value of G with measurements made with the Lageos satellite
+c (which uses laser ranging to keep track of its orbital position to
+c within a millimeter) permits the calculation of a brand new, highest
+c precision mass for the earth: 5.97223 (+/- .00008) x 10^24 kg. 
+c Similarly the new mass of the sun becomes 1.98843 (+/- .00003) x
+c 10^30 kg. Gundlach's (206-543-4080, jens@phys.washington.edu)
+c (See Gundlach's written summary at
+c http://www.aps.org/meet/APR00/baps/vpr/layp11-03.html; figures at
+c www.aip.org/physnews/graphics.)
+c
+c repeat in APSNEWS, july 2000, vol. 9, no. 7
+
+c..fundamental constants
+      parameter( grav = 6.67390d-08,     crad = 2.997924580d+10,  
+     1      avagadro  = 6.0221367d23,  planck = 6.6260755d-27,
+     2      bohr      = 5.29177249d-9,   fine = 7.29735308d-3, 
+     3	    boltz     = 1.380658d-16, evrestm = 5.1099906d-1,
+     4	    egrestm   = 9.1093897d-28,   pi   = 3.1415926d+00,
+     5	    echarge   = 4.80298d-10 )
+c..astronomical constants
+	parameter( sol  = 1.98843d+33,   sollum = 3.8515d33, 
+     1	solrad = 6.960d10,     secpy = 3.6d3*2.4d1*3.65241d2 )
+c..derived constants
+	parameter( rgas = boltz*avagadro,    crad2 = crad**2,
+     1  ergspermev = egrestm*crad2/evrestm,	 
+     2	pi4   = pi*4.0d0,                     pi43 = pi4/3.0d0,
+     3	sigma = pi**2*boltz*(boltz*2.0d0*pi/planck)**3/60.0d0/crad2,
+     4	arad  = 4.0d0*sigma/crad,         cflux = arad*crad/3.0d0, 
+     5	pcons = 2.0d0*pi4*(egrestm*crad/planck)**3*egrestm*crad2,
+     6  cergs = crad2*egrestm/evrestm*avagadro        )
+

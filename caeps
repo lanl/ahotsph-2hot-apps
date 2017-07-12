@@ -1,0 +1,37 @@
+
+c..include file caeps (5/9/99)
+c..changed to one zone for SPH network
+
+c      real*8    aeps(kdm), aenu(kdm), aex(ndim,kdm), temp(kdm), 
+c     1	den(kdm), aepst(kdm), aepsv(kdm), aye(kdm)
+      real*8    aeps, aenu, aex(ndim), 
+     1	den, aepst, aepsv, aye, aenucnu
+      real*8 xdep(ndim),xxdep,xprod(ndim),xxprod
+      real*8 axdcon(ndim,kdm)
+c      real*8 aenucnu(kdm)
+c..nuck(n) is the zone k of most rapid depletion for nucleus n
+c..xdep(n) is value of that change
+c..
+c..nucpk(n)  is the zone k of most rapid production for nucleus n
+c..xprod(n) is value of that change
+c..itbrn(k) is the temperature index for the solven mode 
+c........(0 = decay, 1 = low T, 2 = full network)
+c..
+c      integer*4 modeb, nucdep, nucprod, nuck(ndim), nucpk(ndim)
+c      integer*4 itbrn(kdm)
+      integer*4 modeb, nucdep, nucprod, nuck, nucpk
+      integer*4 itbrn
+
+      common /caeps/
+     1	 aeps, aenu, aenucnu, aex, den, aepst, aepsv, aye,
+     1 xdep, xxdep, xprod, xxprod, axdcon, modeb, nucdep, nucprod, 
+     2 nuck, nucpk, itbrn
+
+cccccccccccccccccccccccccccccccccccc
+c      integer*4 ncyc(kdm),nxid(kdm),ncycmax,kcycmax
+c      character*5 xidk(kdm)
+c      real*8 bk(kdm),yk(kdm)
+      integer*4 ncyc,nxid,ncycmax,kcycmax
+      character*5 xidk
+      real*8 bk,yk
+      common /caeps2/ bk,yk,ncyc,nxid,ncycmax,kcycmax,xidk

@@ -5,20 +5,30 @@
 #include "tree.h"
 #include "key.h"
 #include "timers.h"
-#include "SDF.h"
+#include "ndim.h"
+#include "params.h"
 
-#define NDIM 3
+#ifndef NISO
+#define NISO 20 	/* number of isotopes tracked */
+#endif
+
+/*#define NDIM 3*/ /* now in ndim.h; cie */
 #define SPH_SAVE_ACC
 #define POS_IS_DOUBLE
 #define SPH_GRAV
 
 /* Some physical constants, in cgs units */
+/* now in units.h
 #define A_COEFF (1.043565e-17)
 #define C_LIGHT (3.424758e+02)
 #define KES_COEFF (1.043946e+02)
 #define KFF_COEFF (1.591470e+12)
 #define K_BOLTZ (9.059183e-66)
 #define MH (8.411685e-58)
+*/
+#define POLY_EOS_K 0.5f
+#define POLY_EOS_GAMMA 1.5f
+
 
 typedef struct {
 #ifdef POS_IS_DOUBLE
@@ -46,7 +56,7 @@ typedef struct {
     float grav_acc[NDIM];
     float acc_last[NDIM];
     /* Do these need to go between nodes?  Can things above come down here? */
-    float u_r;                  /* radiation energy density */
+    float u_r;                  /* electron fraction */
     float du_r;                 /* change in u_r this timestep */
     float D;                    /* Diffusion coefficient */
     float phi;
@@ -69,7 +79,9 @@ typedef struct {
     float dt;
     float min_nbr_dt;
     unsigned int windid;
-    unsigned int dummy;
+    float Y_el;
+    float mfp;
+    float abund[NISO]; 
 } SPHbody;
 
 
@@ -122,10 +134,43 @@ typedef struct {
     float phi;
     float dt;
 #endif
+    float pr;
     unsigned int nbrs; 
     unsigned int ident;		/* unique? identifier */
     unsigned int windid;
+    float temp;
+    float Y_el;
+    float mfp;
 } SPHoutbody;
+
+typedef struct {
+#ifdef POS_IS_DOUBLE
+    double pos[NDIM];		/* position of body */
+#else
+    float pos[NDIM];		/* position of body */
+#endif
+    float mass;			/* mass of body */
+    float vel[NDIM];		/* velocity of body */
+    float u;
+    float h;
+    float rho;
+    float drho_dt;
+    float udot;
+#ifdef SPH_SAVE_ACC
+    float acc[NDIM];
+    float acc_last[NDIM];
+    float phi;
+    float dt;
+#endif
+    float pr;
+    unsigned int nbrs; 
+    unsigned int ident;		/* unique? identifier */
+    unsigned int windid;
+    float temp;
+    float Y_el;
+    float mfp;
+    float abund[NISO];
+} SPHoutbody_NW;
 
 typedef struct {
 #ifdef POS_IS_DOUBLE
@@ -160,9 +205,36 @@ typedef struct {
     float lax, lay, laz;	/* acceleration at tpos-dt */\n\
     float phi;			/* potential */\n\
     float idt;			/* timestep */\n\
+    float pr;		/* pressure */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
+    float temp;                 /* temperature */\n\
+    float Y_el;                  /* for alignment */\n\
+    float mfp;			/* mean free path */\n\
+}"
+#define SPHOUTBODYDESC_NW \
+"struct {\n\
+    double x, y, z;		/* position of body */\n\
+    float mass;			/* mass of body */\n\
+    float vx, vy, vz;		/* velocity of body */\n\
+    float u;			/* internal energy */\n\
+    float h;			/* smoothing length */\n\
+    float rho;			/* density */\n\
+    float drho_dt;              /* time derivative of rho */\n\
+    float udot;			/* time derivative of u */\n\
+    float ax, ay, az;		/* acceleration */\n\
+    float lax, lay, laz;	/* acceleration at tpos-dt */\n\
+    float phi;			/* potential */\n\
+    float idt;			/* timestep */\n\
+    float pr;		/* pressure */\n\
+    unsigned int nbrs;          /* number of neighbors */\n\
+    unsigned int ident;		/* unique identifier */\n\
+    unsigned int windid;        /* wind id */\n\
+    float temp;                 /* temperature */\n\
+    float Y_el;                  /* for alignment */\n\
+    float mfp;			/* mean free path */\n\
+    float f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19,f20; \n\
 }"
 #define SPHSHORTOUTBODYDESC \
 "struct {\n\
@@ -187,9 +259,32 @@ typedef struct {
     float rho;			/* density */\n\
     float drho_dt;              /* time derivative of rho */\n\
     float udot;			/* time derivative of u */\n\
+    float pr;		/* pressure */\n\
     unsigned int nbrs;          /* number of neighbors */\n\
     unsigned int ident;		/* unique identifier */\n\
     unsigned int windid;        /* wind id */\n\
+    float temp;                 /* temperature */\n\
+    float Y_el;                  /* for alignment */\n\
+    float mfp;			/* mean free path */\n\
+}"
+#define SPHOUTBODYDESC_NW \
+"struct {\n\
+    double x, y, z;		/* position of body */\n\
+    float mass;			/* mass of body */\n\
+    float vx, vy, vz;		/* velocity of body */\n\
+    float u;			/* internal energy */\n\
+    float h;			/* smoothing length */\n\
+    float rho;			/* density */\n\
+    float drho_dt;              /* time derivative of rho */\n\
+    float udot;			/* time derivative of u */\n\
+    float pr;		/* pressure */\n\
+    unsigned int nbrs;          /* number of neighbors */\n\
+    unsigned int ident;		/* unique identifier */\n\
+    unsigned int windid;        /* wind id */\n\
+    float temp;                 /* temperature */\n\
+    float Y_el;                  /* for alignment */\n\
+    float mfp;			/* mean free path */\n\
+    float f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19,f20; \n\
 }"
 #define SPHSHORTOUTBODYDESC \
 "struct {\n\
@@ -295,10 +390,9 @@ Key_t SPHOutIdentKey(const SPHoutbody *bp);
 Key_t SPHShortOutIdentKey(const SPHshortoutbody *bp);
 
 /* In sphcofm.c */
-void SPHSetupCofm(tree_t *tp);
-void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *);
-int SPHCellSz(void *p);
-void *SPHCellFromCofm(SPHcofmdata *cmp);
+void SPHSetupCofm(int MACtype, float tol, float rel_tol);
+void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
+void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp);
 
 /* In sphprint.c */
 char *PrintSPHCellContents(const SPHcell *cp);
@@ -310,23 +404,25 @@ char *PrintSPHBranch(const SPHcofmdata *cmp);
 void SetSPH(float visc_alpha, float visc_beta, float visc_epsilon, 
 	    float heat_f1, float eos_gamma, int gnobj,  
 	    void bfunc(), void cfunc());
-void SPHgate(SinkSPH *sink, hcell **src_vec, int *flags, int *result, int n);
+void SPHgate(SinkSPH *sink, hcell **src_vec, int *result, int n);
 void nbrMAC(SinkSPH *sink, hcell **src_vec, int *result, int n);
 void macRho(SinkSPH *sink, hcell **source, int *result, int n);
 void macSPH(SinkSPH *sink, hcell **source, int *result, int n);
 void InheritSPH(const SinkSPH *from, SinkSPH *to, hcell *pp);
-void update_final(SPHbody *btab, int nobj, float dt, int *limit_high, int *limit_low);
-void update_intermediate(SPHbody *btab, int nobj, float dt_last, int flag, int *limit);
+void update_final(SPHbody *btab, int nobj, int Gridpts, const int Nel, float dt, int *limit_high, int *limit_low, int rank, float tpos, float R0);
+void update_intermediate(SPHbody *btab, int nobj, int Gridpts, const int Nel, float dt_last, int flag, int *limit, float R0);
 void SPH_setup(int dim, int ncoef1, double *wcoef1, int ncoef2, double *wcoef2);
 /* void SPH_setup(int dim); */
 void SetSPHOffset(float *off, float *voff);
 void UnSetSPHOffset(void);
 void update_point_SPHmass(SPHbody *btab, int nobj, void *p, float smooth2, float newt);
 void update_point_SPHmass2(SPHbody *btab, int nobj, float smooth2, float newt, float mass);
+void update_point_SPHmass_bndry(SPHbody *btab, int SPHnobj, float newt, bndry_t bndry);
 
 /* In sphinit.c */
 void *DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel);
 void *SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel, float new_h, float new_u);
+void *SPHReadA(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int set_id, int setpvel, float new_h, float new_u);
 void SPHTestData(void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp, int periodic);
 void *InitRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, 
 	 SPHbody **SPHbtabp, int *SPHgnobjp, int *SPHnobjp, 
@@ -349,11 +445,6 @@ double duvst(double t);
 float newtraph(double xl, double xr, double prec, double (*f)(double x), 
 	     double (*df)(double x));
 
-/* In wind.c */
-void SDFwritewind(const char *filename, int gnobj, int nobj, 
-                  const void *btab, int windnobj, const void *windbtab, 
-                  int bsize, int wsize, const char *winddesc, 
-                  const char *bodydesc, ...);
-SDF *SDFreadwind(char *name, void **btabp, int *gnobjp, int *nobjp, 
-		 int stride,
-		 /* char *name, offset_t offset, int *confirm */...);
+/* in solven.f */
+void solven_(double *dtstar, double *temp, double *rho, double *y, double *deltah, int *rank, int *partid);
+void build_(int *rank, int *idbug, char *netrcfn);

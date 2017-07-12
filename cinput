@@ -1,0 +1,15 @@
+c..output filenames
+      character*17 fileout,filepun,traj
+c..sequence identifier
+      character*9   prefix
+
+      real*8 delchi,chimin,fdtn,psi,ad,xlfak,t9min,t9max,
+     1 cnlev,timef,tim,dth,t,rho,popz,tfinal,flmin,sgamma0
+
+      integer nwrit,ndt,ievol,izboss,iaboss,idebug,m1,m2,m3,
+     1 nflows,imatrx,xabun
+
+      common /cinput/delchi,chimin,fdtn,psi,ad,xlfak,t9min,t9max,
+     1 cnlev,timef,tim,dth,t,rho,popz,tfinal,flmin,sgamma0,
+     2 nwrit,ndt,ievol,izboss,iaboss,idebug,m1,m2,m3,nflows,imatrx,
+     3 prefix,fileout,filepun,traj,xabun

@@ -1,0 +1,45 @@
+
+c..cdeuter
+c..variables and constants for deuterium burning
+
+c..low T network:
+c..lonuc 	dimension for nuclei = number of nuclei
+c..lodim        dimension for loleqs solver
+c..lrdim	dimension for rate arrays
+
+c..nuclei
+c..aa and bb are loleqs array (aa) and vector (bb)
+      real*8 aa(lodim,lodim),bb(lodim)
+
+c..ylo holds mole fractions of short list
+      real*8 ylo(lodim)
+
+c..locoef are the fkt coeficients
+      real*8 locoef(7,lrdim)
+
+c..xidlo is identifier of nuclei
+      character*5 xidlo(lodim)
+
+c..idlo is index of nucleus in solven list
+c..loz  is Z and lon is N for nucleus
+      integer*4 idlo(lodim),loz(lodim),lon(lodim)
+      integer*4 l1deck(8),l2deck(8)
+
+c..rates
+c..lnreac is number of reactions
+c..lorr is vector of indices for solven list of reactions
+c..lodeck is vector of deck indices for reactions
+c..lonrr is matrix (6,lrdim) of entrance and exit channel id numbers
+      integer*4 lnreac, lorr(lrdim),lodeck(lrdim),lonrr(6,lrdim)
+
+c..lorlkh is reaction type flag
+      character*4	lorlkh(lrdim)
+
+      common/ccdeuter/ aa,bb,locoef,ylo,
+     1                 idlo,loz,lon, lnreac,lorr,lodeck,lonrr,l1deck,
+     1	               l2deck,
+     1                 xidlo, lorlkh
+
+
+
+

@@ -4,21 +4,18 @@
 #include "physics_sph.h"
 #include "vop.h"
 #include "chn.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "Msgs.h"
 #include "error.h"
 #include "Assert.h"
 #include "fastflpt.h"
 #include "protos.h"
 
-tree_t *Tp;
-
-void SPHSetupCofm(tree_t *tp)
+void SPHSetupCofm(int type, float tol, float rel_tol)
 {
-    Tp = tp;
 }
 
-void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies){
+void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     int i;
     SPHcofmdata *dp;
     SPHcofmdata *cmp;
@@ -104,24 +101,14 @@ void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies)
     hptr->ptr = cmp;
 }
 
-/* Tell the tree internals how big an object to copy */
-int SPHCellSz(void *p)
-{
-    return sizeof(SPHcell);
-}
-
 /* Turn the ptr from a cofmdata to a cell. */
-void *SPHCellFromCofm(SPHcofmdata *cmp)
+void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp)
 {
-    SPHcell *cp = ChnAlloc(&Tp->cellchn);
-
     cp->mass = cmp->mass;
     VV(cp->pos, = cmp->pos);
     cp->bmax = cmp->bmax;
     cp->daughters = cmp->ndaughters;
     cp->lap = cmp->lap;
     Msgf(("Cell: %s\n", PrintSPHCellContents(cp)));
-
-    return cp;
 }
 

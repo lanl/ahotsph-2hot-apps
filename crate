@@ -1,0 +1,32 @@
+
+c..include file crate: fkt rate data (5/9/99)
+c..must follow dimenfile
+c..adapted for weak rates (pay 9/14 wda 9/15/04)
+c..adapted for sparse solver (pay 1/6/05)
+
+      real*8    qval(nreac),rcoef(7,nreac),sig(nreac),
+     1          w(ndim),qq(ndim),anuc(ndim)
+      real*8    wkqval(nreac),wkrcoef(7,nreac)
+      real*8    sigt(nreac),sigv(nreac)
+      real*8    ratarray(wkreac,tsize,rhosize),
+     1          enuarray(wkreac,tsize,rhosize),signue(nreac)
+      real*8    sparse_dfdy(nreac),sparseu,sparsew(nnuc)
+
+      integer*4 nz(ndim),nn(ndim),ideck(nreac),ndeck(8),nrr(6,nreac),
+     1          k1deck(8),k2deck(8), wkideck(nreac)
+      integer*4 irev(nreac),iline(nreac),iffn(nreac),jnb
+      integer*4 nvecs,nlinks,iloc(nreac),jloc(nreac),
+     1          ivect(nreac),jvect(nreac),ikeep(nnuc,5),iw(nnuc,8)
+    
+
+      character*5 rname(7,nreac), xid(ndim), wkrname(7,nreac)
+      character*4 rlkh(nreac), wkrlkh(nreac)
+      character*1 rvw(nreac), rnr(nreac), wkrnr(nreac), wkrvw(nreac)
+
+      common /crate/qval,rcoef,sig,w,qq,anuc,sigt,sigv,
+     1     	wkqval, wkrcoef, ratarray, enuarray,signue,
+     2          sparsew, sparseu, sparse_dfdy,
+     3          nz,nn,ideck,ndeck,nrr,k1deck,k2deck,
+     4	 	wkideck,irev,iline,iffn,jnb,nvecs,nlinks,iloc,jloc,
+     5          ivect,jvect,ikeep,iw,rlkh,rnr,rvw, 
+     6          wkrlkh, wkrnr, wkrvw, wkrname, rname,xid

@@ -2,7 +2,7 @@
 #include "physics.h"
 #include "physics_sph.h"
 #include "vop.h"
-#include "Malloc.h"
+#include "bigmalloc.h"
 #include "error.h"
 
 #define SPH_FLAG (1<<31)

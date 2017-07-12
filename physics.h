@@ -178,10 +178,9 @@ extern Counter_t NbodyCnt;
 Key_t getkey(const body *);
 
 /* In cofm.c */
-void SetupCofm(tree_t *tp, int MACtype, float tol, float rel_tol);
-void CofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies);
-int CellSz(void *p);
-void *CellFromCofm(cofmdata *cmp);
+void SetupCofm(int MACtype, float tol, float rel_tol);
+void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]);
+void CellFromCofm(cell *cp, cofmdata *cmp);
 
 /* In print.c */
 char *PrintCellContents(const cell *cp);
@@ -199,12 +198,11 @@ extern Counter_t TranslateCnt;
 
 void SetTol(float tol, float frac_tol, float newton_const, float eps, int gnobj);
 void InheritSink(const Sink *from, Sink *to, hcell *pp);
-void SPHDLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
-void DLRcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
-void RcritMAC(Sink *sink, const hcell **source, int *flags, int *result, int n);
+void SPHDLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
+void DLRcritMAC(Sink *sink, const hcell **source, int *result, int n);
+void RcritMAC(Sink *sink, const hcell **source, int *result, int n);
 void SetGravOffset(float *off);
 void UnSetGravOffset(void);
-void WalkInitSrc(Stk *kstk, Stk *ostk);
 void InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp);
 
 /* In grav.v */

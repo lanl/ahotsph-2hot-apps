@@ -1,0 +1,6 @@
+
+c..include cbug
+
+      integer*4     nbug
+
+      common /cbug/ nbug

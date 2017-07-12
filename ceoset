@@ -1,0 +1,68 @@
+
+c..include file: ceoset
+c..must follow dimenfile
+c..revised for Timmes EOS
+
+c..   tem       temperature (kelvin)
+c..   rhoz      nucleons*amu/volume (grams/cc);   NOT mass density
+c..   rhom      mass/volume
+c..   denye     rhoz*Ye  (gram/cc)
+c..   yion      number of all nuclei/ number of nucleons
+c..   ye        number of all electrons/number of nucleons
+c..   eos components: 
+c..   electrons   pe
+c..   nuclei      pnuc
+c..   radiation   prad
+c..   coulomb     pcou
+c..   h molecules and atoms	pdis
+
+c..   etanuc chemical potential/kT for each nucleus
+
+c..   ionization:
+c..   free electrons          yef
+c..   energy of ionization    eions
+c..   ionized hydrogen        yhi
+c..   singly ionized He       yhe1
+c..   doubly ionized He       yhe2
+
+c..   molecules
+c..   fraction of total H1 that is atomic    yhf
+c..   energy of dissociation                 edis
+
+c..   opacity:
+c..   moles of hydrogen         xh1   
+c..   moles of helium 4         yhe4
+c..                             feion
+c..   conduction opacity        akap
+
+      integer*4 niit
+
+      real*8 tem,rhoz,rhom,denye,yion,ye,
+     1     pe,pet,pev,ee,eet,eev,
+     2     pnuc,pnuct,pnucv,enuc,enuct,enucv,
+     3     prad,pradt,pradv,erad,eradt,eradv,
+     4     pcoul,ecoul,pcv,ecv,pct,ect,
+     5     yef,yeft,yefv,eions,eionst,eionsv,
+     6     xh1,yhe4,feion,akap,
+     7     sel,snuc,srad,scou,etanuc,
+     8     yhf,pdis,pdist,pdisv,edis,edist,edisv,sdis,yhi,yhe1,yhe2,
+     9     yhm, gamma1
+
+      common/eoset/ tem(kdm),rhoz(kdm),rhom(kdm),
+     1	   denye(kdm),yion(kdm),ye(kdm),
+     1     pe(kdm),pet(kdm),pev(kdm),
+     1     ee(kdm),eet(kdm),eev(kdm),
+     2     pnuc(kdm),pnuct(kdm),pnucv(kdm),
+     2     enuc(kdm),enuct(kdm),enucv(kdm),
+     3     prad(kdm),pradt(kdm),pradv(kdm),
+     3     erad(kdm),eradt(kdm),eradv(kdm),
+     4     pcoul(kdm),pct(kdm),pcv(kdm),
+     4     ecoul(kdm),ect(kdm),ecv(kdm),
+     5     yef(kdm),yeft(kdm),yefv(kdm),
+     5     eions(kdm),eionst(kdm),eionsv(kdm),
+     6     xh1(kdm),yhe4(kdm),feion(kdm),akap(kdm), 
+     8     sel(kdm),snuc(kdm),srad(kdm),scou(kdm),etanuc(ndim,kdm),
+     9     yhf(kdm),pdis(kdm),pdist(kdm),pdisv(kdm),
+     9     edis(kdm),edist(kdm),edisv(kdm),sdis(kdm),
+     9	   yhi(kdm),yhe1(kdm),yhe2(kdm),yhm(kdm),gamma1(kdm),
+     9	   niit(kdm)

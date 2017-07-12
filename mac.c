@@ -71,6 +71,7 @@ SetTol(float tol, float frac_tol, float newton_const, float eps, int gnobj)
 #undef INTERACTF
 #undef UNROLL
 #define INTERACTF do_SPHgrav
+#warning SPH_GRAV is #defined; INTERACTF points to do_SPHgrav
 #endif
 
 /* This should be dynamically extensible */
@@ -96,10 +97,7 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 	body *bp = pp->ptr;
 	/* must init mtot or else you get quiet exceptions in asm code */
 	float mtot = (float)0.0;
-	int ijunk = 0;
-#ifdef UNROLL
-        int nn;
-#endif
+	int ijunk = 0, nn;
 	float acc[NDIM];
 	float phi;
 	float indeps;
@@ -190,16 +188,10 @@ InheritSinkNlogN(const Sink *from, Sink *to, hcell *pp)
 }
 
 void
-WalkInitSrc(Stk *kstk, Stk *ostk)
-{
-    StkPushType(kstk, KeyInt(1), Key_t);
-    StkPushType(ostk, 0, int);
-}
-
-void
-RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
+RcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
+    Vxd(float a);
     int icnt = sink->icnt;
     int interactions = 0;
     float dr2;
@@ -215,6 +207,8 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 	for (i = 0; i < n; i++) result[i] = MAC_SPLIT_SINK;
 	return;
     }
+
+    VxS(a, = 0.F);
 
     for (i = 0; i < n; i++) {
 	const hcell *source = source_vec[i];
@@ -262,7 +256,7 @@ RcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 
 /* RcritMAC with Don't Laugh-like traversal */
 void
-DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
+DLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
     float bmax = sink->bmax;
@@ -326,7 +320,7 @@ DLRcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
 
 
 void
-SPHDLRcritMAC(Sink *sink, const hcell **source_vec, int *flags, int *result, int n)
+SPHDLRcritMAC(Sink *sink, const hcell **source_vec, int *result, int n)
 {
     VxdV(float pos_sink, = sink->pos);
     float bmax = sink->bmax;

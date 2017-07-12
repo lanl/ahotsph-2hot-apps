@@ -1,0 +1,95 @@
+# Initial (and restart) filenames
+char SPHdatafile[]="casa16m_1M.sdf";
+char datafile[]="casa16m_1M";
+int do_restart = 0;
+
+# Output options
+int save_first=1;
+char outfile[]="casa16m_1M";
+int output_freq=1000;
+int timer_freq=100;
+int short_output=0;
+
+# Swampi/MPI parameters
+int timeout = 600;
+float SPHCWfac = 0.2;
+float default_nterms = 10;
+#char Msg_turn_on[] = "sphinit.c,main.c";
+#int Msg_memfile = 65536;
+int exact_rho = 1;
+
+# What shall we do?
+int do_sph = 1;
+int do_grav = 1;
+int do_cooling = 0;
+int do_burning = 1;
+#int do_diffusion = 0;
+int heat_f1 = 1;
+float r_outer = 10.0;
+int has_grav_data = 0;
+int exact_rho = 1;
+int nsteps=20000;
+int cosmology=0;
+int log_time=0;
+int comov_eps=0;
+int do_periodic = 0;
+
+# Wind parameters
+int do_winds = 0;
+int old_winds = 0;
+int const_winds = 0;
+int nonconst_winds=0;
+int windpart_per_shell = 600;
+char template_name[]="nhell-0600";
+char winddata_name[]="massloss.out";
+float r_wind = 1.0e-3;
+float v_wind = 1.02e-4;
+float mdot_wind = 1.0e-7;
+float u_wind = 1.08e-10;
+
+# central gravity source 
+int do_absorbing_bndry = 1;
+float bndry_x = 0.0;
+float bndry_y = 0.0;
+float bndry_z = 0.0;
+float bndry_vx = 0.0;
+float bndry_vy = 0.0;
+float bndry_vz = 0.0;
+float bndry_mass = 1.4841e6;
+float bndry_r = 8.0e-4;
+
+# Adjustment of smoothing lengths
+int nbrcut_max = 65;
+int nbrcut_min = 30;
+float nbrcut_fac = 0.05;
+
+# Gravity parameters
+int do_Arel = 1;
+int do_DL = 1;
+float epsilon=3.0e-3;
+float errtol=3.0e+1;
+float frac_tol=5.0e-2;
+
+# Adjustment of timesteps
+int adaptive_dt = 1;
+float dt = 0.00001;
+float dark_dt = 256.0;
+float dt_max = 256.0;
+int dt_long = 60;
+int tlow_cut = 1;
+
+# Physical parameters
+float gamma=1.4;
+
+# conversion factors for units as your units in cgs
+# e.g. I want Rsol; enter lengthCF=6.955e10(cm/Rsol)
+float massCF=1.9889e27;
+float lengthCF=6.955e10;
+float timeCF=100;
+
+# SPH kernel
+int kernel_ncoef1 = 5;
+struct {double kernel_coef1;}[5] =  {1.27849432,  0., -3.25371268,  3.03939597, -0.834068195};
+int kernel_ncoef2 = 5;
+struct {double kernel_coef2;}[5] = {2.1142408, -3.3562279,  1.79516666, -0.323349774,  0.0002717225};
+# SDF-EOH
