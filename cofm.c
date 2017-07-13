@@ -126,6 +126,11 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[]){
     hptr->ptr = cmp;
 }
 
+int CellSz(void *p)
+{
+	return sizeof(cell);
+}
+
 static double a[6];		/* coef of error poly */
 static void rcrit_poly(double r, double *value, double *deriv);
 static double rtnewt(void (*funcd)(double, double *, double *),  

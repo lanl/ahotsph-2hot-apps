@@ -492,19 +492,19 @@ main(int argc, char *argv[])
     }
 
     SetupTree(&thetree, NDIM,
-            sizeof(body), sizeof(cell), TBODYSZ, sizeof(cofmdata),
+            sizeof(body), sizeof(cell), 0, 0, TBODYSZ, sizeof(cofmdata),
             (pq_keyproto)GetKeyFromStruct, (pq_wgtproto)GetCost,
-            CofmFromDaugh, (cellfromcofm_t)CellFromCofm);
+            CofmFromDaugh, (cellfromcofm_t)CellFromCofm, CellSz);
 
     SetupTree(&SPHtree, NDIM,
-            sizeof(SPHbody), sizeof(SPHcell), SPHTBODYSZ, sizeof(SPHcofmdata),
+            sizeof(SPHbody), sizeof(SPHcell), 0, 0, SPHTBODYSZ, sizeof(SPHcofmdata),
             (pq_keyproto)SPHGetKeyFromStruct, (pq_wgtproto)SPHGetCost,
-            SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm);
+            SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm, SPHCellSz);
 
     SetupTree(&SPHsinktree, NDIM,
-            sizeof(SPHbody), sizeof(SPHcell), SPHTBODYSZ, sizeof(SPHcofmdata),
+            sizeof(SPHbody), sizeof(SPHcell), 0, 0, SPHTBODYSZ, sizeof(SPHcofmdata),
             (pq_keyproto)SPHGetKeyFromStruct, (pq_wgtproto)SPHGetCost,
-            SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm);
+            SPHCofmFromDaugh, (cellfromcofm_t)SPHCellFromCofm, SPHCellSz);
 
 
     for (q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
