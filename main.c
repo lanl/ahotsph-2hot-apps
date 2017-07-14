@@ -42,6 +42,7 @@
 #include "nrutil.h"
 #include "units.h"
 #include "cool.h"
+#include "wind.h"
 
 #define MAXCOEF 16
 
