@@ -868,7 +868,7 @@ main(int argc, char *argv[])
             }
             singlPrintf("BuildTree\n");
             StartTimer(&BuildTot);
-            if (did_dark_update || make_sink_tree) decomp_info = SaveDecomp();
+            if (did_dark_update || make_sink_tree) decomp_info = SaveDecomp19();
             pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), params.sort_tol, Realloc_f);
             Msgf(("Build Tree, nobj = %d\n", SPHnobj));
             BuildTree(&SPHtree, &SPHsortedbtab);
@@ -880,12 +880,12 @@ main(int argc, char *argv[])
 
             if (did_dark_update) {
                 /* Make accs computed above congruent to SPH particle decomp */
-                SetDecomp(decomp_info);
+                SetDecomp19(decomp_info);
                 singlPrintf("Re-arrange acctab\n");
                 pqsortsetup(&sortedatab, SPHatab, SPHanobj, sizeof(accbody), params.sort_tol, Realloc_f);
                 SPHatab = pqsort(&sortedatab, UnityCost, accbodyGetKey);
                 SPHanobj = sortedatab.nobj;
-                if (!make_sink_tree) ClearDecomp(decomp_info);
+                if (!make_sink_tree) ClearDecomp19(decomp_info);
 
                 if (SPHanobj != SPHnobj)
                     Error("acc table has %d entries, should be %d\n", SPHanobj, SPHnobj);
@@ -951,14 +951,14 @@ main(int argc, char *argv[])
                 SPHbody *r;
                 FreeTree(&SPHsinktree);
                 /* Make sinkbtab congruent with SPHbtab */
-                SetDecomp(decomp_info);
+                SetDecomp19(decomp_info);
                 pqsortsetup(&SPHsortedbtab, SPHsinkbtab, SPHsinknobj, sizeof(SPHbody), params.sort_tol, Realloc_f);
                 singlPrintf("Re-arrange sinks\n");
                 Msgf(("Re-arrange sinks, nobj = %d\n", SPHsinknobj));
                 SPHsinkbtab = pqsort(&SPHsortedbtab, UnityCost, SPHGetKey);
                 SPHsinknobj = SPHsortedbtab.nobj;
                 Msgf(("Re-arrange sinks done, nobj = %d\n", SPHsinknobj));
-                ClearDecomp(decomp_info);
+                ClearDecomp19(decomp_info);
 
                 /* Replace updated bodies */
                 r = SPHbtab;
