@@ -1,14 +1,10 @@
 Objfiles
 *~
-sph*.p4icc-pink-mpi
-swampi.p4icc-pink-mpi
-sph*.x86_64-mpi
-swampi.x86_64-mpi
+sph*.*-mpi
+swampi.*-mpi
 sph*.g5
 sph*.g5sh
 sph*.x86_64*
 neuttest
 sph*.ofedq*
 sph*.i386-darwin
-sph*.i386-darwin-mpi
-interp_cylgrid.i386-darwin*
