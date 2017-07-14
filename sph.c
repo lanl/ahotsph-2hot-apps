@@ -664,7 +664,7 @@ update_intermediate(SPHbody *btab, int nobj, int Gridpts, const int Nel, float d
 
         /* calculate the total pressure by calculating the respective 
            contributions of gas and radiation pressure */
-        pgas = prad = 0.d;
+        pgas = prad = 0.0;
         pgas = (double)(eos_n * K_BOLTZ * p->temp);
         if( 20.*p->h > p->mfp) 
             prad = (double)(0.33333333333*A_RAD * p->temp*p->temp*p->temp*p->temp);
