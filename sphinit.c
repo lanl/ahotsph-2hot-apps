@@ -11,7 +11,6 @@
 #include "Msgs.h"
 #include "SDF.h"
 #include "SDFread.h"
-#include "SDFreadf.h"
 #include "nrutil.h"
 #include "cool.h"
 
@@ -31,7 +30,7 @@ InitRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 	float hubble;
 
 	singlPrintf("Reading \"%s\"\n", name);
-	sdfp = SDFread(csdfp, (void **)btabp, gnobjp, nobjp, sizeof(body),
+	sdfp = SDFread(NULL, csdfp, (void **)btabp, gnobjp, nobjp, sizeof(body),
 			"mass", offsetof(body, mass), &massconf,
 			"x", offsetof(body, pos[0]), &xconf,
 			"y", offsetof(body, pos[1]), &yconf,
@@ -166,7 +165,7 @@ SPHRead(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
 	int nobj, gnobj;
 
 	singlPrintf("SPHReading \"%s\"\n", name);
-	sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
+	sdfp = SDFreadf(NULL, name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
 			"mass", offsetof(SPHbody, mass), &massconf,
 			"x", offsetof(SPHbody, pos[0]), &xconf,
 			"y", offsetof(SPHbody, pos[1]), &yconf,
@@ -233,7 +232,7 @@ SPHReadA(char *name, void *csdfp, SPHbody **btabp, int *gnobjp, int *nobjp,
 
 	singlPrintf("SPHReading \"%s\"\n", name);
 	singlPrintf("if you get Y_el related error, check in file sphinit.c\n");
-	sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
+	sdfp = SDFreadf(NULL, name, (void **)btabp, gnobjp, nobjp, sizeof(SPHbody),
 			"mass", offsetof(SPHbody, mass), &massconf,
 			"x", offsetof(SPHbody, pos[0]), &xconf,
 			"y", offsetof(SPHbody, pos[1]), &yconf,
@@ -372,7 +371,7 @@ DarkRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp,
 	int nobj, gnobj;
 
 	singlPrintf("Reading \"%s\"\n", name);
-	sdfp = SDFreadf(name, (void **)btabp, gnobjp, nobjp, sizeof(body),
+	sdfp = SDFreadf(NULL, name, (void **)btabp, gnobjp, nobjp, sizeof(body),
 			"mass", offsetof(body, mass), &massconf,
 			"x", offsetof(body, pos[0]), &xconf,
 			"y", offsetof(body, pos[1]), &yconf,
