@@ -706,11 +706,12 @@ main(int argc, char *argv[])
             FixKeys(btab, nobj, GETKEY);
 
             if (MACtype == AREL_MAC) this_tol = params.tol*mtot/(sysradius*sysradius);
-            SetupCofm(MACtype, this_tol, params.frac_tol);
+            SetupCofm(&thetree, MACtype, this_tol, params.frac_tol);
             singlPrintf("BuildTree, tol=%g, frac_tol=%g, sysrad.=%.3g\n", this_tol, params.frac_tol,sysradius);
 
             StartTimer(&BuildTot);
             pqsortsetup(&sortedbtab, btab, nobj, sizeof(body), params.sort_tol, Realloc_f);
+            sortedbtab.method = 1;
             BuildTree(&thetree, &sortedbtab);
             /* PrintTree(&thetree, PrintBodyContents, PrintCellContents); */
             btab = sortedbtab.data;
