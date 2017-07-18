@@ -13,6 +13,7 @@
 #include "SDFread.h"
 #include "nrutil.h"
 #include "cool.h"
+#include "wind.h"
 
 	void *
 InitRead(char *name, void *csdfp, void **btabp, int *gnobjp, int *nobjp, 
