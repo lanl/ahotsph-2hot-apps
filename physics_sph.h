@@ -390,10 +390,10 @@ Key_t SPHOutIdentKey(const SPHoutbody *bp);
 Key_t SPHShortOutIdentKey(const SPHshortoutbody *bp);
 
 /* In sphcofm.c */
-void SPHSetupCofm(int MACtype, float tol, float rel_tol);
+void SPHSetupCofm(tree_t *tp);
 void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *);
 int SPHCellSz(void *p);
-void SPHCellFromCofm(SPHcell *cp, SPHcofmdata *cmp);
+void *SPHCellFromCofm(SPHcofmdata *cmp);
 
 /* In sphprint.c */
 char *PrintSPHCellContents(const SPHcell *cp);
