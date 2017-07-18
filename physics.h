@@ -181,7 +181,7 @@ Key_t getkey(const body *);
 void SetupCofm(tree_t *tp, int MACtype, float tol, float rel_tol);
 void CofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies);
 int CellSz(void *p);
-void CellFromCofm(cofmdata *cmp);
+void *CellFromCofm(cofmdata *cmp);
 
 /* In print.c */
 char *PrintCellContents(const cell *cp);

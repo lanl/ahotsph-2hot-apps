@@ -130,7 +130,7 @@ void CofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies){
 
 int CellSz(void *p)
 {
-	return sizeof(cell);
+    return sizeof(cell);
 }
 
 static double a[6];		/* coef of error poly */
@@ -139,9 +139,9 @@ static double rtnewt(void (*funcd)(double, double *, double *),
 		    double x1, double xacc);
 
 /* Turn the ptr from a cofmdata to a cell. */
-void CellFromCofm(cofmdata *cmp)
+void *CellFromCofm(cofmdata *cmp)
 {
-	cell *cp = ChnAlloc(&Tp->cellchn);
+    cell *cp = ChnAlloc(&Tp->cellchn);
 
     cp->mass = cmp->mass;
     VV(cp->pos, = cmp->pos);
@@ -186,6 +186,8 @@ void CellFromCofm(cofmdata *cmp)
 
     cp->daughters = cmp->ndaughters;
     Msgf(("Cell: %s\n", PrintCellContents(cp)));
+
+	return cp;
 }
 
 /* Use doubles here to avoid catastrophe from roundoff. */
