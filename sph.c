@@ -139,7 +139,7 @@ InheritSPH(const SinkSPH *from, SinkSPH *to, hcell *pp)
 }
 
     void
-SPHgate(SinkSPH *sink, hcell **src_vec, int *result, int n)
+SPHgate(SinkSPH *sink, hcell **src_vec, int *flags, int *result, int n)
 {
     int i;
 
