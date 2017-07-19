@@ -529,6 +529,17 @@ main(int argc, char *argv[])
     this_eps = params.eps;
     this_tol = params.tol;
 
+    /* Set sortresult_t parameters */
+    sortedbtab.decomp_cycles = 1;
+    sortedbtab.first_cycle = 0;
+    sortedbtab.log = 0;
+    SPHsortedbtab.decomp_cycles = 1;
+    SPHsortedbtab.first_cycle = 0;
+    SPHsortedbtab.log = 0;
+    sortedatab.decomp_cycles = 1;
+    sortedatab.first_cycle = 0;
+    sortedatab.log = 0;
+
     /* Testing initialization */
     for (q = SPHbtab; q < SPHbtab+SPHnobj; q++) {
         VS(q->acc, = 0.0);
@@ -795,6 +806,7 @@ main(int argc, char *argv[])
             singlPrintf("BuildTree\n");
             StartTimer(&BuildTot);
             pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), params.sort_tol, Realloc_f);
+			SPHsortedbtab.method = 1;
             SPHFixKeys(SPHbtab, SPHnobj, SPHGetKey);
             BuildTree(&SPHtree, &SPHsortedbtab);
             SPHbtab = SPHsortedbtab.data;
@@ -857,9 +869,11 @@ main(int argc, char *argv[])
                         memcpy(SPHsinkbtab+n++, q, sizeof(SPHbody));
                     }
                 }
+				SPHSetupCofm(&SPHsinktree);
                 singlPrintf("Build Sink Tree\n");
                 StartTimer(&BuildTot);
                 pqsortsetup(&SPHsortedbtab, SPHsinkbtab, SPHsinknobj, sizeof(SPHbody), params.sort_tol, Realloc_f);
+				SPHsortedbtab.method = 1;
                 Msgf(("Build Sink Tree, nobj = %d\n", SPHsinknobj));
                 BuildTree(&SPHsinktree, &SPHsortedbtab);
                 SPHsinkbtab = SPHsortedbtab.data;
@@ -868,10 +882,12 @@ main(int argc, char *argv[])
                 StopTimer(&BuildTot);
                 sinkptr = &SPHsinktree;
             }
+			SPHSetupCofm(&SPHtree);
             singlPrintf("BuildTree\n");
             StartTimer(&BuildTot);
             if (did_dark_update || make_sink_tree) decomp_info = SaveDecomp19();
             pqsortsetup(&SPHsortedbtab, SPHbtab, SPHnobj, sizeof(SPHbody), params.sort_tol, Realloc_f);
+			SPHsortedbtab.method = 1;
             Msgf(("Build Tree, nobj = %d\n", SPHnobj));
             BuildTree(&SPHtree, &SPHsortedbtab);
             SPHbtab = SPHsortedbtab.data;
@@ -885,6 +901,8 @@ main(int argc, char *argv[])
                 SetDecomp19(decomp_info);
                 singlPrintf("Re-arrange acctab\n");
                 pqsortsetup(&sortedatab, SPHatab, SPHanobj, sizeof(accbody), params.sort_tol, Realloc_f);
+				sortedatab.method = 1;
+				sortedatab.cycle = 0;
                 SPHatab = pqsort(&sortedatab, UnityCost, accbodyGetKey);
                 SPHanobj = sortedatab.nobj;
                 if (!make_sink_tree) ClearDecomp19(decomp_info);
