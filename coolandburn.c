@@ -692,7 +692,7 @@ int prep_cool_burn(SPHbody *p, float tlo, float tup, int Gridpts, int Nel, int r
 float burning(SPHbody *p, float dt, int rank) {
 
     int i,j,l;
-    int partid;
+    long partid;
     double temp, rho, dt_cgs, ndens;
     double deltah;
     double *molfrac;

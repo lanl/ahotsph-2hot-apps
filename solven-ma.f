@@ -107,7 +107,7 @@ c..   full network
          
 c..   evaluate rates and put in sig array
 
-         call rate(t9,rho,dtstar,k,jnb)
+         call rate(t9,rho,dtstar)
 
 c..   al26 rate: fix at low T
 c..   reaclib fit is bad below 2.9d7 K
