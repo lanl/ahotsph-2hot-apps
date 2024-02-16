@@ -14,7 +14,8 @@
 #include "verify.h"
 
 extern Timer_t SDFreadTm;
-Timer_t SDFwriteTm;
+/* I'm guessing this should be 'extern'? It's also defined in libSDF/SDFwrite.c. CIE */
+extern Timer_t SDFwriteTm;
 static char *header_buf;
 static int header_size;
 static int header_len;
