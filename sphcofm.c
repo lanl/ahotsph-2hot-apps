@@ -11,11 +11,14 @@
 #include "fastflpt.h"
 #include "protos.h"
 
-tree_t *Tp;
+/* Also defined in sph+nln/cofm.c. Is this intended to be same variable? It's now causing a
+ * 'multiple definitions' error when linking.
+ * I'm going to assume for now the answer is "no". CIE */
+tree_t *Tp1;
 
 void SPHSetupCofm(tree_t *tp)
 {
-	Tp = tp;
+	Tp1 = tp;
 }
 
 void SPHCofmFromDaugh(hcellptr hptr, hcellptr daughters[], sortresult_t *bodies){
@@ -112,10 +115,10 @@ int SPHCellSz(void *p)
 /* Turn the ptr from a cofmdata to a cell. */
 void *SPHCellFromCofm(SPHcofmdata *cmp)
 {
-	SPHcell *cp = ChnAlloc(&Tp->cellchn);
+	SPHcell *cp = ChnAlloc(&Tp1->cellchn);
 
-    cp->mass = cmp->mass;
-    VV(cp->pos, = cmp->pos);
+	cp->mass = cmp->mass;
+	VV(cp->pos, = cmp->pos);
     cp->bmax = cmp->bmax;
     cp->daughters = cmp->ndaughters;
     cp->lap = cmp->lap;
