@@ -29,6 +29,10 @@ ifeq ($(findstring icc,$(defaultCC)),icc)
 $(objdir)/sleos$(objsuf) : sleos.f
 	$(FC) $(FFLAGS) -mp1 -c sleos.f
 	mv sleos$(objsuf) $(objdir)
+else
+$(objdir)/sleos$(objsuf) : sleos.f
+	$(FC) $(FFLAGS) -c sleos.f
+	mv sleos$(objsuf) $(objdir)
 endif
 
 # $(objdir)/eos3$(objsuf) : eos3.f
