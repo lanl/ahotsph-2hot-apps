@@ -12,3 +12,4 @@ sph*.ofedq*
 sph*.i386-darwin
 sph*.i386-darwin-mpi
 interp_cylgrid.i386-darwin*
+*.x86_64*
