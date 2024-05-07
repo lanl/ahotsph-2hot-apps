@@ -1,4 +1,4 @@
-TREEHOME=..
+TREEHOME=../2hot
 treedir_sed=\.\.
 ##### Application-specific stuff goes here
 
@@ -115,7 +115,7 @@ $(objdir)/main$(objsuf): $(treedir)/include/gc.h $(treedir)/include/files.h $(tr
 $(objdir)/main$(objsuf): $(treedir)/include/verify.h $(treedir)/include/randoms.h $(treedir)/include/ring.h
 $(objdir)/main$(objsuf): $(treedir)/include/decomp.h $(treedir)/include/image.h $(treedir)/include/memfile.h
 $(objdir)/main$(objsuf): integrate.h
-$(objdir)/main$(objsuf): $(treedir)/sph+nln/nrutil.h $(treedir)/sph+nln/cool.h
+$(objdir)/main$(objsuf): nrutil.h cool.h
 $(objdir)/physics$(objsuf): physics.h $(treedir)/include/tree.h
 $(objdir)/physics$(objsuf):
 $(objdir)/physics$(objsuf):
@@ -181,8 +181,8 @@ $(objdir)/sph$(objsuf):
 $(objdir)/sph$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/include/chn.h $(treedir)/include/Assert.h
 $(objdir)/sph$(objsuf): $(treedir)/include/pqsort.h $(treedir)/include/vop.h $(treedir)/include/fastflpt.h
 $(objdir)/sph$(objsuf): physics.h ndim.h $(treedir)/include/physics_generic.h 
-$(objdir)/sph$(objsuf): $(treedir)/sph+nln/nrutil.h $(treedir)/sph+nln/cool.h
-$(objdir)/sph$(objsuf): $(treedir)/sph+nln/units.h
+$(objdir)/sph$(objsuf): nrutil.h cool.h
+$(objdir)/sph$(objsuf): units.h
 $(objdir)/sphinit$(objsuf):
 $(objdir)/sphinit$(objsuf):
 $(objdir)/sphinit$(objsuf):
@@ -199,7 +199,7 @@ $(objdir)/sphinit$(objsuf): $(treedir)/include/physics_generic.h physics_sph.h $
 $(objdir)/sphinit$(objsuf): $(treedir)/include/singlio.h $(treedir)/include/fastflpt.h
 $(objdir)/sphinit$(objsuf): $(treedir)/include/mpmy.h $(treedir)/include/gc.h $(treedir)/include/Msgs.h
 $(objdir)/sphinit$(objsuf): $(treedir)/include/SDF.h $(treedir)/include/SDFread.h
-$(objdir)/sphinit$(objsuf): $(treedir)/sph+nln/nrutil.h $(treedir)/sph+nln/cool.h
+$(objdir)/sphinit$(objsuf): nrutil.h cool.h
 $(objdir)/physics_sph$(objsuf): physics_sph.h $(treedir)/include/tree.h
 $(objdir)/physics_sph$(objsuf):
 $(objdir)/physics_sph$(objsuf):
@@ -213,7 +213,7 @@ $(objdir)/physics_sph$(objsuf): $(treedir)/include/gccextensions.h $(treedir)/in
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/Assert.h $(treedir)/include/pqsort.h
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/verify.h $(treedir)/include/mpmy.h $(treedir)/include/gc.h
 $(objdir)/physics_sph$(objsuf): $(treedir)/include/vop.h
-$(objdir)/physics_sph$(objsuf): $(treedir)/sph+nln/units.h
+$(objdir)/physics_sph$(objsuf): units.h
 $(objdir)/sphprint$(objsuf):
 $(objdir)/sphprint$(objsuf):
 $(objdir)/sphprint$(objsuf):
@@ -242,5 +242,5 @@ $(objdir)/sphplus$(objsuf): $(treedir)/include/chn.h $(treedir)/include/Assert.h
 $(objdir)/sphplus$(objsuf): ndim.h $(treedir)/include/physics_generic.h physics_sph.h
 $(objdir)/sphplus$(objsuf): $(treedir)/include/vop.h
 $(objdir)/nrutils$(objsuf):
-$(objdir)/coolandburn$(objsuf): $(treedir)/include/error.h $(treedir)/include/singlio.h $(treedir)/include/fastflpt.h $(treedir)/sph+nln/nrutil.h $(treedir)/sph+nln/cool.h
+$(objdir)/coolandburn$(objsuf): $(treedir)/include/error.h $(treedir)/include/singlio.h $(treedir)/include/fastflpt.h nrutil.h cool.h
 $(objdir)/params$(objsuf):

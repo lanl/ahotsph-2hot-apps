@@ -1,4 +1,4 @@
-TREEHOME=..
+TREEHOME=../2hot
 treedir_sed=\.\.
 ##### Application-specific stuff goes here
 

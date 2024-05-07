@@ -2,7 +2,7 @@
 #PAROS = mpi
 #ARCH=p4icc
 #PAROS=swampi
-treedir:=../
+treedir:=../2hot
 
 ifndef prog
 src= grav.c interp_cylgrid.c mac.c physics.c physics_sph.c \
@@ -15,8 +15,6 @@ src=$(prog).c
 fsrc=$(prog).f
 programname=$(prog)
 endif
-
-treedir:=../
 
 appexcludes:=-name data
 
