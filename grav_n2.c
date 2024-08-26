@@ -1,28 +1,26 @@
-#include "physics.h"
-#include "vop.h"
-#include "randoms.h"
-#include "ring.h"
-#include "mpmy.h"
-#include "error.h"
 #include "Malloc.h"
 #include "Msgs.h"
+#include "error.h"
+#include "mpmy.h"
+#include "physics.h"
+#include "randoms.h"
+#include "ring.h"
 #include "singlio.h"
+#include "vop.h"
 
 /* accumulate acc and phi in double precision */
 typedef struct {
-    float mass;			/* mass of body */
-    float pos[NDIM];		/* position of body */
+    float mass;      /* mass of body */
+    float pos[NDIM]; /* position of body */
     double acc[NDIM];
     double phi;
-    int64_t ident;		/* Not strictly necessary, but could catch errors */
+    int64_t ident; /* Not strictly necessary, but could catch errors */
 } qbody;
 
 static double L;
 static double G;
 
-void
-EwaldSetup(double box_length, double Gnewt)
-{
+void EwaldSetup(double box_length, double Gnewt) {
     L = box_length;
     G = Gnewt;
 }
@@ -78,24 +76,20 @@ grav_ewald(void *p0, void *list, int bsize, int n)
 
 static int Qgnobj;
 
-void
-sum_qbody(const void *in0, const void *in1, void *out)
-{
+void sum_qbody(const void *in0, const void *in1, void *out) {
     int i;
     const qbody *q0 = in0;
     const qbody *q1 = in1;
     qbody *qout = out;
 
     for (i = 0; i < Qgnobj; i++) {
-	VVV(qout[i].acc, = q0[i].acc, + q1[i].acc);
-	qout[i].phi = q0[i].phi + q1[i].phi;
+        VVV(qout[i].acc, = q0[i].acc, +q1[i].acc);
+        qout[i].phi = q0[i].phi + q1[i].phi;
     }
 }
 
 
-void
-EwaldForces(body *btab, int nobj, float sample_frac, void *rs)
-{
+void EwaldForces(body *btab, int nobj, float sample_frac, void *rs) {
     int i, k, qnobj;
     int *rcount, *roffset;
     float p;
@@ -118,59 +112,59 @@ EwaldForces(body *btab, int nobj, float sample_frac, void *rs)
     /* Keep the global qtab on each processor. */
     /* Since this is an N^2 calculation, I can't imagine a case where it won't fit */
     myqtab = Malloc(nobj * sizeof(qbody));
-    p = 2.0 * 1.0/sample_frac;
+    p = 2.0 * 1.0 / sample_frac;
     qnobj = 0;
     k = 0;
     while (1) {
-	if (sample_frac < 1.0) {
-	    k += (int)(p * uniform_rand(ranstate));
-	}
-	if (k < nobj) {
-	    myqtab[qnobj].mass = btab[k].mass;
-	    VV(myqtab[qnobj].pos, = btab[k].pos);
-	    VS(myqtab[qnobj].acc, = 0.0);
-	    myqtab[qnobj].phi = 0.0;
-	    myqtab[qnobj].ident = btab[k].ident;
-	    k++;
-	    qnobj++;
-	} else {
-	    break;
-	}
+        if (sample_frac < 1.0) {
+            k += (int)(p * uniform_rand(ranstate));
+        }
+        if (k < nobj) {
+            myqtab[qnobj].mass = btab[k].mass;
+            VV(myqtab[qnobj].pos, = btab[k].pos);
+            VS(myqtab[qnobj].acc, = 0.0);
+            myqtab[qnobj].phi = 0.0;
+            myqtab[qnobj].ident = btab[k].ident;
+            k++;
+            qnobj++;
+        } else {
+            break;
+        }
     }
-    myqtab = Realloc(myqtab, qnobj*sizeof(qbody));
-    rcount = Malloc(MPMY_Nproc()*sizeof(int));
-    roffset = Malloc(MPMY_Nproc()*sizeof(int));
+    myqtab = Realloc(myqtab, qnobj * sizeof(qbody));
+    rcount = Malloc(MPMY_Nproc() * sizeof(int));
+    roffset = Malloc(MPMY_Nproc() * sizeof(int));
     Native_MPMY_Allgather(&qnobj, 1, MPMY_INT, rcount);
-    
+
     Qgnobj = rcount[0];
     rcount[0] *= sizeof(qbody);
     roffset[0] = 0;
     for (i = 1; i < MPMY_Nproc(); i++) {
-	Qgnobj += rcount[i];
-	rcount[i] *= sizeof(qbody);
-	roffset[i] = roffset[i-1] + rcount[i-1];
+        Qgnobj += rcount[i];
+        rcount[i] *= sizeof(qbody);
+        roffset[i] = roffset[i - 1] + rcount[i - 1];
     }
-    my_offset = roffset[MPMY_Procnum()]/sizeof(qbody);
+    my_offset = roffset[MPMY_Procnum()] / sizeof(qbody);
     Msgf(("qtab my_offset %d, Qgnobj = %d\n", my_offset, Qgnobj));
     singlPrintf("Doing n2 gravity on reduced sample of %d particles\n", Qgnobj);
 
-    qtab = Malloc(Qgnobj*sizeof(qbody));
-    Native_MPMY_Allgatherv(myqtab, qnobj*sizeof(qbody), MPMY_CHAR, qtab, rcount, roffset);
+    qtab = Malloc(Qgnobj * sizeof(qbody));
+    Native_MPMY_Allgatherv(myqtab, qnobj * sizeof(qbody), MPMY_CHAR, qtab, rcount, roffset);
     Free(roffset);
     Free(rcount);
     Free(myqtab);
 
-    for (q = qtab; q < qtab+Qgnobj; q++) {
-	if ((q-qtab) % 100 == 0) {
-	    singlPrintf("cycle %5ld of %d in EwaldForces\n", q-qtab, Qgnobj);
-	    /* Msgf(("cycle %5ld of %d in EwaldForces\n", q-qtab, Qgnobj)); */
-	}
-	for (b = btab; b < btab + nobj; b++) {
-	    VVV(x, = b->pos, - q->pos);
-	    ewald(x, L, f, &pot);
-	    q->phi += b->mass*pot;
-	    VV(q->acc, += b->mass*f);
-	}
+    for (q = qtab; q < qtab + Qgnobj; q++) {
+        if ((q - qtab) % 100 == 0) {
+            singlPrintf("cycle %5ld of %d in EwaldForces\n", q - qtab, Qgnobj);
+            /* Msgf(("cycle %5ld of %d in EwaldForces\n", q-qtab, Qgnobj)); */
+        }
+        for (b = btab; b < btab + nobj; b++) {
+            VVV(x, = b->pos, -q->pos);
+            ewald(x, L, f, &pot);
+            q->phi += b->mass * pot;
+            VV(q->acc, += b->mass * f);
+        }
     }
     /* sum acc and phi across procs */
     MPMY_ICombine_Init(&req);
@@ -179,21 +173,19 @@ EwaldForces(body *btab, int nobj, float sample_frac, void *rs)
 
     b = btab;
     for (i = 0; i < qnobj; i++) {
-	q = qtab+my_offset+i;
-	while ((b->ident != q->ident) && (b < btab+nobj)) {
-	    b->nterms = 1;	/* suppress nterms is 0 warning */
-	    b++;
-	}
-	if (b >= btab+nobj) Error("ident mismatch\n");
-	VV(b->acc, = G*q->acc);	/* double => float */
-	b->phi = G*q->phi;
-	b->nterms = Qgnobj;
+        q = qtab + my_offset + i;
+        while ((b->ident != q->ident) && (b < btab + nobj)) {
+            b->nterms = 1; /* suppress nterms is 0 warning */
+            b++;
+        }
+        if (b >= btab + nobj)
+            Error("ident mismatch\n");
+        VV(b->acc, = G * q->acc); /* double => float */
+        b->phi = G * q->phi;
+        b->nterms = Qgnobj;
     }
-    for (; b < btab + nobj; b++) {
-	b->nterms = 1;
-    }
+    for (; b < btab + nobj; b++) { b->nterms = 1; }
 
     Free(qtab);
     Msgf(("EwaldForces Done\n"));
 }
-
